@@ -1,0 +1,19 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+  included_files = []
+
+# API: mỗi function tự khai báo đường dẫn /api/... trong `export const config = { path }`.
+# Mọi đường dẫn khác trả về app React (SPA).
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[dev]
+  framework = "vite"
+  targetPort = 5173

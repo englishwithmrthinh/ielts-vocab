@@ -1,0 +1,35 @@
+/** POST /api/login  { code, pin } → cookie phiên học sinh */
+import type { Config } from '@netlify/functions';
+import { checkPin, createToken, isValidPin, sessionCookie } from '../lib/auth';
+import { handler, HttpError, json, readJson } from '../lib/http';
+import { db, must } from '../lib/supabase';
+
+const MAX_FAILS = 10;
+const WINDOW_MIN = 15;
+
+export default handler(['POST'], async (req) => {
+  const { code, pin } = await readJson<{ code?: string; pin?: string }>(req);
+  const c = String(code ?? '').trim().toUpperCase();
+  if (!c || !isValidPin(pin)) throw new HttpError(400, 'bad_input', 'Nhập mã và PIN 4 số');
+
+  const since = new Date(Date.now() - WINDOW_MIN * 60_000).toISOString();
+  const { count } = await db()
+    .from('login_attempts').select('id', { count: 'exact', head: true })
+    .eq('code', c).eq('success', false).gte('attempted_at', since);
+  if ((count ?? 0) >= MAX_FAILS) {
+    throw new HttpError(429, 'too_many_attempts', `Sai quá nhiều lần. Đợi ${WINDOW_MIN} phút rồi thử lại.`);
+  }
+
+  const rows = must(await db().from('students').select('id,name,code,pin_hash,active').eq('code', c).limit(1)) as
+    { id: string; name: string; code: string; pin_hash: string; active: boolean }[];
+  const s = rows[0];
+  const ok = !!s && s.active && (await checkPin(pin, s.pin_hash));
+  await db().from('login_attempts').insert({ code: c, success: ok });
+  if (!ok || !s) throw new HttpError(401, 'wrong_credentials', 'Mã hoặc PIN chưa đúng');
+
+  return json({ student: { name: s.name, code: s.code } }, 200, {
+    'set-cookie': sessionCookie('student', createToken('student', s.id)),
+  });
+});
+
+export const config: Config = { path: '/api/login' };

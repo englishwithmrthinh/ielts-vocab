@@ -1,0 +1,36 @@
+/**
+ * API mốc cho trang quản trị (cần cookie quản trị):
+ * GET  /api/admin/milestones?month=2026-11   → { milestones: Milestone[] }  (tự tạo tháng nếu chưa có)
+ * POST /api/admin/milestones/off  { id, off } → bật/tắt Nghỉ (chỉ mốc từ hôm nay trở đi)
+ */
+import type { Config } from '@netlify/functions';
+import type { Milestone } from '../../shared/types';
+import { requireAdmin } from '../lib/auth';
+import { errorResponse, HttpError, json, readJson } from '../lib/http';
+import { ensureMonth, setOff } from '../lib/milestones-db';
+import { db, must } from '../lib/supabase';
+
+export default async (req: Request): Promise<Response> => {
+  try {
+    requireAdmin(req);
+    const url = new URL(req.url);
+    if (url.pathname === '/api/admin/milestones' && req.method === 'GET') {
+      const month = url.searchParams.get('month') ?? '';
+      if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new HttpError(400, 'bad_month', 'Tháng dạng YYYY-MM');
+      await ensureMonth(month);
+      const rows = must(await db().from('milestones').select('*').eq('month', month).order('date')) as Milestone[];
+      return json({ milestones: rows });
+    }
+    if (url.pathname === '/api/admin/milestones/off' && req.method === 'POST') {
+      const { id, off } = await readJson<{ id?: string; off?: boolean }>(req);
+      if (!id || typeof off !== 'boolean') throw new HttpError(400, 'bad_input', 'Cần id và off');
+      await setOff(id, off);
+      return json({ ok: true });
+    }
+    throw new HttpError(405, 'method_not_allowed', 'Phương thức không hỗ trợ');
+  } catch (e) {
+    return errorResponse(e);
+  }
+};
+
+export const config: Config = { path: ['/api/admin/milestones', '/api/admin/milestones/off'] };
