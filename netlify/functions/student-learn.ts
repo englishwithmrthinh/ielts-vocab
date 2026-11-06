@@ -25,7 +25,7 @@ import { requireStudent } from '../lib/auth';
 import { errorResponse, HttpError, json, readJson } from '../lib/http';
 import { db, must } from '../lib/supabase';
 import {
-  addXp, answersOf, cardsOf, distractorPool, getAssignment, getWords, loadPlan, loadStudentWords, streakOf, toCard, toQuiz,
+  addXp, answersOf, cardsOf, getAssignment, getWords, loadPlan, loadStudentWords, poolWords, streakOf, toCard, toQuiz, withPool,
 } from '../lib/learn';
 
 const rng = Math.random;
@@ -34,7 +34,12 @@ const now = () => new Date().toISOString();
 // ---------------- home & preview ----------------
 async function home(studentId: string): Promise<HomeResponse> {
   const t = now();
-  const plan = await loadPlan(studentId, t);
+  const [plan, st, xp, fresh] = await Promise.all([
+    loadPlan(studentId, t),
+    db().from('students').select('name,code').eq('id', studentId).single(),
+    db().from('xp_events').select('amount,created_at').eq('student_id', studentId),
+    db().from('student_words').select('word_id', { count: 'exact', head: true }).eq('student_id', studentId).eq('introduced', false),
+  ]);
   const { owing, open, next } = cardsOf(plan);
   const list = [...owing, ...(open ? [open] : [])];
   const tomorrow = new Date(Date.parse(t) + 86_400_000).toISOString();
@@ -47,11 +52,6 @@ async function home(studentId: string): Promise<HomeResponse> {
       progress: { done: a?.answered_count ?? 0, required: a?.required_count ?? null },
     };
   });
-  const [st, xp, fresh] = await Promise.all([
-    db().from('students').select('name,code').eq('id', studentId).single(),
-    db().from('xp_events').select('amount,created_at').eq('student_id', studentId),
-    db().from('student_words').select('word_id', { count: 'exact', head: true }).eq('student_id', studentId).eq('introduced', false),
-  ]);
   const s = must(st) as { name: string; code: string };
   const xps = (must(xp) as { amount: number; created_at: string }[]);
   const wk = vnStartOfDay(weekStart(vnDate(t)));
@@ -72,7 +72,7 @@ async function preview(studentId: string): Promise<PreviewResponse> {
 // ---------------- start ----------------
 async function start(studentId: string, milestoneId: string): Promise<StartAssignmentResponse> {
   const t = now();
-  const plan = await loadPlan(studentId, t);
+  const [plan, words] = await Promise.all([loadPlan(studentId, t), loadStudentWords(studentId)]);
   const m = plan.milestones.find((x) => x.id === milestoneId);
   if (!m || m.idx === null) throw new HttpError(404, 'not_found', 'Không tìm thấy bài này');
   const status = plan.status.get(m.id)!;
@@ -85,16 +85,17 @@ async function start(studentId: string, milestoneId: string): Promise<StartAssig
   const older = plan.milestones.find((x) => x.date < m.date && plan.status.get(x.id) === 'owing');
   if (older) throw new HttpError(409, 'blocked_by_older', `Làm bù bài ngày ${older.date} trước`);
 
-  const words = await loadStudentWords(studentId);
   const sel = selectWords(words, m.idx);
   const fresh = words.filter((w) => !w.introduced && sel.graded.includes(w.word_id)).map((w) => w.word_id);
-  if (fresh.length) {
-    must(await db().from('student_words').update({ introduced: true }).eq('student_id', studentId).in('word_id', fresh));
-  }
-  const ins = await db().from('assignments').insert({
-    student_id: studentId, milestone_id: m.id, status, started_at: t,
-    required_count: sel.graded.length + sel.filler.length, answered_count: 0, word_ids: sel.graded,
-  }).select('id').single();
+  const [, ins] = await Promise.all([
+    fresh.length
+      ? db().from('student_words').update({ introduced: true }).eq('student_id', studentId).in('word_id', fresh).then(must)
+      : Promise.resolve(null),
+    db().from('assignments').insert({
+      student_id: studentId, milestone_id: m.id, status, started_at: t,
+      required_count: sel.graded.length + sel.filler.length, answered_count: 0, word_ids: sel.graded,
+    }).select('id').single(),
+  ]);
   if (ins.error?.code === '23505') return start(studentId, milestoneId); // bấm 2 lần cùng lúc
   const a = must(ins) as { id: string };
   return { assignmentId: a.id, required: sel.graded.length + sel.filler.length, done: 0, canContinueExtra: sel.extra.length > 0 };
@@ -129,12 +130,13 @@ function relearnQueue(answers: { word_id: string; mode: string; correct: boolean
 interface StoredPayload extends QuestionPayload { mode: Question['mode']; wordIds: string[] }
 
 async function next(studentId: string, assignmentId: string, extra: boolean): Promise<NextQuestionResponse> {
-  const [{ a, m }, answers, pendingR, words] = await Promise.all([
+  const [{ a, m }, answers, pendingR, words, extraPool] = await Promise.all([
     getAssignment(studentId, assignmentId),
     answersOf(assignmentId),
     db().from('pending_questions').select('qid,payload').eq('assignment_id', assignmentId).eq('student_id', studentId)
       .order('created_at', { ascending: false }).limit(1),
     loadStudentWords(studentId),
+    poolWords(),
   ]);
   const inBai = new Set(a.word_ids);
   const gradedDone = new Set(answers.filter((x) => x.mode === 'graded').map((x) => x.word_id));
@@ -153,7 +155,7 @@ async function next(studentId: string, assignmentId: string, extra: boolean): Pr
   }
 
   const byId = new Map(words.map((w) => [w.word_id, w]));
-  const pool = await distractorPool(words.map(toQuiz));
+  const pool = withPool(words.map(toQuiz), extraPool);
   const prev = (answers.at(-1)?.qtype as QType | undefined) ?? null;
 
   let plan: { type: QType; words: ReturnType<typeof toQuiz>[] } | null = null;
@@ -275,9 +277,8 @@ const PASS_BADGES: [number, BadgeCode][] = [[10, 'pass_10'], [50, 'pass_50'], [1
 const STREAK_BADGES: [number, BadgeCode][] = [[6, 'streak_6'], [12, 'streak_12'], [24, 'streak_24']];
 
 async function submit(studentId: string, assignmentId: string): Promise<SubmitResponse> {
-  const { a, m } = await getAssignment(studentId, assignmentId);
+  const [{ a, m }, answers] = await Promise.all([getAssignment(studentId, assignmentId), answersOf(assignmentId)]);
   if (a.status === 'submitted') throw new HttpError(409, 'already_submitted', 'Bài này đã nộp rồi');
-  const answers = await answersOf(a.id);
   const gradedDone = new Set(answers.filter((x) => x.mode === 'graded').map((x) => x.word_id));
   const fillerDone = answers.filter((x) => x.mode === 'practice').length;
   const fillerTarget = (a.required_count ?? 0) - a.word_ids.length;
@@ -291,25 +292,30 @@ async function submit(studentId: string, assignmentId: string): Promise<SubmitRe
   const late = daysLate(m.date, t);
   const score = scoreForDaysLate(late);
   if (score === null) throw new HttpError(409, 'abandoned', 'Bài này đã quá 7 ngày, không nộp được nữa');
+  const ws = weekStart(m.date);
+  const pwReason = `perfect_week:${ws}`;
+  // Ghi nộp bài trước, rồi đọc song song những thứ cần cho tuần hoàn hảo và huy hiệu
   must(await db().from('assignments').update({ status: 'submitted', submitted_at: t, days_late: late, score_pct: score }).eq('id', a.id));
+  const [weekMsR, weekAsR, hadR, plan, passR] = await Promise.all([
+    db().from('milestones').select('id').eq('is_off', false).gte('date', ws).lte('date', addDays(ws, 6)),
+    db().from('assignments').select('milestone_id,status,days_late,m:milestones!inner(date,is_off)').eq('student_id', studentId)
+      .gte('m.date', ws).lte('m.date', addDays(ws, 6)),
+    db().from('xp_events').select('id').eq('student_id', studentId).eq('reason', pwReason).limit(1),
+    loadPlan(studentId, t),
+    db().from('student_words').select('word_id', { count: 'exact', head: true }).eq('student_id', studentId).eq('box', PASS_BOX),
+  ]);
+  const weekMs = must(weekMsR) as { id: string }[];
+  const weekAs = must(weekAsR) as unknown as { milestone_id: string; status: string; days_late: number | null }[];
+  const passCount = passR.count ?? 0;
 
   let xpGained = 0;
-  if (late === 0) { xpGained += XP.onTimeSubmit; await addXp(studentId, XP.onTimeSubmit, `submit:${a.id}`); }
-
+  const xpWrites: Promise<void>[] = [];
+  if (late === 0) { xpGained += XP.onTimeSubmit; xpWrites.push(addXp(studentId, XP.onTimeSubmit, `submit:${a.id}`)); }
   // Tuần hoàn hảo: mọi mốc không nghỉ trong tuần (Thứ 2–CN) của bài này đều nộp đúng hạn
-  const ws = weekStart(m.date);
-  const weekMs = must(await db().from('milestones').select('id').eq('is_off', false).gte('date', ws).lte('date', addDays(ws, 6))) as { id: string }[];
-  const weekAs = must(await db().from('assignments').select('milestone_id,status,days_late').eq('student_id', studentId).in('milestone_id', weekMs.map((x) => x.id))) as { milestone_id: string; status: string; days_late: number | null }[];
   const perfectWeek = weekMs.length > 0 && weekMs.every((x) => weekAs.some((y) => y.milestone_id === x.id && y.status === 'submitted' && y.days_late === 0));
-  if (perfectWeek) {
-    const reason = `perfect_week:${ws}`;
-    const had = must(await db().from('xp_events').select('id').eq('student_id', studentId).eq('reason', reason).limit(1)) as unknown[];
-    if (!had.length) { xpGained += XP.perfectWeek; await addXp(studentId, XP.perfectWeek, reason); }
-  }
+  if (perfectWeek && !(must(hadR) as unknown[]).length) { xpGained += XP.perfectWeek; xpWrites.push(addXp(studentId, XP.perfectWeek, pwReason)); }
 
   // Huy hiệu
-  const plan = await loadPlan(studentId, t);
-  const passCount = (await db().from('student_words').select('word_id', { count: 'exact', head: true }).eq('student_id', studentId).eq('box', PASS_BOX)).count ?? 0;
   const streak = streakOf(plan);
   const want: BadgeCode[] = [
     ...(late === 0 ? ['first_submit' as BadgeCode] : []),
@@ -325,6 +331,7 @@ async function submit(studentId: string, assignmentId: string): Promise<SubmitRe
     ) as { code: BadgeCode }[];
     newBadges = ins.map((x) => x.code);
   }
+  await Promise.all(xpWrites);
 
   const graded = answers.filter((x) => x.mode === 'graded' && a.word_ids.includes(x.word_id) && !x.flagged);
   return {
