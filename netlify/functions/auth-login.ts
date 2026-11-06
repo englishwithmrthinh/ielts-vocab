@@ -26,7 +26,7 @@ export default handler(['POST'], async (req) => {
   const s = rows[0];
   const ok = !!s && s.active && (!withPin || (await checkPin(pin as string, s.pin_hash)));
   await db().from('login_attempts').insert({ code: c, success: ok });
-  if (!ok || !s) throw new HttpError(401, 'wrong_credentials', 'Mã chưa đúng. Mã = mã lớp + ngày sinh, ví dụ FD15032008');
+  if (!ok || !s) throw new HttpError(401, 'wrong_credentials', 'Mã lớp hoặc ngày sinh chưa đúng');
 
   return json({ student: { name: s.name, code: s.code } }, 200, {
     'set-cookie': sessionCookie('student', createToken('student', s.id)),

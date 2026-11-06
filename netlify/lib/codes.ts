@@ -1,5 +1,5 @@
 /**
- * Mã học sinh = mã lớp (2 chữ in hoa) + ngày sinh, ví dụ FD15032008. Chủ sở hữu: Sếp.
+ * Mã học sinh = mã lớp (2–6 chữ/số, vd GB07) + ngày sinh, ví dụ FD15032008. Chủ sở hữu: Sếp.
  * Trùng thì thêm 2, 3… vào cuối. Học sinh chưa có ngày sinh giữ mã cũ (HSxx).
  * Học sinh chưa xếp lớp dùng tiền tố "HS".
  */
@@ -11,13 +11,13 @@ export function cleanBirth(v: unknown): string | null {
 }
 
 export function cleanClassCode(v: unknown): string {
-  const s = String(v ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'D').replace(/[^A-Za-z]/g, '').toUpperCase();
-  return s.slice(0, 4);
+  const s = String(v ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'D').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  return s.slice(0, 6);
 }
 
 /** Gợi ý mã lớp từ tên: chữ đầu của 2 từ đầu, ví dụ "IELTS Foundation" → IF */
 export function suggestClassCode(name: string): string {
-  const words = name.split(/\s+/).map((w) => cleanClassCode(w)).filter(Boolean);
+  const words = name.split(/\s+/).map((w) => cleanClassCode(w).replace(/\d/g, '')).filter(Boolean);
   const c = words.length >= 2 ? words[0]![0]! + words[1]![0]! : (words[0] ?? 'LH').slice(0, 2);
   return c.padEnd(2, 'X');
 }
