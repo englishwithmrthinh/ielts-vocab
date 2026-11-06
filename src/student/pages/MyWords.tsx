@@ -5,12 +5,12 @@ import { Clock3, LayoutGrid, List, Plus, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { Box, MyWordsResponse } from '@shared/types';
-import Infographic from '../../shared-ui/Infographic';
 import { errorText, studentApi } from '../api';
 import { ART, Spot } from '../components/Art';
 import { BookCover, SHELF } from '../components/BookCover';
 import { Button, Card, SectionTitle, Spinner, Tag, cx } from '../components/ui';
 import { POS_VI, WordCardView } from '../components/WordCardView';
+import { WordGrid } from '../components/WordGrid';
 import { COPY } from '../lib/copy';
 
 type Word = MyWordsResponse['words'][number];
@@ -27,7 +27,7 @@ function Sheet({ onClose, children, label }: { onClose: () => void; children: Re
   return (
     <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/40 lg:items-center" onClick={onClose} role="dialog" aria-modal="true" aria-label={label}>
       <div
-        className="max-h-[88dvh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-page p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] animate-[fadeIn_.2s_ease-out] lg:rounded-3xl"
+        className="max-h-[88dvh] w-full max-w-[560px] overflow-y-auto rounded-t-3xl bg-page p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] animate-[fadeIn_.2s_ease-out] lg:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-2 flex justify-end">
@@ -201,16 +201,7 @@ export default function MyWords() {
               {hideMeaning ? 'Hiện nghĩa' : 'Che nghĩa để tự kiểm tra'}
             </button>
           </div>
-          <div className="overflow-hidden rounded-[var(--radius-card)] bg-surface p-2 shadow-[var(--shadow-card)] ring-1 ring-line">
-            <Infographic
-              hideMeaning={hideMeaning}
-              items={list.map((w) => ({ id: w.wordId, word: w.word, meaningVi: w.meaningVi, imageUrl: w.imageUrl, pos: w.pos }))}
-              onSelect={(it) => {
-                const w = list.find((x) => x.wordId === it.id);
-                if (w) setOpen(w);
-              }}
-            />
-          </div>
+          <WordGrid words={list} hideMeaning={hideMeaning} onOpen={setOpen} />
         </div>
       ) : (
         <ul className="mt-4 divide-y divide-line overflow-hidden rounded-[var(--radius-card)] bg-surface shadow-[var(--shadow-card)] ring-1 ring-line">
@@ -239,8 +230,8 @@ export default function MyWords() {
 
       {open && (
         <Sheet onClose={() => setOpen(null)} label={`Thẻ từ ${open.word}`}>
-          <WordCardView card={open} big />
-          <p className="mt-3 text-center text-sm text-ink-2">{open.box === 6 ? 'Bạn đã thuộc từ này.' : `Đang ở ${BOX_LABEL[open.box]}.`}</p>
+          <WordCardView card={open} variant="detail" />
+          <p className="mt-2 text-center text-sm text-ink-2">{open.box === 6 ? 'Bạn đã thuộc từ này.' : `Đang ở ${BOX_LABEL[open.box]}.`}</p>
         </Sheet>
       )}
 

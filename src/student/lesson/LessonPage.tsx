@@ -18,6 +18,7 @@ import { Preview } from './Preview';
 import { ResultPanel } from './ResultPanel';
 import { prefetch, preloadMedia, type Prefetch } from './flow';
 import { quickGrade } from '@shared/check';
+import { feedback, primeAudio } from '../lib/feedback';
 import type { QuickResult } from '../../questions';
 
 export type Stage =
@@ -95,12 +96,20 @@ export default function LessonPage() {
     const { q, phase } = stage;
     const sameQ = (cur: Stage) => cur.k === 'question' && cur.q.qid === q.qid;
     setStage({ ...stage, sending: true });
-    // Chấm nhanh trên máy (mã băm) → tô đúng/sai ngay, không chờ mạng
+    primeAudio();
+    // Chấm nhanh trên máy (mã băm) → tô đúng/sai + âm báo ngay, không chờ mạng
+    let quickDone = false;
     quickGrade(q.check, a)
-      .then((quick) => quick && setStage((cur) => (sameQ(cur) && cur.k === 'question' && !cur.result ? { ...cur, quick } : cur)))
+      .then((quick) => {
+        if (!quick) return;
+        quickDone = true;
+        feedback(quick.correct);
+        setStage((cur) => (sameQ(cur) && cur.k === 'question' && !cur.result ? { ...cur, quick } : cur));
+      })
       .catch(() => undefined);
     try {
       const result = await studentApi.answer(assignmentId, a);
+      if (!quickDone) feedback(result.correct);
       setStage((cur) => (sameQ(cur) && cur.k === 'question' ? { ...cur, sending: false, result } : cur));
       // Tải trước câu sau trong lúc học sinh đọc thẻ đáp án
       pre.current = prefetch(() => studentApi.next(assignmentId, phase === 'extra'));
@@ -238,16 +247,17 @@ function TopBar({ stage, onClose }: { stage: Stage; onClose: () => void }) {
             <span className="text-sm font-semibold tabular-nums text-cream/90">
               {q.progress.done}/{q.progress.required}
             </span>
-            {!!q.progress.fixLeft && (
-              <span className="rounded-full bg-blush px-2 py-0.5 text-[11px] font-semibold text-blush-ink" title="Số từ làm sai còn phải làm đúng lại">
-                ôn lại {q.progress.fixLeft}
-              </span>
-            )}
+
           </>
         )}
         {q && phase === 'extra' && <p className="label-caps flex-1 text-cream/90">Làm tiếp · câu thêm {q.progress.extra + 1}</p>}
         {!q && <p className="font-display flex-1 text-[15px] text-cream/90">Học từ vựng</p>}
       </div>
+      {q && phase !== 'extra' && q.progress.done >= q.progress.required && !!q.progress.fixLeft && (
+        <p className="bg-primary-edge px-4 py-1.5 text-center text-xs font-medium text-cream" role="status">
+          Còn {q.progress.fixLeft} từ cần làm đúng lại trước khi nộp
+        </p>
+      )}
     </div>
   );
 }
@@ -263,7 +273,7 @@ export function QuestionView({
 }) {
   const Comp = QUESTION_COMPONENTS[stage.q.type];
   return (
-    <div data-qtype={stage.q.type} className={cx('pb-24', !stage.result && 'animate-[fadeIn_.2s_ease-out]')}>
+    <div data-qtype={stage.q.type} data-qid={stage.q.qid} className={cx('pb-24', !stage.result && 'animate-[fadeIn_.2s_ease-out]')}>
       {stage.phase === 'fix' && (
         <p className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-blush px-3 py-1 text-xs font-semibold text-blush-ink">
           <Repeat className="size-3.5" aria-hidden /> Ôn lại từ vừa sai · không tính điểm

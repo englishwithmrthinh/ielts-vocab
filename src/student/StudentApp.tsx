@@ -37,7 +37,7 @@ function RequireLogin() {
 /** Khung có điều hướng: điện thoại = thanh dưới; máy tính = thanh bên trái + nội dung rộng */
 function WithNav() {
   return (
-    <div className="lg:flex">
+    <div className="lg:flex lg:min-h-dvh">
       <SideNav />
       <div className="mx-auto w-full max-w-md pb-24 lg:max-w-5xl lg:px-8 lg:pb-12 lg:pt-6">
         <Outlet />

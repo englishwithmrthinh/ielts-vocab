@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { AnswerSubmission, NextQuestionResponse } from '@shared/types';
 import { quickGrade } from '@shared/check';
+import { feedback, primeAudio } from '../lib/feedback';
 import { prefetch, type Prefetch } from './flow';
 import { ApiCallError } from '../../lib/api';
 import { errorText, studentApi } from '../api';
@@ -50,11 +51,19 @@ export default function PracticePage() {
     const qid = stage.q.qid;
     const same = (cur: Stage) => cur.k === 'question' && cur.q.qid === qid;
     setStage({ ...stage, sending: true });
+    primeAudio();
+    let quickDone = false;
     quickGrade(stage.q.check, a)
-      .then((quick) => quick && setStage((cur) => (same(cur) && cur.k === 'question' && !cur.result ? { ...cur, quick } : cur)))
+      .then((quick) => {
+        if (!quick) return;
+        quickDone = true;
+        feedback(quick.correct);
+        setStage((cur) => (same(cur) && cur.k === 'question' && !cur.result ? { ...cur, quick } : cur));
+      })
       .catch(() => undefined);
     try {
       const result = await studentApi.practiceAnswer(a);
+      if (!quickDone) feedback(result.correct);
       setStage((cur) => (same(cur) && cur.k === 'question' ? { ...cur, sending: false, result } : cur));
       pre.current = prefetch(() => studentApi.practiceNext());
       setXp((v) => v + result.xp);

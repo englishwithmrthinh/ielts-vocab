@@ -57,10 +57,9 @@ export function BottomNav() {
 
 export function SideNav() {
   return (
-    <aside
-      aria-label="Điều hướng chính"
-      className="sticky top-0 hidden h-dvh w-[220px] shrink-0 flex-col border-r border-line bg-surface-2 lg:flex"
-    >
+    // Nền be kéo hết chiều cao trang (aside giãn theo hàng flex), phần menu dính trên cùng khi cuộn
+    <aside aria-label="Điều hướng chính" className="hidden min-h-dvh w-[220px] shrink-0 self-stretch border-r border-line bg-surface-2 lg:block">
+      <div className="sticky top-0 flex h-dvh flex-col">
       <div className="px-5 pb-4 pt-6">
         <p className="font-display text-[17px] leading-tight text-ink">Học từ vựng</p>
         <p className="label-caps mt-0.5 text-ink-3">Mr Thinh Class</p>
@@ -86,6 +85,7 @@ export function SideNav() {
       <div className="mt-auto flex flex-col items-center gap-6 px-6 pb-8">
         <Spot src={ART.bookGlasses} className="w-32 opacity-95" />
         <Spot src={ART.bookPen} className="w-28 opacity-95" />
+      </div>
       </div>
     </aside>
   );
