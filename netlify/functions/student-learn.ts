@@ -180,12 +180,15 @@ async function answer(studentId: string, sub: AnswerSubmission): Promise<AnswerR
       .select('assignment_id,payload,answer_key'),
   ) as { assignment_id: string | null; payload: StoredPayload; answer_key: AnswerKey }[];
   const p = del[0];
-  if (!p || !p.assignment_id) throw new HttpError(410, 'question_expired', 'Câu này đã được trả lời. Tải câu tiếp theo nhé.');
+  if (!p) throw new HttpError(410, 'question_expired', 'Câu này đã được trả lời. Tải câu tiếp theo nhé.');
 
-  const { a, m } = await getAssignment(studentId, p.assignment_id);
+  // Luyện thêm: không gắn bài, không đổi hộp
+  const ctx = p.assignment_id ? await getAssignment(studentId, p.assignment_id) : null;
+  const a = ctx?.a ?? null;
+  const m = ctx?.m ?? null;
   const out = grade(p.answer_key, sub);
   const type = p.payload.type;
-  const mode = p.payload.mode;
+  const mode = a ? p.payload.mode : 'practice';
   const words = await getWords(p.payload.wordIds);
   const sws = must(
     await db().from('student_words').select('word_id,box,typed_ok,wrong_count').eq('student_id', studentId).in('word_id', p.payload.wordIds),
@@ -200,7 +203,7 @@ async function answer(studentId: string, sub: AnswerSubmission): Promise<AnswerR
     const s = swBy.get(pw.wordId);
     let boxAfter: Box | null = s?.box ?? null;
     if (mode === 'graded' && s) {
-      const r = applyAnswer(s, pw.correct, isTypingType(type), m.idx ?? 0);
+      const r = applyAnswer(s, pw.correct, isTypingType(type), m?.idx ?? 0);
       boxAfter = r.box;
       passed ||= r.passed;
       must(await db().from('student_words').update({
@@ -214,17 +217,17 @@ async function answer(studentId: string, sub: AnswerSubmission): Promise<AnswerR
     }
     rows.push({
       ...(i === 0 ? { id: sub.qid } : {}),
-      student_id: studentId, assignment_id: a.id, word_id: pw.wordId, qtype: type, mode,
+      student_id: studentId, assignment_id: a?.id ?? null, word_id: pw.wordId, qtype: type, mode,
       given: out.given.slice(0, 500), correct: pw.correct, hint_code: out.hint ?? null,
       box_before: s?.box ?? null, box_after: boxAfter,
     });
   }
   must(await db().from('answers').insert(rows));
-  const countsTowardBai = mode === 'practice' || (mode === 'graded' && a.word_ids.includes(out.perWord[0]!.wordId));
-  if (countsTowardBai) {
+  const countsTowardBai = !!a && (mode === 'practice' || (mode === 'graded' && a.word_ids.includes(out.perWord[0]!.wordId)));
+  if (a && countsTowardBai) {
     must(await db().from('assignments').update({ answered_count: a.answered_count + out.perWord.length }).eq('id', a.id));
   }
-  await addXp(studentId, xp, `answer:${type}`);
+  await addXp(studentId, xp, a ? `answer:${type}` : `practice:${type}`);
 
   const cards = p.payload.wordIds.map((id) => words.get(id)).filter((w) => !!w).map((w) => toCard(w!));
   return {

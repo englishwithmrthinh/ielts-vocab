@@ -4,36 +4,24 @@
 import { Award, CalendarCheck, Clock, Home, Repeat, Trophy, X, Zap } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import type { AnswerResult, AnswerSubmission, BadgeCode, NextQuestionResponse, Question, SubmitResponse, WordCard } from '@shared/types';
+import type { AnswerResult, AnswerSubmission, NextQuestionResponse, Question, SubmitResponse, WordCard } from '@shared/types';
 import { QUESTION_COMPONENTS } from '../../questions';
 import { ApiCallError } from '../../lib/api';
 import { errorText, studentApi } from '../api';
 import { Button, Card, ProgressBar, Spinner, cx } from '../components/ui';
+import { BADGE_VI } from '../lib/badges';
 import { celebrate } from '../lib/celebrate';
+import { COPY, fill, summaryLine } from '../lib/copy';
 import { Preview } from './Preview';
 import { ResultPanel } from './ResultPanel';
 
-type Stage =
+export type Stage =
   | { k: 'loading' }
   | { k: 'error'; msg: string }
   | { k: 'preview'; cards: WordCard[] }
   | { k: 'question'; q: Question; phase: NextQuestionResponse['phase']; result?: AnswerResult; sending?: boolean }
   | { k: 'summary' }
   | { k: 'submitted'; r: SubmitResponse };
-
-export const BADGE_VI: Record<BadgeCode, string> = {
-  first_submit: 'Bài nộp đầu tiên',
-  perfect_week: 'Tuần hoàn hảo',
-  perfect_month: 'Tháng hoàn hảo',
-  all_sundays_month: 'Đủ mọi Chủ nhật trong tháng',
-  pass_10: 'Thuộc 10 từ',
-  pass_50: 'Thuộc 50 từ',
-  pass_100: 'Thuộc 100 từ',
-  pass_300: 'Thuộc 300 từ',
-  streak_6: 'Chuỗi 6 mốc',
-  streak_12: 'Chuỗi 12 mốc',
-  streak_24: 'Chuỗi 24 mốc',
-};
 
 export default function LessonPage() {
   const { milestoneId = '' } = useParams();
@@ -220,7 +208,7 @@ function TopBar({ stage, onClose }: { stage: Stage; onClose: () => void }) {
   );
 }
 
-function QuestionView({
+export function QuestionView({
   stage,
   onSubmit,
   onNext,
@@ -319,8 +307,9 @@ function Submitted({
       </span>
       <h1 className="mt-4 text-2xl font-bold">{r.perfectWeek ? 'Tuần hoàn hảo!' : 'Đã nộp bài'}</h1>
       <p className="mt-1 text-ink-2">
-        {onTime ? 'Đúng hạn, giỏi lắm!' : `Nộp trễ ${r.daysLate} ngày. Lần sau cố gắng đúng hạn nhé.`}
+        {r.perfectWeek ? COPY.perfect_week : onTime ? COPY.submit.on_time : fill(COPY.submit.late, { days: r.daysLate, pct: r.scorePct })}
       </p>
+      {r.summary.total > 0 && <p className="mt-1 text-sm text-ink-2">{summaryLine(r.summary.correct, r.summary.total, String(r.summary.correct))}</p>}
 
       <div className="mt-6 grid w-full grid-cols-3 gap-2">
         <Metric icon={<Clock className="size-4" aria-hidden />} value={`${r.scorePct}%`} label="chuyên cần" tone={onTime ? 'ok' : 'mid'} />

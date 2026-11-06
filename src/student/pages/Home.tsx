@@ -7,6 +7,7 @@ import { errorText, studentApi } from '../api';
 import { Button, Card, ProgressBar, Spinner, Tag, cx } from '../components/ui';
 import { countdown, ddmm, dowName, dowShort, lessonTitle, longDate, todayVN } from '../lib/format';
 import { useSession } from '../session';
+import { COPY, fill } from '../lib/copy';
 
 function useNow(ms = 30000) {
   const [now, setNow] = useState(Date.now());
@@ -21,7 +22,7 @@ function useNow(ms = 30000) {
 function blockedReason(cards: AssignmentCard[]): string {
   const oldest = cards.find((c) => !c.blocked && c.status === 'owing');
   if (!oldest) return 'Bài này chưa mở.';
-  return `Làm bù bài ${dowName(oldest.date)} (${ddmm(oldest.date)}) trước nhé.`;
+  return fill(COPY.home.blocked, { date: `${dowName(oldest.date)} (${ddmm(oldest.date)})` });
 }
 
 export default function Home() {
@@ -208,8 +209,7 @@ function EmptyState({ canPractice }: { canPractice: boolean }) {
       </span>
       <h2 className="mt-3 text-lg font-bold">Xong hết bài rồi!</h2>
       <p className="mt-1 text-sm text-ink-2">
-        Bài tiếp theo mở sau hạn mốc này.
-        {canPractice && ' Muốn ôn thêm thì vào Luyện thêm nhé (không tính điểm, vẫn được XP).'}
+        {COPY.home.no_assignment}
       </p>
       {canPractice && (
         <Button variant="secondary" className="mt-5" onClick={() => nav('/hoc/luyen-them')}>
