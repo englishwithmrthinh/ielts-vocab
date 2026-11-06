@@ -1,8 +1,12 @@
 // Lớp gọi API khu học sinh. Phiên đăng nhập = cookie httpOnly (server đặt), không lưu token ở trình duyệt.
 // VITE_USE_MOCK=true → dùng dữ liệu giả trong ./mock, không cần backend.
-import type { HomeResponse } from '@shared/types';
+import type {
+  AnswerResult, AnswerSubmission, HomeResponse, NextQuestionResponse, PreviewResponse,
+  StartAssignmentResponse, SubmitResponse,
+} from '@shared/types';
 import { api, ApiCallError } from '../lib/api';
 import { mockHome } from './mock/home';
+import { mockLesson } from './mock/lesson';
 
 export const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 
@@ -83,6 +87,58 @@ export const studentApi = {
       return mockHome(mockScenario());
     }
     return api<HomeResponse>('GET', '/api/home');
+  },
+
+  // ---- Làm bài — theo hợp đồng API sếp chốt 06/11 ----
+  /** Các từ mới chưa xem. milestoneId chỉ dùng cho dữ liệu giả. */
+  async preview(milestoneId: string): Promise<PreviewResponse> {
+    if (USE_MOCK) {
+      await delay(200);
+      return mockLesson.preview(milestoneId);
+    }
+    return api<PreviewResponse>('GET', '/api/preview');
+  },
+
+  async start(milestoneId: string): Promise<StartAssignmentResponse> {
+    if (USE_MOCK) {
+      await delay(200);
+      return mockLesson.start(milestoneId);
+    }
+    return api<StartAssignmentResponse>('POST', '/api/assignment/start', { milestoneId });
+  },
+
+  async next(assignmentId: string, extra = false): Promise<NextQuestionResponse> {
+    if (USE_MOCK) {
+      await delay(150);
+      return mockLesson.next(assignmentId, extra);
+    }
+    const q = `assignmentId=${encodeURIComponent(assignmentId)}${extra ? '&extra=1' : ''}`;
+    return api<NextQuestionResponse>('GET', `/api/assignment/next?${q}`);
+  },
+
+  async answer(assignmentId: string, a: AnswerSubmission): Promise<AnswerResult> {
+    if (USE_MOCK) {
+      await delay(250);
+      return mockLesson.answer(assignmentId, a);
+    }
+    return api<AnswerResult>('POST', '/api/answer', { assignmentId, ...a });
+  },
+
+  async submit(assignmentId: string): Promise<SubmitResponse> {
+    if (USE_MOCK) {
+      await delay(400);
+      return mockLesson.submit(assignmentId);
+    }
+    return api<SubmitResponse>('POST', '/api/assignment/submit', { assignmentId });
+  },
+
+  /** Nút "Câu này có 2 đáp án đúng" */
+  async flag(qid: string): Promise<void> {
+    if (USE_MOCK) {
+      await delay(200);
+      return;
+    }
+    await api('POST', '/api/flag', { qid });
   },
 };
 
