@@ -41,7 +41,21 @@ export async function loadStudentWords(studentId: string): Promise<StudentWordFu
 /** Kho để lấy đáp án nhiễu: từ của học sinh, thiếu thì bù từ kho tổng */
 export async function distractorPool(own: QuizWord[]): Promise<QuizWord[]> {
   if (own.length >= 12) return own;
-  const extra = must(await db().from('words').select(WORD_COLS).limit(60)) as WordRow[];
+  return withPool(own, await poolWords());
+}
+
+/** Từ kho tổng làm đáp án nhiễu. Cache 5 phút trong instance đang chạy để khỏi gọi lại database. */
+let poolCache: { at: number; rows: WordRow[] } | null = null;
+export async function poolWords(): Promise<WordRow[]> {
+  if (poolCache && Date.now() - poolCache.at < 300_000) return poolCache.rows;
+  const rows = must(await db().from('words').select(WORD_COLS).limit(60)) as WordRow[];
+  poolCache = { at: Date.now(), rows };
+  return rows;
+}
+
+/** Ghép kho nhiễu không cần chờ thêm lượt gọi database (extra đã tải song song) */
+export function withPool(own: QuizWord[], extra: WordRow[]): QuizWord[] {
+  if (own.length >= 12) return own;
   const have = new Set(own.map((w) => w.id));
   return [
     ...own,
