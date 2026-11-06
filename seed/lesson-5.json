@@ -1,0 +1,262 @@
+{
+  "words": [
+    {
+      "word": "career",
+      "pos": "n",
+      "meaning_vi": "sự nghiệp",
+      "ipa": "/kəˈrɪə/",
+      "syllables": "ca·REER",
+      "example": "She decided to pursue a medical career after volunteering at a hospital.",
+      "word_family": [],
+      "image_hint": "a golden ladder reaching up towards a bright glowing star"
+    },
+    {
+      "word": "profession",
+      "pos": "n",
+      "meaning_vi": "nghề nghiệp chuyên môn",
+      "ipa": "/prəˈfeʃn/",
+      "syllables": "pro·FES·sion",
+      "example": "Teaching is a noble profession that requires endless patience and vast knowledge.",
+      "word_family": [
+        {
+          "form": "professional",
+          "pos": "adj",
+          "sentence": "Employees must maintain a ___ appearance when meeting with important company clients."
+        }
+      ],
+      "image_hint": "a doctor's stethoscope and a judge's wooden gavel on a desk"
+    },
+    {
+      "word": "colleague",
+      "pos": "n",
+      "meaning_vi": "đồng nghiệp",
+      "ipa": "/ˈkɒliːɡ/",
+      "syllables": "COL·league",
+      "example": "A supportive colleague can make a stressful work environment much more enjoyable.",
+      "word_family": [],
+      "image_hint": "two office workers shaking hands across a neat wooden desk"
+    },
+    {
+      "word": "commute",
+      "pos": "v",
+      "meaning_vi": "đi lại làm việc",
+      "ipa": "/kəˈmjuːt/",
+      "syllables": "com·MUTE",
+      "example": "Many office workers commute for two hours every day on crowded trains.",
+      "word_family": [
+        {
+          "form": "commuter",
+          "pos": "n",
+          "sentence": "The early morning train is usually packed with every sleepy ___."
+        }
+      ],
+      "image_hint": "a crowded train carriage filled with people holding briefcases and bags"
+    },
+    {
+      "word": "salary",
+      "pos": "n",
+      "meaning_vi": "tiền lương",
+      "ipa": "/ˈsæləri/",
+      "syllables": "SAL·a·ry",
+      "example": "The software company offers a highly competitive salary to attract top talent.",
+      "word_family": [],
+      "image_hint": "a glowing envelope opening to reveal shiny gold coins inside"
+    },
+    {
+      "word": "pension",
+      "pos": "n",
+      "meaning_vi": "lương hưu",
+      "ipa": "/ˈpenʃn/",
+      "syllables": "PEN·sion",
+      "example": "The government promises to increase the state pension for all elderly citizens.",
+      "word_family": [
+        {
+          "form": "pensioner",
+          "pos": "n",
+          "sentence": "The local council provides free bus travel for every elderly ___."
+        }
+      ],
+      "image_hint": "an elderly couple relaxing on a beach chair under an umbrella"
+    },
+    {
+      "word": "redundant",
+      "pos": "adj",
+      "meaning_vi": "bị sa thải",
+      "ipa": "/rɪˈdʌndənt/",
+      "syllables": "re·DUN·dant",
+      "example": "The failing factory made fifty workers redundant right before the winter holidays.",
+      "word_family": [
+        {
+          "form": "redundancy",
+          "pos": "n",
+          "sentence": "The struggling retail company announced another massive round of staff ___."
+        }
+      ],
+      "image_hint": "a sad worker carrying a cardboard box full of office supplies"
+    },
+    {
+      "word": "resign",
+      "pos": "v",
+      "meaning_vi": "từ chức",
+      "ipa": "/rɪˈzaɪn/",
+      "syllables": "re·SIGN",
+      "example": "The tired manager decided to resign and spend more time relaxing outdoors.",
+      "word_family": [
+        {
+          "form": "resignation",
+          "pos": "n",
+          "sentence": "The scandal forced the politician to hand in his official ___ immediately."
+        }
+      ],
+      "image_hint": "a hand placing a sealed envelope on a manager's wooden desk"
+    },
+    {
+      "word": "retire",
+      "pos": "v",
+      "meaning_vi": "nghỉ hưu",
+      "ipa": "/rɪˈtaɪə/",
+      "syllables": "re·TIRE",
+      "example": "Most people plan to retire at sixty and travel around the world.",
+      "word_family": [
+        {
+          "form": "retirement",
+          "pos": "n",
+          "sentence": "He bought a small house by the sea to enjoy his ___."
+        }
+      ],
+      "image_hint": "an older man gardening happily next to a small wooden house"
+    },
+    {
+      "word": "vacancy",
+      "pos": "n",
+      "meaning_vi": "vị trí trống",
+      "ipa": "/ˈveɪkənsi/",
+      "syllables": "VA·can·cy",
+      "example": "The local hospital has a vacancy for a senior nurse in emergency.",
+      "word_family": [
+        {
+          "form": "vacant",
+          "pos": "adj",
+          "sentence": "The office space has remained completely ___ since the previous company moved."
+        }
+      ],
+      "image_hint": "an empty office chair waiting behind a clean glass desk"
+    },
+    {
+      "word": "interview",
+      "pos": "n",
+      "meaning_vi": "cuộc phỏng vấn",
+      "ipa": "/ˈɪntəvjuː/",
+      "syllables": "IN·ter·view",
+      "example": "He wore his best grey suit to the job interview this morning.",
+      "word_family": [
+        {
+          "form": "interviewer",
+          "pos": "n",
+          "sentence": "The nervous candidate tried to maintain eye contact with the lead ___."
+        }
+      ],
+      "image_hint": "a job candidate talking to two managers across a meeting table"
+    },
+    {
+      "word": "qualification",
+      "pos": "n",
+      "meaning_vi": "bằng cấp chuyên môn",
+      "ipa": "/ˌkwɒlɪfɪˈkeɪʃn/",
+      "syllables": "qual·i·fi·CA·tion",
+      "example": "A university degree is an essential qualification for most modern office jobs.",
+      "word_family": [
+        {
+          "form": "qualify",
+          "pos": "v",
+          "sentence": "You must complete a tough training course to ___ as a lifeguard."
+        }
+      ],
+      "image_hint": "a gold medal resting on top of a framed university diploma"
+    },
+    {
+      "word": "promote",
+      "pos": "v",
+      "meaning_vi": "thăng chức",
+      "ipa": "/prəˈməʊt/",
+      "syllables": "pro·MOTE",
+      "example": "The director will promote her to team leader after her excellent presentation.",
+      "word_family": [
+        {
+          "form": "promotion",
+          "pos": "n",
+          "sentence": "Her hard work and dedication eventually earned her a well-deserved ___."
+        }
+      ],
+      "image_hint": "a worker stepping up onto a higher block holding a trophy"
+    },
+    {
+      "word": "evaluate",
+      "pos": "v",
+      "meaning_vi": "đánh giá",
+      "ipa": "/ɪˈvæljueɪt/",
+      "syllables": "e·VAL·u·ate",
+      "example": "Managers carefully evaluate staff performance at the end of every financial year.",
+      "word_family": [
+        {
+          "form": "evaluation",
+          "pos": "n",
+          "sentence": "The department conducts a thorough ___ of all new policies every spring."
+        }
+      ],
+      "image_hint": "a clipboard with a rating chart and a magnifying glass"
+    },
+    {
+      "word": "corporate",
+      "pos": "adj",
+      "meaning_vi": "thuộc về công ty",
+      "ipa": "/ˈkɔːpərət/",
+      "syllables": "COR·po·rate",
+      "example": "Strict corporate rules prevent employees from using social media during working hours.",
+      "word_family": [
+        {
+          "form": "corporation",
+          "pos": "n",
+          "sentence": "The multinational ___ announced record profits for the third quarter this year."
+        }
+      ],
+      "image_hint": "tall glass skyscrapers shining under a clear blue sky"
+    },
+    {
+      "word": "lay off",
+      "pos": "phr",
+      "meaning_vi": "sa thải nhân viên",
+      "ipa": "/leɪ ɒf/",
+      "syllables": "LAY off",
+      "example": "The struggling airline had to lay off hundreds of flight attendants recently.",
+      "word_family": [
+        {
+          "form": "layoff",
+          "pos": "n",
+          "sentence": "The factory closure resulted in a massive ___ that devastated the town."
+        }
+      ],
+      "image_hint": "a boss pointing away from the office towards an exit door"
+    },
+    {
+      "word": "step down",
+      "pos": "phr",
+      "meaning_vi": "từ chức",
+      "ipa": "/step daʊn/",
+      "syllables": "STEP down",
+      "example": "The controversial chairman agreed to step down after the massive financial scandal.",
+      "word_family": [],
+      "image_hint": "a manager handing a golden key to a younger office worker"
+    },
+    {
+      "word": "take on",
+      "pos": "phr",
+      "meaning_vi": "đảm nhận thêm việc",
+      "ipa": "/teɪk ɒn/",
+      "syllables": "TAKE on",
+      "example": "Young graduates often take on extra tasks to impress their new bosses.",
+      "word_family": [],
+      "image_hint": "a confident worker holding a large heavy box with a smile"
+    }
+  ]
+}
