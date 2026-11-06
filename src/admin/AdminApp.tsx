@@ -11,10 +11,12 @@ import CreateLessonPage from './pages/CreateLessonPage';
 import LessonsPage from './pages/LessonsPage';
 import ReviewPage from './pages/ReviewPage';
 import ReportsPage from './pages/ReportsPage';
+import OverviewPage from './pages/OverviewPage';
 import SuggestionsPage from './pages/SuggestionsPage';
 import FlagsPage from './pages/FlagsPage';
 
 const NAV: { to: string; label: string; badge?: 'suggestions' | 'flags' }[] = [
+  { to: 'tong-quan', label: 'Tổng quan' },
   { to: 'bo-tu', label: 'Bộ từ' },
   { to: 'them-bo-tu', label: 'Thêm bộ từ' },
   { to: 'de-xuat', label: 'Từ HS đề xuất', badge: 'suggestions' },
@@ -99,7 +101,8 @@ function Shell({ onLogout }: { onLogout: () => void }) {
       </aside>
       <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 md:py-8">
         <Routes>
-          <Route index element={<Navigate to="bo-tu" replace />} />
+          <Route index element={<Navigate to="tong-quan" replace />} />
+          <Route path="tong-quan" element={<OverviewPage />} />
           <Route path="bo-tu" element={<LessonsPage />} />
           <Route path="bo-tu/:id" element={<ReviewPage />} />
           <Route path="them-bo-tu" element={<CreateLessonPage />} />

@@ -6,6 +6,7 @@
 import type { AdminFlagsResponse, AdminReportsResponse, AdminSuggestionsResponse, Class, ClassesResponse, Lesson, Milestone, Student, Word } from '@shared/types';
 import { api } from '../../lib/api';
 import { mockApi } from './mock';
+import type { AdminOverview } from './overview';
 
 export interface StudentCard { id: string; code: string; name: string; pin: string }
 
@@ -78,6 +79,7 @@ export const adminApi = {
   uploadGrid: (lessonId: string, index: number, image: string) =>
     call<{ updated: number; kept: number; layout: string; ms: number }>('POST', '/api/admin/images/grid', { lesson_id: lessonId, index, image }),
   uploadSingle: (wordId: string, image: string) => call<{ word: Word }>('POST', '/api/admin/images/single', { word_id: wordId, image }),
+  overview: () => call<AdminOverview>('GET', '/api/admin/overview'),
   getWord: (id: string) => call<{ word: Word }>('GET', `/api/admin/words/get?id=${id}`),
 
   reports: (month: string) => call<AdminReportsResponse>('GET', `/api/admin/reports?month=${month}`),

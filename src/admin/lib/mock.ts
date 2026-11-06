@@ -286,6 +286,22 @@ export async function mockApi<T>(method: string, path: string, body?: unknown): 
     w.image_url = String(b.image);
     return ok({ word: { ...w } });
   }
+  if (route === 'GET /api/admin/overview') {
+    const act = state.students.filter((x) => x.active);
+    return ok({
+      now: new Date().toISOString(),
+      milestone: { id: 'm', date: '2026-11-06', kind: 'fri', deadlineAt: '2026-11-06T16:59:59Z', open: true },
+      today: { submitted: 6, doing: 2, notStarted: act.length - 8, total: act.length },
+      owing: [
+        { studentId: 's9', code: 'HS09', name: 'Đỗ Phương Nhi', classId: 'c2', count: 2, oldestDate: '2026-11-01', daysLate: 5, pctNow: 50, pctTomorrow: 40 },
+        { studentId: 's4', code: 'HS04', name: 'Phạm Đức Duy', classId: 'c1', count: 1, oldestDate: '2026-11-03', daysLate: 3, pctNow: 70, pctTomorrow: 60 },
+        { studentId: 's12', code: 'HS12', name: 'Lý Thanh Tâm', classId: null, count: 1, oldestDate: '2026-11-03', daysLate: 3, pctNow: 70, pctTomorrow: 60 },
+      ],
+      lessons: { draft: state.lessons.filter((l) => l.status === 'draft').length, processing: state.lessons.filter((l) => l.status === 'processing').length, review: state.lessons.filter((l) => l.status === 'review').length },
+      suggestionsPending: demoSuggestions.filter((x) => x.status === 'pending').length,
+      flagsTotal: demoFlags.length,
+    });
+  }
   if (route === 'GET /api/admin/reports') {
     const month = url.searchParams.get('month')!;
     return ok({ month, reports: reportsFor(month).map((r) => ({ ...r, classId: state.students.find((x) => x.id === r.studentId)?.class_id ?? null })) });
