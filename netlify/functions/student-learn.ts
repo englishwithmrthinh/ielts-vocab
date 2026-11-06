@@ -49,7 +49,7 @@ async function home(studentId: string): Promise<HomeResponse> {
       assignmentId: a?.id ?? null, milestoneId: m.id, date: m.date, kind: m.kind, status: plan.status.get(m.id)!,
       deadlineAt: m.deadline_at, currentPct: scoreIfSubmittedAt(m.date, t), tomorrowPct: scoreIfSubmittedAt(m.date, tomorrow),
       daysLateNow: daysLate(m.date, t), blocked: i > 0 && owing.length > 0,
-      progress: { done: a?.answered_count ?? 0, required: a?.required_count ?? null },
+      progress: { done: Math.min(a?.answered_count ?? 0, a?.required_count ?? 0), required: a?.required_count ?? null },
     };
   });
   const s = must(st) as { name: string; code: string };
@@ -80,7 +80,7 @@ async function start(studentId: string, milestoneId: string): Promise<StartAssig
   if (status === 'abandoned') throw new HttpError(409, 'abandoned', 'Bài này đã quá 7 ngày, không làm được nữa');
   const existing = plan.assignments.get(m.id);
   if (existing) {
-    return { assignmentId: existing.id, required: existing.required_count ?? 0, done: existing.answered_count, canContinueExtra: false };
+    return { assignmentId: existing.id, required: existing.required_count ?? 0, done: Math.min(existing.answered_count, existing.required_count ?? 0), canContinueExtra: false };
   }
   const older = plan.milestones.find((x) => x.date < m.date && plan.status.get(x.id) === 'owing');
   if (older) throw new HttpError(409, 'blocked_by_older', `Làm bù bài ngày ${older.date} trước`);
@@ -142,14 +142,18 @@ async function next(studentId: string, assignmentId: string, extra: boolean): Pr
   const gradedDone = new Set(answers.filter((x) => x.mode === 'graded').map((x) => x.word_id));
   const fillerDone = answers.filter((x) => x.mode === 'practice');
   const fillerTarget = (a.required_count ?? 0) - a.word_ids.length;
-  const progress = {
-    done: a.word_ids.filter((id) => gradedDone.has(id)).length + fillerDone.length,
-    required: a.required_count ?? 0,
-    extra: [...gradedDone].filter((id) => !inBai.has(id)).length,
-  };
+  const required = a.required_count ?? 0;
+  const done = Math.min(required, a.word_ids.filter((id) => gradedDone.has(id)).length + Math.min(fillerDone.length, Math.max(0, fillerTarget)));
+  const fixLeft = relearnQueue(answers, inBai).length;
+  const progress = { done, required, extra: [...gradedDone].filter((id) => !inBai.has(id)).length, fixLeft };
+  // Đồng bộ số câu đã làm (thẻ ngoài Trang chủ + Google Sheet) theo đúng số câu bắt buộc đã làm
+  const sync = a.answered_count !== done
+    ? db().from('assignments').update({ answered_count: done }).eq('id', a.id).then(must)
+    : Promise.resolve(null);
 
   const pending = must(pendingR) as { qid: string; payload: StoredPayload }[];
   if (pending[0]) {
+    await sync;
     const { mode, wordIds: _w, ...rest } = pending[0].payload;
     return { question: { ...rest, qid: pending[0].qid, mode, progress }, phase: mode === 'fix' ? 'fix' : mode === 'graded' && !inBai.has(_w[0]!) ? 'extra' : 'graded' };
   }
@@ -194,13 +198,15 @@ async function next(studentId: string, assignmentId: string, extra: boolean): Pr
     if (ex.length) { plan = planNext(ex, prev, pool.length, rng); phase = 'extra'; }
   }
 
-  if (!plan) return { question: null, phase: 'done' };
+  if (!plan) { await sync; return { question: null, phase: 'done' }; }
   const built = buildQuestion(plan.type, plan.words, pool, rng);
   const stored: StoredPayload = { ...built.payload, mode, wordIds: built.wordIds };
-  const row = must(
-    await db().from('pending_questions').insert({ student_id: studentId, assignment_id: a.id, payload: stored, answer_key: built.key })
+  const [insR] = await Promise.all([
+    db().from('pending_questions').insert({ student_id: studentId, assignment_id: a.id, payload: stored, answer_key: built.key })
       .select('qid').single(),
-  ) as { qid: string };
+    sync,
+  ]);
+  const row = must(insR) as { qid: string };
   return { question: { ...built.payload, qid: row.qid, mode, progress }, phase };
 }
 
@@ -257,10 +263,7 @@ async function answer(studentId: string, sub: AnswerSubmission): Promise<AnswerR
     });
   }
   writes.push(db().from('answers').insert(rows).then(must));
-  const countsTowardBai = !!a && (mode === 'practice' || (mode === 'graded' && a.word_ids.includes(out.perWord[0]!.wordId)));
-  if (a && countsTowardBai) {
-    writes.push(db().from('assignments').update({ answered_count: a.answered_count + out.perWord.length }).eq('id', a.id).then(must));
-  }
+  // answered_count được tính lại chính xác từ bảng answers ở lần gọi next() kế tiếp (không cộng dồn ở đây nữa)
   writes.push(addXp(studentId, xp, a ? `answer:${type}` : `practice:${type}`));
   await Promise.all(writes);
 
