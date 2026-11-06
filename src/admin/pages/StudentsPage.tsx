@@ -190,7 +190,7 @@ export default function StudentsPage() {
         {adding && (
           <Card>
             <h2 className="font-semibold text-slate-900">Thêm học sinh</h2>
-            <p className="mt-1 text-sm text-slate-500">Mỗi dòng: tên, dấu phẩy, ngày sinh. Ví dụ <span className="font-mono">Nguyễn Minh Anh, 15032008</span>. Mã đăng nhập = mã lớp + ngày sinh (vd <span className="font-mono">FD15032008</span>); trùng thì tự thêm số 2, 3. Học sinh chỉ cần gõ mã là vào.</p>
+            <p className="mt-1 text-sm text-slate-500">Mỗi dòng: tên, dấu phẩy, ngày sinh. Ví dụ <span className="font-mono">Nguyễn Minh Anh, 15032008</span>. Mã đăng nhập = mã lớp + ngày sinh (vd <span className="font-mono">GB0715032008</span>); trùng thì tự thêm số 2, 3. Học sinh chỉ cần gõ mã là vào.</p>
             <label className="mt-3 flex flex-wrap items-center gap-2 text-sm text-slate-700">
               Vào lớp
               <select className={selectCls} value={addClassId} onChange={(e) => setAddClassId(e.target.value)}>

@@ -57,7 +57,7 @@ export default async (req: Request): Promise<Response> => {
       if (typeof b.active === 'boolean') patch.active = b.active;
       if (b.code !== undefined) {
         const c = cleanClassCode(b.code);
-        if (c.length < 2) throw new HttpError(400, 'bad_code', 'Mã lớp 2–4 chữ cái');
+        if (c.length < 2) throw new HttpError(400, 'bad_code', 'Mã lớp 2–6 chữ hoặc số, ví dụ GB07');
         patch.code = c;
       }
       const r = await db().from('classes').update(patch).eq('id', b.id).select(COLS).maybeSingle();

@@ -43,7 +43,7 @@ export interface Student {
 export interface Class {
   id: UUID;
   name: string;
-  /** 2–4 chữ in hoa, tiền tố mã học sinh (mã = mã lớp + ngày sinh) */
+  /** 2–6 chữ/số in hoa (vd GB07), tiền tố mã học sinh (mã = mã lớp + ngày sinh) */
   code?: string | null;
   active: boolean;
   created_at: ISODateTime;
