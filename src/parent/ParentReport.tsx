@@ -3,7 +3,11 @@
 import '@fontsource/be-vietnam-pro/400.css';
 import '@fontsource/be-vietnam-pro/600.css';
 import '@fontsource/be-vietnam-pro/700.css';
-import { BookOpenCheck, Printer } from 'lucide-react';
+import { Printer } from 'lucide-react';
+import '@fontsource/cormorant-sc/600.css';
+import '@fontsource/cormorant-garamond/600.css';
+import '@fontsource/cormorant-garamond/700.css';
+import { Banner, Star4 } from '../student/components/Art';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useParams } from 'react-router-dom';
 import { ApiCallError } from '../lib/api';
@@ -18,19 +22,19 @@ const monthTitle = (m: string) => `Tháng ${Number(m.slice(5))}/${m.slice(0, 4)}
 function Section({ title, children, className }: { title: string; children: ReactNode; className?: string }) {
   return (
     <section className={cx('print-avoid-break rounded-[var(--radius-card)] bg-surface p-4 shadow-[var(--shadow-card)] ring-1 ring-line', className)}>
-      <h2 className="mb-3 text-base font-bold">{title}</h2>
+      <h2 className="font-display mb-3 text-[18px] leading-tight">{title}</h2>
       {children}
     </section>
   );
 }
 
 function Big({ value, label, sub, tone }: { value: string; label: string; sub?: string; tone?: 'ok' | 'mid' | 'bad' | 'brand' }) {
-  const t = { ok: 'bg-ok-bg text-ok-ink', mid: 'bg-mid-bg text-mid-ink', bad: 'bg-bad-bg text-bad-ink', brand: 'bg-brand-tint text-brand-ink' }[tone ?? 'brand'];
+  const t = { ok: 'bg-ok-bg text-ok-ink', mid: 'bg-mid-bg text-mid-ink', bad: 'bg-bad-bg text-bad-ink', brand: 'bg-blush text-blush-ink' }[tone ?? 'brand'];
   return (
-    <div className={cx('rounded-2xl px-3 py-3', t)}>
+    <div className={cx('rounded-xl px-3 py-3 ring-1 ring-black/5', t)}>
       <p className="text-[28px] font-bold leading-none tabular-nums">{value}</p>
-      <p className="mt-1.5 text-sm font-semibold">{label}</p>
-      {sub && <p className="text-xs opacity-80">{sub}</p>}
+      <p className="label-caps mt-2">{label}</p>
+      {sub && <p className="mt-0.5 text-xs opacity-85">{sub}</p>}
     </div>
   );
 }
@@ -75,23 +79,25 @@ function Report({ d }: { d: ParentReportResponse }) {
 
   return (
     <div className="space-y-3">
-      <header className="rounded-[var(--radius-card)] bg-primary p-5 text-white print-avoid-break">
-        <div className="flex items-center gap-2 text-sm text-white/90">
-          <BookOpenCheck className="size-5" aria-hidden /> Ôn từ vựng IELTS · Báo cáo phụ huynh
-        </div>
-        <h1 className="mt-2 text-2xl font-bold">{d.student.name}</h1>
+      <header className="print-avoid-break overflow-hidden rounded-[var(--radius-card)]">
+        <Banner className="px-5 pb-5 pt-4">
+        <p className="label-caps flex items-center gap-1.5 text-cream/85">
+          <Star4 className="size-3 text-gold" /> Học từ vựng · Mr Thinh Class
+        </p>
+        <h1 className="mt-2 font-serif text-[30px] font-bold leading-tight text-cream">{d.student.name}</h1>
         <div className="mt-1 flex items-center gap-2">
-          <span className="text-lg">{monthTitle(d.month)}</span>
+          <span className="font-display text-[17px] text-cream">Báo cáo {monthTitle(d.month)}</span>
           <span
             className={cx(
-              'rounded-lg px-2 py-0.5 text-xs font-bold',
-              d.status === 'final' ? 'bg-white text-primary' : 'bg-mid-bg text-mid-ink',
+              'whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-bold',
+              d.status === 'final' ? 'bg-gold text-[#3b2a10]' : 'bg-blush text-blush-ink',
             )}
           >
             {d.status === 'final' ? 'Đã chốt' : 'Tạm tính'}
           </span>
         </div>
-        {d.status === 'draft' && <p className="mt-2 text-xs text-white/90">Số liệu đang cập nhật, sẽ chốt vào ngày 8 tháng sau.</p>}
+        {d.status === 'draft' && <p className="mt-2 text-xs text-cream/85">Số liệu đang cập nhật, sẽ chốt vào ngày 8 tháng sau.</p>}
+        </Banner>
       </header>
 
       <div className="grid grid-cols-2 gap-2 print-avoid-break">
@@ -147,7 +153,7 @@ function Report({ d }: { d: ParentReportResponse }) {
               {s.passed_by_week.map((w, i) => (
                 <div key={w.week_start} className="flex flex-1 flex-col items-center gap-1">
                   <span className="text-xs font-bold tabular-nums">{w.passed_total}</span>
-                  <div className="w-full rounded-t-lg bg-brand" style={{ height: `${(w.passed_total / maxWeek) * 72}px` }} />
+                  <div className="w-full rounded-t-md bg-primary" style={{ height: `${(w.passed_total / maxWeek) * 72}px` }} />
                   <span className="text-[11px] text-ink-3">Tuần {i + 1}</span>
                 </div>
               ))}
@@ -158,7 +164,7 @@ function Report({ d }: { d: ParentReportResponse }) {
 
       <Section title="Nhận xét của giáo viên">
         {comment ? (
-          <p className="whitespace-pre-line leading-relaxed">{comment}</p>
+          <p className="whitespace-pre-line font-serif text-[19px] leading-relaxed text-ink">{comment}</p>
         ) : (
           <p className="text-sm text-ink-3">Nhận xét của thầy sẽ có khi báo cáo được chốt.</p>
         )}

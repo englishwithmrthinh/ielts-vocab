@@ -3,7 +3,7 @@ import type { QuestionProps } from './index';
 import { POS_VI } from '../student/components/WordCardView';
 import { Instruction, Picture, TypeBox } from './parts';
 
-export default function I({ question: q, onSubmit, disabled, result }: QuestionProps) {
+export default function I({ question: q, onSubmit, disabled, result, quick }: QuestionProps) {
   return (
     <div>
       <Instruction>Nhìn ảnh, gõ từ tiếng Anh</Instruction>
@@ -15,7 +15,7 @@ export default function I({ question: q, onSubmit, disabled, result }: QuestionP
           Loại từ: <b className="font-semibold text-brand-ink">{POS_VI[q.prompt.pos]}</b>
         </p>
       )}
-      <TypeBox key={q.qid} done={!!result} disabled={disabled} onSubmit={(text) => onSubmit({ qid: q.qid, text })} />
+      <TypeBox key={q.qid} done={!!result || !!quick} tone={result ? result.correct : quick?.correct} disabled={disabled} onSubmit={(text) => onSubmit({ qid: q.qid, text })} />
     </div>
   );
 }

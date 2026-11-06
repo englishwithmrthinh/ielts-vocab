@@ -3,7 +3,7 @@ import type { QuestionProps } from './index';
 import { AudioButton } from '../student/components/AudioButton';
 import { Instruction, TypeBox } from './parts';
 
-export default function H({ question: q, onSubmit, disabled, result }: QuestionProps) {
+export default function H({ question: q, onSubmit, disabled, result, quick }: QuestionProps) {
   return (
     <div>
       <Instruction>Nghe rồi gõ lại từ</Instruction>
@@ -11,7 +11,7 @@ export default function H({ question: q, onSubmit, disabled, result }: QuestionP
         <AudioButton url={q.prompt.audioUrl} autoPlay size="lg" label="Nghe lại" />
         <span className="text-xs text-ink-3">Chạm để nghe lại</span>
       </div>
-      <TypeBox key={q.qid} done={!!result} disabled={disabled} onSubmit={(text) => onSubmit({ qid: q.qid, text })} />
+      <TypeBox key={q.qid} done={!!result || !!quick} tone={result ? result.correct : quick?.correct} disabled={disabled} onSubmit={(text) => onSubmit({ qid: q.qid, text })} />
     </div>
   );
 }

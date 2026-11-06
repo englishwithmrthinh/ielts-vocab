@@ -43,7 +43,7 @@ export function PinPad({
             key={i}
             className={cx(
               'size-4 rounded-full transition',
-              error ? 'bg-bad' : i < value.length ? 'bg-primary scale-110' : 'bg-brand-tint',
+              error ? 'bg-bad' : i < value.length ? 'bg-primary scale-110' : 'bg-surface-2 ring-1 ring-line',
             )}
           />
         ))}
@@ -60,9 +60,9 @@ export function PinPad({
               onClick={() => press(k)}
               aria-label={k === 'del' ? 'Xoá' : k}
               className={cx(
-                'flex h-16 items-center justify-center rounded-2xl text-2xl font-semibold transition select-none',
+                'flex h-16 items-center justify-center rounded-2xl transition select-none',
                 'active:scale-95 disabled:opacity-50',
-                k === 'del' ? 'text-ink-2 active:bg-brand-wash' : 'bg-surface text-ink shadow-[var(--shadow-card)] active:bg-brand-wash',
+                k === 'del' ? 'text-ink-2 active:bg-brand-wash' : 'bg-surface-2 font-serif text-[32px] font-semibold text-ink ring-1 ring-line active:bg-brand-tint active:ring-brand',
               )}
             >
               {k === 'del' ? <Delete className="size-7" aria-hidden /> : k}

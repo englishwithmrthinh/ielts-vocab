@@ -7,11 +7,11 @@ import { cx } from '../student/components/ui';
 import { useDragDrop } from './drag';
 import { CheckButton, Instruction } from './parts';
 
-export default function F({ question: q, onSubmit, disabled, result }: QuestionProps) {
+export default function F({ question: q, onSubmit, disabled, result, quick }: QuestionProps) {
   const letters = q.prompt.letters ?? [];
   /** thứ tự chỉ số chữ cái học sinh đã xếp */
   const [seq, setSeq] = useState<number[]>([]);
-  const lock = disabled || !!result;
+  const lock = disabled || !!result || !!quick;
 
   const dd = useDragDrop({
     disabled: lock,
@@ -35,7 +35,8 @@ export default function F({ question: q, onSubmit, disabled, result }: QuestionP
   });
 
   const free = letters.map((c, i) => ({ c, i })).filter((x) => !seq.includes(x.i));
-  const tone = result ? (result.correct ? 'ok' : 'bad') : null;
+  const verdict = result ? result.correct : quick?.correct;
+  const tone = verdict === undefined ? null : verdict ? 'ok' : 'bad';
 
   return (
     <div>
@@ -46,7 +47,7 @@ export default function F({ question: q, onSubmit, disabled, result }: QuestionP
         data-drop="end"
         className={cx(
           'flex min-h-16 flex-wrap items-center justify-center gap-1.5 rounded-2xl border-2 p-2',
-          tone === 'ok' ? 'border-ok bg-ok-bg' : tone === 'bad' ? 'border-bad bg-bad-bg' : 'border-brand bg-brand-wash',
+          tone === 'ok' ? 'border-ok bg-ok-bg' : tone === 'bad' ? 'border-bad bg-bad-bg' : 'border-dashed border-brand bg-brand-tint/40',
         )}
         aria-label="Từ đang xếp"
       >
@@ -58,7 +59,7 @@ export default function F({ question: q, onSubmit, disabled, result }: QuestionP
               disabled={lock}
               {...dd.dragProps(`a:${i}`, letters[i])}
               className={cx(
-                'size-11 rounded-xl bg-surface text-xl font-bold shadow-[var(--shadow-card)] transition',
+                'size-11 rounded-lg bg-surface font-serif text-[26px] font-bold shadow-[var(--shadow-card)] ring-1 ring-line transition',
                 dd.draggingId === `a:${i}` && 'opacity-30',
                 dd.overId === `s:${pos}` && 'ring-2 ring-brand',
               )}
@@ -69,7 +70,7 @@ export default function F({ question: q, onSubmit, disabled, result }: QuestionP
         ))}
       </div>
 
-      {!result && (
+      {!result && !quick && (
         <>
           <div data-drop="bank" className="mt-4 flex min-h-14 flex-wrap justify-center gap-2">
             {free.map(({ c, i }) => (
@@ -79,7 +80,7 @@ export default function F({ question: q, onSubmit, disabled, result }: QuestionP
                 disabled={lock}
                 {...dd.dragProps(`b:${i}`, c)}
                 className={cx(
-                  'size-12 rounded-xl bg-surface text-xl font-bold text-ink shadow-[0_3px_0_var(--color-line)] ring-1 ring-line transition active:translate-y-[2px] active:shadow-none',
+                  'size-12 rounded-lg bg-surface-2 font-serif text-[28px] font-bold text-ink shadow-[0_3px_0_var(--color-line)] ring-1 ring-line transition active:translate-y-[2px] active:shadow-none',
                   dd.draggingId === `b:${i}` && 'opacity-30',
                 )}
               >

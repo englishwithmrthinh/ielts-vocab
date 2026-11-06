@@ -20,13 +20,14 @@ export function cellTone(c: CalendarCell): Tone {
   return 'pending'; // locked / open: chưa đến hạn
 }
 
-const TONE: Record<Tone, string> = {
-  ok: 'bg-ok text-white',
-  mid: 'bg-mid text-white',
-  low: 'bg-low text-white',
-  bad: 'bg-bad text-white',
-  off: 'bg-off-bg text-off-ink',
-  pending: 'bg-surface text-brand-ink ring-2 ring-inset ring-brand',
+/** Màu chấm trạng thái dưới số ngày */
+const DOT: Record<Tone, string> = {
+  ok: 'bg-ok',
+  mid: 'bg-mid',
+  low: 'bg-low',
+  bad: 'bg-bad',
+  off: 'bg-off',
+  pending: 'bg-transparent ring-[1.5px] ring-inset ring-brand',
 };
 
 export function cellLabel(c: CalendarCell): string {
@@ -45,9 +46,11 @@ export function MonthCalendar({ month, cells, today, compact }: { month: MonthKe
   const byDate = new Map(cells.map((c) => [c.date, c]));
   return (
     <div>
-      <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-semibold text-ink-3">
+      <div className="grid grid-cols-7 gap-1 text-center">
         {DOW.map((d) => (
-          <span key={d}>{d}</span>
+          <span key={d} className="label-caps !text-[10px] text-ink-3">
+            {d}
+          </span>
         ))}
       </div>
       <div className="mt-1 grid grid-cols-7 gap-1">
@@ -57,19 +60,21 @@ export function MonthCalendar({ month, cells, today, compact }: { month: MonthKe
         {days.map((d) => {
           const c = byDate.get(d);
           const n = Number(d.slice(8));
+          const tone = c ? cellTone(c) : null;
           return (
             <span
               key={d}
               title={c ? `${n}: ${cellLabel(c)}` : undefined}
               aria-label={c ? `Ngày ${n}: ${cellLabel(c)}` : `Ngày ${n}`}
               className={cx(
-                'flex aspect-square items-center justify-center rounded-lg font-semibold tabular-nums',
+                'flex aspect-square flex-col items-center justify-center gap-0.5 rounded-md tabular-nums',
                 compact ? 'text-xs' : 'text-sm',
-                c ? TONE[cellTone(c)] : 'text-ink-3',
-                d === today && !c && 'ring-1 ring-ink-3',
+                c ? 'bg-surface-2 font-semibold text-ink ring-1 ring-line' : 'text-ink-3',
+                d === today && 'ring-2 ring-gold',
               )}
             >
               {n}
+              {tone && <span aria-hidden className={cx('size-2 rounded-full', DOT[tone])} />}
             </span>
           );
         })}
@@ -91,7 +96,7 @@ export function CalendarLegend() {
     <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1.5 text-[11px] text-ink-2">
       {items.map(([t, l]) => (
         <span key={t} className="inline-flex items-center gap-1">
-          <span className={cx('size-3 rounded', TONE[t])} />
+          <span className={cx('size-2.5 rounded-full', DOT[t])} />
           {l}
         </span>
       ))}

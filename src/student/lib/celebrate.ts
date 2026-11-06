@@ -1,7 +1,7 @@
 // Hiệu ứng chúc mừng. Tôn trọng "giảm chuyển động" của máy: khi bật thì không bắn pháo giấy.
 import confetti from 'canvas-confetti';
 
-const COLORS = ['#14b8a6', '#5eead4', '#0f766e', '#facc15', '#fb7185'];
+const COLORS = ['#c9a24a', '#1f4e52', '#7b2d34', '#f3e9d2', '#2f6b6f'];
 
 export const reducedMotion = () =>
   typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
