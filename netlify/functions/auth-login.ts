@@ -21,9 +21,16 @@ export default handler(['POST'], async (req) => {
     throw new HttpError(429, 'too_many_attempts', `Sai quá nhiều lần. Đợi ${WINDOW_MIN} phút rồi thử lại.`);
   }
 
-  const rows = must(await db().from('students').select('id,name,code,pin_hash,active').eq('code', c).limit(1)) as
-    { id: string; name: string; code: string; pin_hash: string; active: boolean }[];
-  const s = rows[0];
+  type Row = { id: string; name: string; code: string; pin_hash: string; active: boolean };
+  const rows = must(await db().from('students').select('id,name,code,pin_hash,active').eq('code', c).limit(1)) as Row[];
+  let s: Row | undefined = rows[0];
+  if (!s) {
+    // Dự phòng: mã lưu chưa kịp cập nhật (đổi mã lớp / mã HS sau) → so trực tiếp mã lớp hiện tại + mã HS
+    const all = must(await db().from('students').select('id,name,code,pin_hash,active,birth,c:classes(code)').not('birth', 'is', null)) as unknown as
+      (Row & { birth: string; c: { code: string | null } | null })[];
+    s = all.find((x) => `${(x.c?.code || 'HS').toUpperCase()}${x.birth.toUpperCase()}` === c);
+    if (s) await db().from('students').update({ code: c }).eq('id', s.id); // sửa luôn mã lưu cho lần sau
+  }
   const ok = !!s && s.active && (!withPin || (await checkPin(pin as string, s.pin_hash)));
   await db().from('login_attempts').insert({ code: c, success: ok });
   if (!ok || !s) throw new HttpError(401, 'wrong_credentials', 'Mã lớp hoặc ngày sinh chưa đúng');
