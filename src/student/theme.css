@@ -1,0 +1,117 @@
+/* Design tokens khu học sinh + phụ huynh — bộ 06 Teal & White, font Be Vietnam Pro.
+   Dùng token theo VAI TRÒ (primary, surface, ink…) để dark mode chỉ cần đổi biến.
+   Quy ước màu trạng thái dùng thống nhất cả app (khớp ô mốc Google Sheet):
+     ok = đúng hạn / đúng (xanh lá) · mid = trễ 50–90% (vàng) · low = trễ 30–40% (cam)
+     bad = đang nợ / bỏ bài / sai (đỏ) · off = nghỉ (xám)
+   Ghi chú: file này tự @import tailwindcss vì không được sửa src/index.css (xem Câu hỏi cho sếp). */
+@import 'tailwindcss';
+
+
+@theme {
+  --font-sans: 'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* Thương hiệu */
+  --color-primary: #0f766e;        /* nút chính, thanh đầu trang — chữ trắng 5.5:1 */
+  --color-primary-hover: #115e59;
+  --color-primary-edge: #134e4a;   /* gờ dưới của nút */
+  --color-brand: #14b8a6;          /* thanh tiến độ, icon, viền */
+  --color-brand-soft: #5eead4;     /* hover, phần đã xong, hiệu ứng */
+  --color-brand-tint: #ccfbf1;     /* nền nhạt: rãnh thanh tiến độ, mục đang chọn */
+  --color-brand-wash: #f0fdfa;     /* nền rất nhạt khi hover */
+  --color-brand-ink: #0f766e;      /* chữ màu thương hiệu trên nền sáng */
+
+  /* Nền, chữ, đường kẻ */
+  --color-page: #f0fdfa;
+  --color-surface: #ffffff;
+  --color-surface-2: #f8fafc;
+  --color-ink: #0f172a;
+  --color-ink-2: #475569;
+  --color-ink-3: #64748b;
+  --color-line: #d5efeb;
+
+  /* Trạng thái: fg = màu đậm (chấm, thanh), bg = nền nhạt, ink = chữ trên nền nhạt */
+  --color-ok: #16a34a;
+  --color-ok-bg: #dcfce7;
+  --color-ok-ink: #166534;
+  --color-mid: #ca8a04;
+  --color-mid-bg: #fef9c3;
+  --color-mid-ink: #854d0e;
+  --color-low: #ea580c;
+  --color-low-bg: #ffedd5;
+  --color-low-ink: #9a3412;
+  --color-bad: #dc2626;
+  --color-bad-bg: #fee2e2;
+  --color-bad-ink: #991b1b;
+  --color-off: #94a3b8;
+  --color-off-bg: #f1f5f9;
+  --color-off-ink: #475569;
+
+  --radius-card: 18px;
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.05), 0 4px 16px rgb(15 23 42 / 0.06);
+}
+
+/* Dark mode: theo cài đặt của máy */
+@media (prefers-color-scheme: dark) {
+  .student-root {
+    --color-primary: #0f766e;
+    --color-primary-hover: #0d9488;
+    --color-primary-edge: #042f2e;
+    --color-brand: #2dd4bf;
+    --color-brand-soft: #5eead4;
+    --color-brand-tint: #134e4a;
+    --color-brand-wash: #0f2a28;
+    --color-brand-ink: #5eead4;
+
+    --color-page: #0a1615;
+    --color-surface: #12211f;
+    --color-surface-2: #182b29;
+    --color-ink: #e6f2f0;
+    --color-ink-2: #a7bcb8;
+    --color-ink-3: #8aa09c;
+    --color-line: #23403c;
+
+    --color-ok: #22c55e;
+    --color-ok-bg: #0f2e1c;
+    --color-ok-ink: #86efac;
+    --color-mid: #eab308;
+    --color-mid-bg: #33290a;
+    --color-mid-ink: #fde047;
+    --color-low: #f97316;
+    --color-low-bg: #36200f;
+    --color-low-ink: #fdba74;
+    --color-bad: #ef4444;
+    --color-bad-bg: #3a1414;
+    --color-bad-ink: #fca5a5;
+    --color-off: #64748b;
+    --color-off-bg: #1e293b;
+    --color-off-ink: #cbd5e1;
+
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3);
+    color-scheme: dark;
+  }
+}
+
+.student-root {
+  font-family: var(--font-sans);
+  background: var(--color-page);
+  color: var(--color-ink);
+  min-height: 100dvh;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .student-root *,
+  .student-root *::before,
+  .student-root *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+.animate-shake { animation: shake 0.35s ease-in-out; }

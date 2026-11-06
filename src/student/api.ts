@@ -1,0 +1,93 @@
+// Lớp gọi API khu học sinh. Phiên đăng nhập = cookie httpOnly (server đặt), không lưu token ở trình duyệt.
+// VITE_USE_MOCK=true → dùng dữ liệu giả trong ./mock, không cần backend.
+import type { HomeResponse } from '@shared/types';
+import { api, ApiCallError } from '../lib/api';
+import { mockHome } from './mock/home';
+
+export const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
+
+export interface Me {
+  name: string;
+  code: string;
+}
+
+// ---- Giả lập cookie phiên khi chạy mock (chỉ để thử giao diện) ----
+const MOCK_KEY = 'ielts.mock.session';
+const mockStore = {
+  get(): Me | null {
+    try {
+      const v = sessionStorage.getItem(MOCK_KEY);
+      return v ? (JSON.parse(v) as Me) : null;
+    } catch {
+      return null;
+    }
+  },
+  set(me: Me | null) {
+    try {
+      if (me) sessionStorage.setItem(MOCK_KEY, JSON.stringify(me));
+      else sessionStorage.removeItem(MOCK_KEY);
+    } catch {
+      /* trình duyệt chặn storage: bỏ qua */
+    }
+  },
+};
+const delay = (ms = 300) => new Promise((r) => setTimeout(r, ms));
+const mockScenario = () => new URLSearchParams(location.search).get('mock') ?? 'owing';
+let mockFails = 0;
+
+export const studentApi = {
+  async login(code: string, pin: string): Promise<Me> {
+    if (USE_MOCK) {
+      await delay(400);
+      if (mockFails >= 10) throw new ApiCallError(429, 'too_many_attempts', 'Sai quá nhiều lần. Đợi 15 phút rồi thử lại nhé.');
+      // Mã thử: HS01 / PIN 1234
+      if (code.trim().toUpperCase() === 'HS01' && pin === '1234') {
+        mockFails = 0;
+        const me = { name: 'Minh Anh', code: 'HS01' };
+        mockStore.set(me);
+        return me;
+      }
+      mockFails++;
+      throw new ApiCallError(401, 'wrong_credentials', 'Mã hoặc PIN chưa đúng');
+    }
+    const r = await api<{ student: Me }>('POST', '/api/login', { code: code.trim(), pin });
+    return r.student;
+  },
+
+  /** null = chưa đăng nhập */
+  async me(): Promise<Me | null> {
+    if (USE_MOCK) {
+      await delay(100);
+      return mockStore.get();
+    }
+    try {
+      const r = await api<{ student: Me }>('GET', '/api/me');
+      return r.student;
+    } catch (e) {
+      if (e instanceof ApiCallError && e.status === 401) return null;
+      throw e;
+    }
+  },
+
+  async logout(): Promise<void> {
+    if (USE_MOCK) {
+      mockStore.set(null);
+      return;
+    }
+    await api('POST', '/api/logout');
+  },
+
+  async home(): Promise<HomeResponse> {
+    if (USE_MOCK) {
+      await delay();
+      return mockHome(mockScenario());
+    }
+    return api<HomeResponse>('GET', '/api/home');
+  },
+};
+
+/** Câu báo lỗi cho học sinh: ưu tiên câu server trả về */
+export function errorText(e: unknown): string {
+  if (e instanceof ApiCallError) return e.message;
+  return 'Không kết nối được. Kiểm tra mạng rồi thử lại nhé.';
+}
