@@ -39,7 +39,7 @@ function WithNav() {
   return (
     <div className="lg:flex lg:min-h-dvh">
       <SideNav />
-      <div className="mx-auto w-full max-w-md pb-24 lg:max-w-5xl lg:px-8 lg:pb-12 lg:pt-6">
+      <div className="mx-auto w-full max-w-md pb-24 sm:max-w-2xl lg:max-w-5xl lg:px-8 lg:pb-12 lg:pt-6">
         <Outlet />
       </div>
       <BottomNav />
