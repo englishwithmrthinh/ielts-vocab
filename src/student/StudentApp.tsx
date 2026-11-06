@@ -7,6 +7,7 @@ import './theme.css';
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import { BottomNav } from './components/BottomNav';
 import { Spinner } from './components/ui';
+import LessonPage from './lesson/LessonPage';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Placeholder from './pages/Placeholder';
@@ -46,7 +47,7 @@ export default function StudentApp() {
               <Route path="tien-do" element={<Placeholder title="Tiến độ" stage={3} />} />
               <Route path="kho-tu" element={<Placeholder title="Kho từ của tôi" stage={3} />} />
             </Route>
-            <Route path="bai/:milestoneId" element={<Placeholder title="Làm bài" stage={2} back />} />
+            <Route path="bai/:milestoneId" element={<LessonPage />} />
             <Route path="luyen-them" element={<Placeholder title="Luyện thêm" stage={2} back />} />
           </Route>
           <Route path="*" element={<Navigate to="/hoc" replace />} />
