@@ -156,6 +156,7 @@ export interface MonthlyStats {
   words_passed: number;
   words_learning: number;
   accuracy_pct: number;   // câu graded đúng / tổng câu graded trong tháng
+  /** passed_total là số CỘNG DỒN đến hết tuần đó */
   passed_by_week: { week_start: ISODate; passed_total: number }[];
   cells: { milestone_date: ISODate; kind: MilestoneKind; status: AssignmentStatus; score_pct: number | null; days_late: number | null }[];
 }
@@ -312,5 +313,19 @@ export interface MyWordsResponse {
   words: (WordCard & { box: Box; lessonNumber: number | null })[];
   pending: { id: UUID; text: string; note: string | null; created_at: ISODateTime }[];
 }
+
+/** GET /api/report/:token — trang phụ huynh. 404 nếu token sai. Bản draft: ai_comment = null (chỉ hiện nhận xét khi đã chốt). */
+export interface ParentReportResponse {
+  student: { name: string };
+  month: MonthKey;
+  status: 'draft' | 'final';
+  finalized_at: ISODateTime | null;
+  stats: MonthlyStats;
+  ai_comment: string | null;
+  teacher_comment: string | null;
+}
+
+/** POST /api/my-words { text, note? } — linked: từ đã có trong kho tổng, gán luôn; pending: chờ giáo viên duyệt */
+export interface AddWordResponse { status: 'linked' | 'pending' }
 
 export interface ApiError { error: string; code: string }
