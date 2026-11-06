@@ -230,3 +230,7 @@ create unique index if not exists classes_name_uq on classes (lower(name));
 alter table classes enable row level security;
 alter table students add column if not exists class_id uuid references classes(id) on delete set null;
 create index if not exists students_class_idx on students (class_id);
+
+-- ---------- Mã theo ngày sinh (migration 003) ----------
+alter table classes  add column if not exists code  text;
+alter table students add column if not exists birth text;

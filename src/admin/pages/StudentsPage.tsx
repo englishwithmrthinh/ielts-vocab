@@ -83,11 +83,11 @@ export default function StudentsPage() {
       await load();
     });
 
-  const setPin = (s: Student) => {
-    const pin = prompt(`PIN mới cho ${s.name} (${s.code}) — đúng 4 chữ số:`)?.trim();
-    if (!pin) return;
-    if (!/^\d{4}$/.test(pin)) { alert('PIN phải đúng 4 chữ số'); return; }
-    run(async () => { await adminApi.updateStudent(s.id, { pin }); alert(`Đã đặt PIN ${pin} cho ${s.name}.`); });
+  const setBirth = (s: Student) => {
+    const v = prompt(`Ngày sinh của ${s.name} (ví dụ 15032008 hoặc 15/03/2008).\nMã đăng nhập sẽ thành: mã lớp + ngày sinh.`, s.birth ?? '')?.replace(/\D/g, '');
+    if (!v) return;
+    if (v.length < 4 || v.length > 8) { alert('Ngày sinh 4–8 chữ số'); return; }
+    run(async () => { const { student } = await adminApi.updateStudent(s.id, { birth: v }); alert(`Mã mới của ${s.name}: ${student.code}`); await load(); });
   };
 
   const remove = (ids: string[], label: string) => {
@@ -190,7 +190,7 @@ export default function StudentsPage() {
         {adding && (
           <Card>
             <h2 className="font-semibold text-slate-900">Thêm học sinh</h2>
-            <p className="mt-1 text-sm text-slate-500">Mỗi dòng một tên. Mã (HS..) tạo tự động. Muốn tự đặt PIN thì thêm dấu phẩy và 4 số, ví dụ <span className="font-mono">Nguyễn Minh Anh, 1234</span>; không ghi thì PIN tạo ngẫu nhiên.</p>
+            <p className="mt-1 text-sm text-slate-500">Mỗi dòng: tên, dấu phẩy, ngày sinh. Ví dụ <span className="font-mono">Nguyễn Minh Anh, 15032008</span>. Mã đăng nhập = mã lớp + ngày sinh (vd <span className="font-mono">FD15032008</span>); trùng thì tự thêm số 2, 3. Học sinh chỉ cần gõ mã là vào.</p>
             <label className="mt-3 flex flex-wrap items-center gap-2 text-sm text-slate-700">
               Vào lớp
               <select className={selectCls} value={addClassId} onChange={(e) => setAddClassId(e.target.value)}>
@@ -202,7 +202,7 @@ export default function StudentsPage() {
               autoFocus
               rows={5}
               className={`${inputCls} mt-3 font-normal`}
-              placeholder={'Nguyễn Minh Anh\nTrần Gia Bảo'}
+              placeholder={'Nguyễn Minh Anh, 15032008\nTrần Gia Bảo, 02112009'}
               value={namesText}
               onChange={(e) => setNamesText(e.target.value)}
             />
@@ -270,7 +270,7 @@ export default function StudentsPage() {
                   {editId !== s.id && (
                     <div className="ml-auto flex gap-1">
                       <Button variant="ghost" onClick={() => { setEditId(s.id); setEditName(s.name); }}>Sửa tên</Button>
-                      <Button variant="ghost" disabled={busy} onClick={() => setPin(s)}>Đặt PIN</Button>
+                      <Button variant="ghost" disabled={busy} onClick={() => setBirth(s)}>Ngày sinh</Button>
                       <Button variant="ghost" disabled={busy} onClick={() => remove([s.id], `${s.name} (${s.code})`)}>
                         <span className="text-red-700">Xoá</span>
                       </Button>
