@@ -13,8 +13,9 @@ import type { Class, ClassesResponse } from '../../shared/types';
 import { requireAdmin } from '../lib/auth';
 import { errorResponse, HttpError, json, readJson } from '../lib/http';
 import { db, must } from '../lib/supabase';
+import { cleanClassCode, recomputeCodes, suggestClassCode } from '../lib/codes';
 
-const COLS = 'id,name,active,created_at';
+const COLS = 'id,name,code,active,created_at';
 
 async function list(): Promise<ClassesResponse> {
   const [cR, sR] = await Promise.all([
@@ -42,27 +43,39 @@ export default async (req: Request): Promise<Response> => {
     const p = new URL(req.url).pathname;
     if (p === '/api/admin/classes' && req.method === 'GET') return json(await list());
     if (p === '/api/admin/classes' && req.method === 'POST') {
-      const { name } = await readJson<{ name?: string }>(req);
-      const r = await db().from('classes').insert({ name: cleanName(name) }).select(COLS).single();
+      const { name, code } = await readJson<{ name?: string; code?: string }>(req);
+      const n = cleanName(name);
+      const r = await db().from('classes').insert({ name: n, code: cleanClassCode(code) || suggestClassCode(n) }).select(COLS).single();
       dup(r.error);
       return json({ class: must(r) as Class });
     }
     if (p === '/api/admin/classes/update' && req.method === 'POST') {
-      const b = await readJson<{ id?: string; name?: string; active?: boolean }>(req);
+      const b = await readJson<{ id?: string; name?: string; active?: boolean; code?: string }>(req);
       if (!b.id) throw new HttpError(400, 'bad_input', 'Thiếu id');
       const patch: Partial<Class> = {};
       if (b.name !== undefined) patch.name = cleanName(b.name);
       if (typeof b.active === 'boolean') patch.active = b.active;
+      if (b.code !== undefined) {
+        const c = cleanClassCode(b.code);
+        if (c.length < 2) throw new HttpError(400, 'bad_code', 'Mã lớp 2–4 chữ cái');
+        patch.code = c;
+      }
       const r = await db().from('classes').update(patch).eq('id', b.id).select(COLS).maybeSingle();
       dup(r.error);
       const c = must(r) as Class | null;
       if (!c) throw new HttpError(404, 'not_found', 'Không tìm thấy lớp');
+      if (b.code !== undefined) {
+        const ids = (must(await db().from('students').select('id').eq('class_id', c.id)) as { id: string }[]).map((x) => x.id);
+        await recomputeCodes(ids);
+      }
       return json({ class: c });
     }
     if (p === '/api/admin/classes/delete' && req.method === 'POST') {
       const { id } = await readJson<{ id?: string }>(req);
       if (!id) throw new HttpError(400, 'bad_input', 'Thiếu id');
+      const ids = (must(await db().from('students').select('id').eq('class_id', id)) as { id: string }[]).map((x) => x.id);
       must(await db().from('classes').delete().eq('id', id)); // học sinh trong lớp → chưa xếp lớp (on delete set null)
+      await recomputeCodes(ids);
       return json({ ok: true });
     }
     if (p === '/api/admin/classes/move' && req.method === 'POST') {
@@ -70,6 +83,7 @@ export default async (req: Request): Promise<Response> => {
       const ids = (b.studentIds ?? []).filter((x) => typeof x === 'string');
       if (!ids.length) throw new HttpError(400, 'bad_input', 'Chưa chọn học sinh');
       const rows = must(await db().from('students').update({ class_id: b.classId ?? null }).in('id', ids).select('id')) as unknown[];
+      await recomputeCodes(ids); // đổi lớp → đổi tiền tố mã
       return json({ moved: rows.length });
     }
     throw new HttpError(405, 'method_not_allowed', 'Phương thức không hỗ trợ');

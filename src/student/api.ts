@@ -47,16 +47,16 @@ export const studentApi = {
       await delay(400);
       if (mockFails >= 10) throw new ApiCallError(429, 'too_many_attempts', 'Sai quá nhiều lần. Đợi 15 phút rồi thử lại nhé.');
       // Mã thử: HS01 / PIN 1234
-      if (code.trim().toUpperCase() === 'HS01' && pin === '1234') {
+      if (code.trim().toUpperCase() === 'HS01' && (pin === '' || pin === '1234')) {
         mockFails = 0;
         const me = { name: 'Minh Anh', code: 'HS01' };
         mockStore.set(me);
         return me;
       }
       mockFails++;
-      throw new ApiCallError(401, 'wrong_credentials', 'Mã hoặc PIN chưa đúng');
+      throw new ApiCallError(401, 'wrong_credentials', 'Mã chưa đúng');
     }
-    const r = await api<{ student: Me }>('POST', '/api/login', { code: code.trim(), pin });
+    const r = await api<{ student: Me }>('POST', '/api/login', pin ? { code: code.trim(), pin } : { code: code.trim() });
     return r.student;
   },
 

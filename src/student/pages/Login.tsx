@@ -46,14 +46,24 @@ export default function Login() {
 
   if (me) return <Navigate to="/hoc" replace />;
 
+  // Giáo viên chọn: chỉ cần gõ MÃ (mã lớp + ngày sinh) là vào, không cần PIN
   const goPin = (e: FormEvent) => {
     e.preventDefault();
     if (!code.trim()) {
       setError('Nhập mã học sinh của bạn trước nhé.');
       return;
     }
+    if (busy) return;
     setError('');
-    setStep('pin');
+    setBusy(true);
+    studentApi
+      .login(code, '')
+      .then((student) => {
+        setMe(student);
+        nav('/hoc', { replace: true });
+      })
+      .catch((err: unknown) => setError(errorText(err)))
+      .finally(() => setBusy(false));
   };
 
   return (
@@ -81,12 +91,12 @@ export default function Login() {
               setCode(e.target.value.toUpperCase());
               setError('');
             }}
-            placeholder="HS01"
+            placeholder="VD: FD15032008"
             autoComplete="username"
             autoCapitalize="characters"
             autoCorrect="off"
             spellCheck={false}
-            enterKeyHint="next"
+            enterKeyHint="go"
             className="h-14 rounded-xl border border-line bg-surface-2 px-4 text-center text-xl font-semibold tracking-[0.2em] text-ink outline-none transition placeholder:text-ink-3/60 focus:border-brand focus:ring-2 focus:ring-brand/25"
           />
           {error && (
@@ -95,10 +105,11 @@ export default function Login() {
             </p>
           )}
           <div className="mt-auto pt-8">
-            <Button type="submit" block size="lg">
-              Tiếp tục
+            <p className="mb-3 text-center text-xs text-ink-3">Mã = mã lớp + ngày sinh (thầy đã gửi em)</p>
+            <Button type="submit" block size="lg" disabled={busy}>
+              {busy ? 'Đang vào…' : 'Vào học'}
             </Button>
-            {USE_MOCK && <p className="mt-3 text-center text-xs text-ink-3">Dữ liệu thử: mã HS01, PIN 1234</p>}
+            {USE_MOCK && <p className="mt-3 text-center text-xs text-ink-3">Dữ liệu thử: mã HS01</p>}
           </div>
         </form>
       ) : (
@@ -127,7 +138,7 @@ export default function Login() {
           <div className="mt-5 min-h-6 text-center text-sm" aria-live="polite">
             {busy ? <Spinner className="size-5" /> : error && <span className="text-bad-ink">{error}</span>}
           </div>
-          <p className="mt-auto pt-6 text-center text-xs text-ink-3">Quên PIN? Nhắn thầy để được đặt lại.</p>
+          <p className="mt-auto pt-6 text-center text-xs text-ink-3">Quên mã? Nhắn thầy nhé.</p>
           <p className="pt-2 text-center text-xs text-ink-3">
             <a href="/admin" className="underline underline-offset-2">Dành cho thầy · Quản trị</a>
           </p>

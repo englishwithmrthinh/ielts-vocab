@@ -54,11 +54,11 @@ export const adminApi = {
 
   classes: () => call<ClassesResponse>('GET', '/api/admin/classes'),
   addClass: (name: string) => call<{ class: Class }>('POST', '/api/admin/classes', { name }),
-  updateClass: (id: string, patch: { name?: string; active?: boolean }) => call<{ class: Class }>('POST', '/api/admin/classes/update', { id, ...patch }),
+  updateClass: (id: string, patch: { name?: string; active?: boolean; code?: string }) => call<{ class: Class }>('POST', '/api/admin/classes/update', { id, ...patch }),
   deleteClass: (id: string) => call<{ ok: true }>('POST', '/api/admin/classes/delete', { id }),
   deleteStudents: (ids: string[]) => call<{ deleted: number }>('POST', '/api/admin/students/delete', { ids }),
   moveStudents: (studentIds: string[], classId: string | null) => call<{ moved: number }>('POST', '/api/admin/classes/move', { studentIds, classId }),
-  updateStudent: (id: string, patch: { name?: string; active?: boolean; pin?: string }) =>
+  updateStudent: (id: string, patch: { name?: string; active?: boolean; pin?: string; birth?: string }) =>
     call<{ student: Student }>('POST', '/api/admin/students/update', { id, ...patch }),
   resetPins: (ids: string[]) => call<{ cards: StudentCard[] }>('POST', '/api/admin/students/reset-pins', { ids }),
 
