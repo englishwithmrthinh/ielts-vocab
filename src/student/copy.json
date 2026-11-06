@@ -1,0 +1,45 @@
+{
+  "badges": {
+    "first_submit": { "name": "Khởi đầu tốt", "desc": "Nộp bài đúng hạn lần đầu tiên." },
+    "perfect_week": { "name": "Tuần hoàn hảo", "desc": "Nộp đúng hạn cả 3 bài trong một tuần." },
+    "perfect_month": { "name": "Tháng hoàn hảo", "desc": "Nộp đúng hạn toàn bộ bài trong tháng." },
+    "all_sundays_month": { "name": "Chăm chỉ cuối tuần", "desc": "Không bỏ bài Chủ nhật nào trong tháng." },
+    "pass_10": { "name": "Mở rộng vốn từ", "desc": "Thuộc 10 từ vựng." },
+    "pass_50": { "name": "Bước tiến lớn", "desc": "Thuộc 50 từ vựng." },
+    "pass_100": { "name": "Chinh phục trăm từ", "desc": "Thuộc 100 từ vựng." },
+    "pass_300": { "name": "Bậc thầy từ vựng", "desc": "Thuộc 300 từ vựng." },
+    "streak_6": { "name": "Chuỗi 6 mốc", "desc": "Nộp đúng hạn 6 mốc liên tiếp." },
+    "streak_12": { "name": "Chuỗi 12 mốc", "desc": "Nộp đúng hạn 12 mốc liên tiếp." },
+    "streak_24": { "name": "Chuỗi 24 mốc", "desc": "Nộp đúng hạn 24 mốc liên tiếp." }
+  },
+  "correct": ["Chính xác", "Rất chuẩn", "Đúng rồi", "Tuyệt vời", "Hoàn toàn chính xác", "Làm tốt lắm", "Chuẩn xác", "Rất tốt"],
+  "wrong": ["Chưa đúng, nhớ nhé", "Không sao, xem lại nhé", "Sai để nhớ lâu hơn", "Lần sau sẽ đúng", "Ghi nhớ đáp án nhé", "Chưa chính xác", "Cố lên nhé", "Từ này sẽ quay lại sớm"],
+  "summary": {
+    "90_100": ["Phong độ xuất sắc, tiếp tục phát huy nhé.", "Kết quả rất tốt, bạn nắm bài rất vững.", "Độ chính xác rất cao, làm tốt lắm."],
+    "70_89": ["Kết quả khá tốt, cẩn thận hơn một chút nhé.", "Bạn nắm bài tốt, hãy tiếp tục duy trì.", "Làm tốt, lần sau cố gắng đạt tối đa nhé."],
+    "50_69": ["Bạn cần chú ý ôn kỹ hơn một chút.", "Còn hơi nhiều câu sai, cẩn thận hơn nhé.", "Dành thêm chút thời gian xem lại các từ sai nhé."],
+    "0_49": ["Bài này hơi khó, đừng nản nhé.", "Các từ sai sẽ được hỏi lại ở bài sau, đừng lo.", "Sai nhiều giúp nhớ lâu, lần sau sẽ tốt hơn."]
+  },
+  "submit": {
+    "on_time": "Bạn đã nộp bài đúng hạn.",
+    "late": "Bạn nộp trễ {days} ngày. Chuyên cần bài này còn {pct}%."
+  },
+  "word_passed": ["Chúc mừng, bạn đã thuộc từ này.", "Thêm một từ vào nhóm đã thuộc."],
+  "perfect_week": "Tuyệt vời, bạn đã có một tuần hoàn hảo.",
+  "home": {
+    "no_assignment": "Hiện chưa có bài mới. Bạn có thể nghỉ ngơi hoặc luyện thêm.",
+    "blocked": "Làm bù bài {date} trước rồi mới làm được bài này.",
+    "owing_warning": "Bạn đang nợ bài. Chuyên cần hiện còn {pct}%, sang ngày mai còn {tomorrowPct}%.",
+    "countdown": "Còn {time} đến hạn nộp."
+  },
+  "empty": {
+    "no_words_yet": "Kho từ của bạn đang trống. Từ mới sẽ có sau buổi học.",
+    "no_badges_yet": "Bạn chưa có huy hiệu nào. Chăm chỉ học để thu thập nhé.",
+    "my_words_search_empty": "Không tìm thấy từ nào khớp với từ khóa."
+  },
+  "errors": {
+    "offline": "Mất kết nối mạng. Kiểm tra lại internet rồi thử lại nhé.",
+    "server": "Hệ thống đang gặp sự cố. Thử lại sau ít phút nhé.",
+    "session_expired": "Phiên đăng nhập đã hết hạn. Đăng nhập lại nhé."
+  }
+}

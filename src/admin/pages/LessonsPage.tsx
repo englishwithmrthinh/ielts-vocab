@@ -1,4 +1,4 @@
-/** Danh sách buổi học. Giai đoạn 2 sẽ thêm nút chạy pipeline, Duyệt, Phát hành. */
+/** Danh sách buổi học. Bấm vào buổi để chạy pipeline, Duyệt, Phát hành. */
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { adminApi, type LessonSummary } from '../lib/adminApi';
@@ -36,11 +36,13 @@ export default function LessonsPage() {
         ) : (
           <ul className="divide-y divide-slate-100">
             {lessons.map((l) => (
-              <li key={l.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3">
+              <li key={l.id}>
+                <Link to={`/admin/buoi-hoc/${l.id}`} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 hover:bg-slate-50">
                 <span className="w-20 font-semibold text-slate-900">Buổi {l.number}</span>
                 <span className="w-24 text-sm text-slate-600">{fmtDate(l.taught_on)}</span>
                 <span className="text-sm text-slate-600">{l.word_count} từ · {l.student_count} học sinh</span>
                 <span className="ml-auto"><Badge tone={STATUS[l.status].tone}>{STATUS[l.status].label}</Badge></span>
+                </Link>
               </li>
             ))}
           </ul>

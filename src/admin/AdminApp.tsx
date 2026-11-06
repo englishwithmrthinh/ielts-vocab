@@ -8,6 +8,7 @@ import PrintCardsPage from './pages/PrintCardsPage';
 import CalendarPage from './pages/CalendarPage';
 import CreateLessonPage from './pages/CreateLessonPage';
 import LessonsPage from './pages/LessonsPage';
+import ReviewPage from './pages/ReviewPage';
 
 const NAV = [
   { to: 'buoi-hoc', label: 'Buổi học' },
@@ -71,6 +72,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
         <Routes>
           <Route index element={<Navigate to="buoi-hoc" replace />} />
           <Route path="buoi-hoc" element={<LessonsPage />} />
+          <Route path="buoi-hoc/:id" element={<ReviewPage />} />
           <Route path="tao-buoi" element={<CreateLessonPage />} />
           <Route path="hoc-sinh" element={<StudentsPage />} />
           <Route path="lich-moc" element={<CalendarPage />} />

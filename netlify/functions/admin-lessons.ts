@@ -60,6 +60,9 @@ async function createLesson(body: { number?: unknown; taught_on?: unknown; stude
     throw new HttpError(400, 'bad_json', `${first.word ? `"${first.word}" · ` : ''}${first.field}: ${first.message}`);
   }
 
+  const taken = must(await db().from('lessons').select('id').eq('number', number).limit(1)) as { id: string }[];
+  if (taken.length) throw new HttpError(409, 'lesson_number_taken', `Buổi số ${number} đã có. Chọn số khác.`);
+
   const existing = await findExisting(parsed.words);
   const toInsert: LessonWordInput[] = parsed.words.filter((w) => !existing.has(`${w.word}|${w.pos}`));
   if (toInsert.length) {
@@ -72,9 +75,11 @@ async function createLesson(body: { number?: unknown; taught_on?: unknown; stude
     for (const r of rows) existing.set(`${normWord(r.word)}|${r.pos}`, r);
   }
 
-  const lesson = must(
-    await db().from('lessons').insert({ number, taught_on: taughtOn, status: 'draft' }).select('*').single(),
-  ) as Lesson;
+  const ins = await db().from('lessons').insert({ number, taught_on: taughtOn, status: 'draft' }).select('*').single();
+  if ((ins.error as { code?: string } | null)?.code === '23505') {
+    throw new HttpError(409, 'lesson_number_taken', `Buổi số ${number} đã có. Chọn số khác.`);
+  }
+  const lesson = must(ins) as Lesson;
   try {
     must(
       await db().from('lesson_words').insert(
