@@ -14,6 +14,7 @@ import type {
 import { PASS_BOX } from '../../shared/types';
 import { buildQuestion, chooseType } from '../../shared/questions';
 import { monthKey, vnDate, vnStartOfDay, weekStart } from '../../shared/time';
+import { makeCheck } from '../../shared/check';
 import { requireStudent } from '../lib/auth';
 import { errorResponse, HttpError, json, readJson } from '../lib/http';
 import { db, must } from '../lib/supabase';
@@ -121,12 +122,13 @@ async function practiceNext(studentId: string): Promise<NextQuestionResponse> {
   const w = toQuiz(pick);
   const type = chooseType(w, null, pool.length, Math.random, ['D', 'L']);
   const built = buildQuestion(type, [w], pool, Math.random);
+  const check = await makeCheck(built.key);
   const row = must(
     await db().from('pending_questions').insert({
-      student_id: studentId, assignment_id: null, payload: { ...built.payload, mode: 'practice', wordIds: built.wordIds }, answer_key: built.key,
+      student_id: studentId, assignment_id: null, payload: { ...built.payload, check, mode: 'practice', wordIds: built.wordIds }, answer_key: built.key,
     }).select('qid').single(),
   ) as { qid: string };
-  return { question: { ...built.payload, qid: row.qid, mode: 'practice', progress: { done: 0, required: 0, extra: 0 } }, phase: 'graded' };
+  return { question: { ...built.payload, check, qid: row.qid, mode: 'practice', progress: { done: 0, required: 0, extra: 0 } }, phase: 'graded' };
 }
 
 async function report(token: string): Promise<ParentReportResponse> {
