@@ -1,10 +1,11 @@
 /**
- * Mã học sinh = mã lớp (2–6 chữ/số, vd GB07) + ngày sinh, ví dụ FD15032008. Chủ sở hữu: Sếp.
+ * Mã học sinh = mã lớp (2–6 chữ/số, vd GB07) + ngày sinh, ví dụ GB072402. Chủ sở hữu: Sếp.
  * Trùng thì thêm 2, 3… vào cuối. Học sinh chưa có ngày sinh giữ mã cũ (HSxx).
  * Học sinh chưa xếp lớp dùng tiền tố "HS".
  */
 import { db, must } from './supabase';
 
+/** Ngày + tháng sinh (DDMM, vd 2402). Vẫn nhận 4–8 số để mã cũ dạng đủ năm không lỗi. */
 export function cleanBirth(v: unknown): string | null {
   const s = String(v ?? '').replace(/\D/g, '');
   return s.length >= 4 && s.length <= 8 ? s : null;
