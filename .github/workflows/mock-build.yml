@@ -1,0 +1,21 @@
+# Build bản demo (dữ liệu giả) để quay video hướng dẫn. Chỉ chạy trên nhánh video-build.
+name: mock-build
+on:
+  push:
+    branches: [video-build]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npx vite build
+        env:
+          VITE_USE_MOCK: 'true'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-mock
+          path: dist
