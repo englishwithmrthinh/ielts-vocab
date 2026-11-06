@@ -1,0 +1,361 @@
+{
+  "words": [
+    {
+      "word": "curriculum",
+      "pos": "n",
+      "meaning_vi": "chương trình giảng dạy",
+      "ipa": "/kəˈrɪkjələm/",
+      "syllables": "cur·RIC·u·lum",
+      "example": "The ministry updated the national school curriculum to include computer coding alongside maths and science.",
+      "word_family": [
+        {
+          "form": "curricular",
+          "pos": "adj",
+          "sentence": "All ___ activities must align with the academic standards set by the education board."
+        }
+      ],
+      "image_hint": "an open binder linked to a microscope, a globe and a paint palette"
+    },
+    {
+      "word": "pedagogy",
+      "pos": "n",
+      "meaning_vi": "phương pháp sư phạm",
+      "ipa": "/ˈpedəɡɒdʒi/",
+      "syllables": "PED·a·gog·y",
+      "example": "Modern pedagogy encourages interactive group discussions rather than forcing pupils to memorize textbook facts.",
+      "word_family": [
+        {
+          "form": "pedagogical",
+          "pos": "adj",
+          "sentence": "The training workshop introduced teachers to effective ___ techniques for mixed-ability classrooms."
+        }
+      ],
+      "image_hint": "a teacher guiding four students sitting in a circle around a puzzle"
+    },
+    {
+      "word": "literacy",
+      "pos": "n",
+      "meaning_vi": "trình độ biết chữ",
+      "ipa": "/ˈlɪtərəsi/",
+      "syllables": "LIT·er·a·cy",
+      "example": "Rural library campaigns have raised adult literacy rates by teaching villagers how to read and write.",
+      "word_family": [
+        {
+          "form": "literate",
+          "pos": "adj",
+          "sentence": "In the nineteenth century, only a small fraction of the population was fully ___."
+        },
+        {
+          "form": "illiterate",
+          "pos": "adj",
+          "sentence": "Without access to primary schools, many children in remote areas remain ___."
+        }
+      ],
+      "image_hint": "an elderly woman learning to read a book with a young volunteer"
+    },
+    {
+      "word": "compulsory",
+      "pos": "adj",
+      "meaning_vi": "bắt buộc",
+      "ipa": "/kəmˈpʌlsəri/",
+      "syllables": "com·PUL·so·ry",
+      "example": "Mathematics and English remain compulsory subjects for every secondary student until the age of sixteen.",
+      "word_family": [
+        {
+          "form": "compulsorily",
+          "pos": "adv",
+          "sentence": "All first-year undergraduates are ___ enrolled in an academic writing module."
+        }
+      ],
+      "image_hint": "a line of students in uniform all walking through the same school gate"
+    },
+    {
+      "word": "vocational",
+      "pos": "adj",
+      "meaning_vi": "thuộc về hướng nghiệp",
+      "ipa": "/vəʊˈkeɪʃənl/",
+      "syllables": "vo·CA·tion·al",
+      "example": "Many school leavers choose vocational training in carpentry or culinary arts instead of university degrees.",
+      "word_family": [
+        {
+          "form": "vocation",
+          "pos": "n",
+          "sentence": "She found her true ___ in nursing after volunteering at a community clinic."
+        }
+      ],
+      "image_hint": "a young trainee in safety goggles working at a carpentry workbench"
+    },
+    {
+      "word": "plagiarism",
+      "pos": "n",
+      "meaning_vi": "sự đạo văn",
+      "ipa": "/ˈpleɪdʒərɪzəm/",
+      "syllables": "PLA·gia·rism",
+      "example": "Copying paragraphs from internet articles without citation constitutes plagiarism and leads to automatic disqualification.",
+      "word_family": [
+        {
+          "form": "plagiarize",
+          "pos": "v",
+          "sentence": "Students who ___ another author's research risk being expelled from the university."
+        },
+        {
+          "form": "plagiarist",
+          "pos": "n",
+          "sentence": "Detection software quickly exposed the ___ who had copied an entire chapter word for word."
+        }
+      ],
+      "image_hint": "a student secretly copying a classmate's essay under a magnifying glass"
+    },
+    {
+      "word": "tuition",
+      "pos": "n",
+      "meaning_vi": "học phí",
+      "ipa": "/tjuˈɪʃn/",
+      "syllables": "tu·I·tion",
+      "example": "Rising university tuition fees force many undergraduates to take part-time jobs or student loans.",
+      "word_family": [],
+      "image_hint": "a graduation cap sitting on top of a tall stack of gold coins"
+    },
+    {
+      "word": "assessment",
+      "pos": "n",
+      "meaning_vi": "sự đánh giá",
+      "ipa": "/əˈsesmənt/",
+      "syllables": "as·SESS·ment",
+      "example": "Continuous coursework assessment measures student progress more fairly than a single high-stakes final examination.",
+      "word_family": [
+        {
+          "form": "assess",
+          "pos": "v",
+          "sentence": "Examiners use four clear criteria to ___ each candidate's speaking performance."
+        },
+        {
+          "form": "assessor",
+          "pos": "n",
+          "sentence": "An independent external ___ reviewed the graded exam papers to ensure fairness."
+        }
+      ],
+      "image_hint": "a teacher with a clipboard watching a student give a presentation"
+    },
+    {
+      "word": "comprehend",
+      "pos": "v",
+      "meaning_vi": "hiểu thấu đáo",
+      "ipa": "/ˌkɒmprɪˈhend/",
+      "syllables": "com·pre·HEND",
+      "example": "Young readers often struggle to comprehend dense academic texts filled with unfamiliar technical terminology.",
+      "word_family": [
+        {
+          "form": "comprehension",
+          "pos": "n",
+          "sentence": "Listening ___ improves rapidly when learners watch authentic documentaries without subtitles."
+        },
+        {
+          "form": "comprehensible",
+          "pos": "adj",
+          "sentence": "The professor explained quantum mechanics in simple language that was easily ___ to beginners."
+        }
+      ],
+      "image_hint": "a student reading a thick book with a glowing lightbulb above their head"
+    },
+    {
+      "word": "inquisitive",
+      "pos": "adj",
+      "meaning_vi": "ham học hỏi",
+      "ipa": "/ɪnˈkwɪzətɪv/",
+      "syllables": "in·QUIS·i·tive",
+      "example": "An inquisitive child constantly asks how machines work and loves conducting simple science experiments.",
+      "word_family": [
+        {
+          "form": "inquisitiveness",
+          "pos": "n",
+          "sentence": "Good science teachers nurture natural ___ rather than punishing students for asking tough questions."
+        },
+        {
+          "form": "inquisitively",
+          "pos": "adv",
+          "sentence": "The young pupil peered ___ through the microscope at the moving pond organisms."
+        }
+      ],
+      "image_hint": "a curious child studying a butterfly through a giant magnifying glass"
+    },
+    {
+      "word": "collaborate",
+      "pos": "v",
+      "meaning_vi": "hợp tác làm việc",
+      "ipa": "/kəˈlæbəreɪt/",
+      "syllables": "col·LAB·o·rate",
+      "example": "Engineering students collaborate in small teams to design and build solar-powered model vehicles.",
+      "word_family": [
+        {
+          "form": "collaboration",
+          "pos": "n",
+          "sentence": "The research breakthrough was achieved through close ___ between two medical universities."
+        },
+        {
+          "form": "collaborative",
+          "pos": "adj",
+          "sentence": "Problem-based learning thrives in a ___ classroom environment where everyone shares ideas."
+        }
+      ],
+      "image_hint": "four students joining colourful jigsaw pieces together on a round table"
+    },
+    {
+      "word": "extracurricular",
+      "pos": "adj",
+      "meaning_vi": "ngoại khóa",
+      "ipa": "/ˌekstrəkəˈrɪkjələ/",
+      "syllables": "ex·tra·cur·RIC·u·lar",
+      "example": "Joining extracurricular clubs like debate, chess, or football helps teenagers develop leadership and social skills.",
+      "word_family": [],
+      "image_hint": "students playing football, painting and playing guitar in a schoolyard"
+    },
+    {
+      "word": "proficiency",
+      "pos": "n",
+      "meaning_vi": "sự thành thạo",
+      "ipa": "/prəˈfɪʃnsi/",
+      "syllables": "pro·FI·cien·cy",
+      "example": "Overseas universities require applicants to demonstrate high English proficiency through standardized language tests.",
+      "word_family": [
+        {
+          "form": "proficient",
+          "pos": "adj",
+          "sentence": "After living in Tokyo for three years, she became ___ in spoken Japanese."
+        },
+        {
+          "form": "proficiently",
+          "pos": "adv",
+          "sentence": "Graduates must be able to use spreadsheet software ___ before joining the accounting firm."
+        }
+      ],
+      "image_hint": "a student standing at the top of a staircase holding a gold trophy"
+    },
+    {
+      "word": "discipline",
+      "pos": "n",
+      "meaning_vi": "kỷ luật",
+      "ipa": "/ˈdɪsəplɪn/",
+      "syllables": "DIS·ci·pline",
+      "example": "Mastering a musical instrument requires strict self-control and daily discipline over many years of practice.",
+      "word_family": [
+        {
+          "form": "disciplined",
+          "pos": "adj",
+          "sentence": "Distance learning suits ___ students who can manage their own study schedules."
+        },
+        {
+          "form": "disciplinary",
+          "pos": "adj",
+          "sentence": "The headmaster took strict ___ action against pupils caught cheating in the exam."
+        }
+      ],
+      "image_hint": "a student studying at a tidy desk beside an alarm clock at dawn"
+    },
+    {
+      "word": "enrol",
+      "pos": "v",
+      "meaning_vi": "ghi danh nhập học",
+      "ipa": "/ɪnˈrəʊl/",
+      "syllables": "en·ROL",
+      "example": "Over five hundred freshmen enrol in the introductory psychology course at the start of autumn.",
+      "word_family": [
+        {
+          "form": "enrolment",
+          "pos": "n",
+          "sentence": "University ___ has increased steadily since the government introduced interest-free student loans."
+        }
+      ],
+      "image_hint": "a young student handing a form to a smiling university receptionist"
+    },
+    {
+      "word": "mentor",
+      "pos": "n",
+      "meaning_vi": "người cố vấn",
+      "ipa": "/ˈmentɔː/",
+      "syllables": "MEN·tor",
+      "example": "An experienced professor served as her academic mentor throughout the three-year doctoral research project.",
+      "word_family": [
+        {
+          "form": "mentorship",
+          "pos": "n",
+          "sentence": "The alumni ___ programme pairs final-year students with seasoned industry professionals."
+        }
+      ],
+      "image_hint": "an older professor walking beside a young student on a mountain path"
+    },
+    {
+      "word": "cognitive",
+      "pos": "adj",
+      "meaning_vi": "thuộc về nhận thức",
+      "ipa": "/ˈkɒɡnətɪv/",
+      "syllables": "COG·ni·tive",
+      "example": "Playing chess and learning foreign languages stimulate cognitive development such as memory and logical reasoning.",
+      "word_family": [
+        {
+          "form": "cognition",
+          "pos": "n",
+          "sentence": "Sleep deprivation negatively affects human ___ and slows down decision-making speed."
+        },
+        {
+          "form": "cognitively",
+          "pos": "adv",
+          "sentence": "Bilingual children often perform better on ___ demanding tasks that require switching attention."
+        }
+      ],
+      "image_hint": "a side view of a human head with glowing gears inside the brain"
+    },
+    {
+      "word": "scholarship",
+      "pos": "n",
+      "meaning_vi": "học bổng",
+      "ipa": "/ˈskɒləʃɪp/",
+      "syllables": "SCHOL·ar·ship",
+      "example": "Winning a full academic scholarship allowed the talented student from a poor family to study abroad.",
+      "word_family": [
+        {
+          "form": "scholar",
+          "pos": "n",
+          "sentence": "The visiting ___ published three influential books on ancient Mediterranean history."
+        },
+        {
+          "form": "scholarly",
+          "pos": "adj",
+          "sentence": "All claims in your essay must be supported by peer-reviewed ___ journals."
+        }
+      ],
+      "image_hint": "a smiling student in a graduation gown receiving a rolled certificate"
+    },
+    {
+      "word": "dissertation",
+      "pos": "n",
+      "meaning_vi": "luận văn tốt nghiệp",
+      "ipa": "/ˌdɪsəˈteɪʃn/",
+      "syllables": "dis·ser·TA·tion",
+      "example": "Every master's candidate must write and defend an original research dissertation before graduating in July.",
+      "word_family": [],
+      "image_hint": "a thick hardbound thesis on a desk beside stacks of research books"
+    },
+    {
+      "word": "autonomous",
+      "pos": "adj",
+      "meaning_vi": "tự chủ",
+      "ipa": "/ɔːˈtɒnəməs/",
+      "syllables": "au·TON·o·mous",
+      "example": "University tutors expect undergraduates to become autonomous learners who research topics without constant supervision.",
+      "word_family": [
+        {
+          "form": "autonomy",
+          "pos": "n",
+          "sentence": "Giving teachers greater classroom ___ allows them to tailor lessons to student needs."
+        },
+        {
+          "form": "autonomously",
+          "pos": "adv",
+          "sentence": "By the final semester, students should be able to design lab experiments ___."
+        }
+      ],
+      "image_hint": "a confident student sailing a small boat alone towards a lighthouse"
+    }
+  ]
+}

@@ -1,0 +1,316 @@
+{
+  "words": [
+    {
+      "word": "innovation",
+      "pos": "n",
+      "meaning_vi": "sự đổi mới sáng tạo",
+      "ipa": "/ˌɪnəˈveɪʃn/",
+      "syllables": "in·no·VA·tion",
+      "example": "Continuous technological innovation has transformed smartphones from simple calling devices into pocket computers.",
+      "word_family": [
+        {
+          "form": "innovate",
+          "pos": "v",
+          "sentence": "Tech companies that fail to ___ quickly lose market share to agile competitors."
+        },
+        {
+          "form": "innovative",
+          "pos": "adj",
+          "sentence": "Engineers developed an ___ battery design that charges fully in under five minutes."
+        },
+        {
+          "form": "innovator",
+          "pos": "n",
+          "sentence": "As a pioneering ___ in robotics, she holds over forty international patents."
+        }
+      ],
+      "image_hint": "a glowing lightbulb with a tiny rocket launching out of it"
+    },
+    {
+      "word": "automation",
+      "pos": "n",
+      "meaning_vi": "sự tự động hóa",
+      "ipa": "/ˌɔːtəˈmeɪʃn/",
+      "syllables": "au·to·MA·tion",
+      "example": "Factory automation using robotic arms has doubled car production speed while reducing human assembly errors.",
+      "word_family": [
+        {
+          "form": "automate",
+          "pos": "v",
+          "sentence": "Many logistics warehouses now ___ parcel sorting with high-speed conveyor belts."
+        },
+        {
+          "form": "automated",
+          "pos": "adj",
+          "sentence": "Passengers scanned their passports at the ___ border control gates."
+        }
+      ],
+      "image_hint": "orange robotic arms assembling a car on a factory conveyor belt"
+    },
+    {
+      "word": "algorithm",
+      "pos": "n",
+      "meaning_vi": "thuật toán",
+      "ipa": "/ˈælɡərɪðəm/",
+      "syllables": "AL·go·rithm",
+      "example": "Social media platforms use a recommendation algorithm to predict which videos will keep users watching.",
+      "word_family": [
+        {
+          "form": "algorithmic",
+          "pos": "adj",
+          "sentence": "Financial firms rely on ___ trading systems to execute thousands of orders per second."
+        }
+      ],
+      "image_hint": "a machine sorting colourful balls into matching tubes along branching paths"
+    },
+    {
+      "word": "obsolete",
+      "pos": "adj",
+      "meaning_vi": "lỗi thời",
+      "ipa": "/ˈɒbsəliːt/",
+      "syllables": "OB·so·lete",
+      "example": "High-speed cloud storage has rendered floppy disks and compact discs completely obsolete in modern offices.",
+      "word_family": [
+        {
+          "form": "obsolescence",
+          "pos": "n",
+          "sentence": "Consumer groups criticized smartphone makers for planned ___ that forces frequent hardware upgrades."
+        }
+      ],
+      "image_hint": "a dusty old typewriter covered in cobwebs next to a modern laptop"
+    },
+    {
+      "word": "breakthrough",
+      "pos": "n",
+      "meaning_vi": "bước đột phá",
+      "ipa": "/ˈbreɪkθruː/",
+      "syllables": "BREAK·through",
+      "example": "Scientists achieved a major medical breakthrough by developing a vaccine that prevents malaria infection.",
+      "word_family": [],
+      "image_hint": "a beam of golden light smashing through a grey brick wall"
+    },
+    {
+      "word": "surveillance",
+      "pos": "n",
+      "meaning_vi": "sự giám sát",
+      "ipa": "/sɜːˈveɪləns/",
+      "syllables": "sur·VEIL·lance",
+      "example": "Facial recognition cameras mounted on street corners have sparked heated debates over public surveillance.",
+      "word_family": [],
+      "image_hint": "security cameras on a street pole watching people walking below"
+    },
+    {
+      "word": "encryption",
+      "pos": "n",
+      "meaning_vi": "sự mã hóa dữ liệu",
+      "ipa": "/ɪnˈkrɪpʃn/",
+      "syllables": "en·CRYP·tion",
+      "example": "Online banking apps rely on end-to-end encryption to protect customer passwords from cyber thieves.",
+      "word_family": [
+        {
+          "form": "encrypt",
+          "pos": "v",
+          "sentence": "Messaging services automatically ___ private chats so third parties cannot read them."
+        },
+        {
+          "form": "encrypted",
+          "pos": "adj",
+          "sentence": "All medical records are stored on an ___ server inside the hospital network."
+        }
+      ],
+      "image_hint": "an envelope wrapped in heavy chains and locked with a golden padlock"
+    },
+    {
+      "word": "bandwidth",
+      "pos": "n",
+      "meaning_vi": "băng thông mạng",
+      "ipa": "/ˈbændwɪdθ/",
+      "syllables": "BAND·width",
+      "example": "Streaming high-definition video across five devices simultaneously consumes tremendous network bandwidth in a household.",
+      "word_family": [],
+      "image_hint": "a wide glowing tube carrying fast streams of coloured light into a router"
+    },
+    {
+      "word": "simulate",
+      "pos": "v",
+      "meaning_vi": "mô phỏng",
+      "ipa": "/ˈsɪmjuleɪt/",
+      "syllables": "SIM·u·late",
+      "example": "Trainee airline pilots use virtual cockpits to simulate emergency landings during extreme thunderstorm conditions.",
+      "word_family": [
+        {
+          "form": "simulation",
+          "pos": "n",
+          "sentence": "Computer ___ allows architects to test how a skyscraper will withstand strong earthquakes."
+        },
+        {
+          "form": "simulator",
+          "pos": "n",
+          "sentence": "Every astronaut spends hundreds of hours practising inside a zero-gravity flight ___."
+        }
+      ],
+      "image_hint": "a trainee pilot in a flight simulator cockpit facing a virtual runway"
+    },
+    {
+      "word": "cybercrime",
+      "pos": "n",
+      "meaning_vi": "tội phạm mạng",
+      "ipa": "/ˈsaɪbəkraɪm/",
+      "syllables": "CY·ber·crime",
+      "example": "Identity theft and ransomware attacks have made cybercrime a growing threat to global banking systems.",
+      "word_family": [
+        {
+          "form": "cybercriminal",
+          "pos": "n",
+          "sentence": "A notorious ___ was arrested for stealing credit card details from an online retailer."
+        }
+      ],
+      "image_hint": "a hooded hacker at a laptop stealing gold coins out of the screen"
+    },
+    {
+      "word": "gadget",
+      "pos": "n",
+      "meaning_vi": "thiết bị điện tử nhỏ",
+      "ipa": "/ˈɡædʒɪt/",
+      "syllables": "GAD·get",
+      "example": "The waterproof smartwatch is a handy gadget that tracks heart rate, sleep quality, and footsteps.",
+      "word_family": [],
+      "image_hint": "a smartwatch, wireless earbuds and a mini drone arranged on a desk"
+    },
+    {
+      "word": "prototype",
+      "pos": "n",
+      "meaning_vi": "nguyên mẫu thử nghiệm",
+      "ipa": "/ˈprəʊtətaɪp/",
+      "syllables": "PRO·to·type",
+      "example": "Engineers built a working prototype of the folding electric bicycle before launching mass factory production.",
+      "word_family": [],
+      "image_hint": "an engineer adjusting a half-built robot dog on a workbench"
+    },
+    {
+      "word": "integrate",
+      "pos": "v",
+      "meaning_vi": "tích hợp",
+      "ipa": "/ˈɪntɪɡreɪt/",
+      "syllables": "IN·te·grate",
+      "example": "Modern smart homes integrate lighting, heating, and security cameras into a single mobile control application.",
+      "word_family": [
+        {
+          "form": "integration",
+          "pos": "n",
+          "sentence": "Seamless ___ between the payment gateway and inventory database sped up online checkout."
+        },
+        {
+          "form": "integrated",
+          "pos": "adj",
+          "sentence": "The new electric saloon features an ___ voice assistant on the dashboard."
+        }
+      ],
+      "image_hint": "a lightbulb, a thermostat and a camera all connecting to one smartphone"
+    },
+    {
+      "word": "ubiquitous",
+      "pos": "adj",
+      "meaning_vi": "có mặt khắp nơi",
+      "ipa": "/juːˈbɪkwɪtəs/",
+      "syllables": "u·BIQ·ui·tous",
+      "example": "Touchscreen smartphones have become ubiquitous in modern society, seen in every cafe, train, and classroom.",
+      "word_family": [
+        {
+          "form": "ubiquity",
+          "pos": "n",
+          "sentence": "The ___ of free wireless internet has allowed remote workers to work from anywhere."
+        },
+        {
+          "form": "ubiquitously",
+          "pos": "adv",
+          "sentence": "Contactless payment terminals are now ___ installed across supermarkets and bus stations."
+        }
+      ],
+      "image_hint": "people in a park, on a train and in a café all using smartphones"
+    },
+    {
+      "word": "biometrics",
+      "pos": "n",
+      "meaning_vi": "sinh trắc học",
+      "ipa": "/ˌbaɪəʊˈmetrɪks/",
+      "syllables": "bi·o·MET·rics",
+      "example": "Modern airports use biometrics such as fingerprint and iris scanners to verify passenger identities quickly.",
+      "word_family": [
+        {
+          "form": "biometric",
+          "pos": "adj",
+          "sentence": "Employees must scan their thumbs on a ___ pad before entering the server room."
+        }
+      ],
+      "image_hint": "a glowing fingerprint scanner unlocking a glass security door"
+    },
+    {
+      "word": "streamline",
+      "pos": "v",
+      "meaning_vi": "tối ưu hóa quy trình",
+      "ipa": "/ˈstriːmlaɪn/",
+      "syllables": "STREAM·line",
+      "example": "Hospital managers introduced digital booking software to streamline patient registration and reduce waiting room queues.",
+      "word_family": [
+        {
+          "form": "streamlined",
+          "pos": "adj",
+          "sentence": "The ___ customs procedure allowed travellers to clear the airport in ten minutes."
+        }
+      ],
+      "image_hint": "a tangled knot of grey pipes turning into three straight smooth pipes"
+    },
+    {
+      "word": "malfunction",
+      "pos": "v",
+      "meaning_vi": "trục trặc kỹ thuật",
+      "ipa": "/ˌmælˈfʌŋkʃn/",
+      "syllables": "mal·FUNC·tion",
+      "example": "Extreme sub-zero temperatures caused the satellite battery to malfunction and lose contact with ground control.",
+      "word_family": [],
+      "image_hint": "a delivery robot stopped on a pavement with sparks and smoke rising"
+    },
+    {
+      "word": "interface",
+      "pos": "n",
+      "meaning_vi": "giao diện",
+      "ipa": "/ˈɪntəfeɪs/",
+      "syllables": "IN·ter·face",
+      "example": "A clean, intuitive user interface helps elderly people navigate banking applications without feeling confused.",
+      "word_family": [],
+      "image_hint": "a finger tapping colourful buttons and sliders on a large tablet screen"
+    },
+    {
+      "word": "database",
+      "pos": "n",
+      "meaning_vi": "cơ sở dữ liệu",
+      "ipa": "/ˈdeɪtəbeɪs/",
+      "syllables": "DA·ta·base",
+      "example": "The national library digitized millions of historical newspapers and stored them in a searchable database.",
+      "word_family": [],
+      "image_hint": "rows of tall blue server cabinets inside a cool server room"
+    },
+    {
+      "word": "revolutionize",
+      "pos": "v",
+      "meaning_vi": "cách mạng hóa",
+      "ipa": "/ˌrevəˈluːʃənaɪz/",
+      "syllables": "rev·o·LU·tion·ize",
+      "example": "Artificial intelligence tools are poised to revolutionize medical diagnostics by detecting early cancer cells accurately.",
+      "word_family": [
+        {
+          "form": "revolution",
+          "pos": "n",
+          "sentence": "The invention of the printing press sparked a cultural ___ across fifteenth-century Europe."
+        },
+        {
+          "form": "revolutionary",
+          "pos": "adj",
+          "sentence": "Fibre-optic cables brought a ___ increase in international data transmission speeds."
+        }
+      ],
+      "image_hint": "an old wooden abacus transforming into a sleek futuristic computer"
+    }
+  ]
+}
