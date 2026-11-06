@@ -43,9 +43,22 @@ async function setWord(id: string, patch: Partial<Word>) {
   must(await db().from('words').update(patch).eq('id', id));
 }
 
+export class SkipRun extends Error {}
+
 export async function runPipeline(lessonId: string, deps: PipelineDeps): Promise<PipelineSummary> {
-  const lesson = must(await db().from('lessons').select('id,status').eq('id', lessonId).single()) as { id: string; status: string };
-  if (lesson.status === 'published') throw new Error('Buổi đã phát hành, không chạy lại pipeline');
+  const lesson = must(await db().from('lessons').select('id,status,pipeline_log').eq('id', lessonId).single()) as {
+    id: string; status: string; pipeline_log: { at: string }[] | null;
+  };
+  if (lesson.status === 'published') throw new Error('Bộ từ đã phát hành, không chạy lại pipeline');
+  // Khoá: bấm 2 lần / 2 tab cùng lúc thì lần sau bỏ qua (thật sự đã xảy ra 06/11: 2 lần chạy song song, 4 lỗi).
+  // Lần chạy cũ quá 15 phút (function đã chết) thì cho chạy lại.
+  const lastAt = Date.parse(lesson.pipeline_log?.at(-1)?.at ?? '') || 0;
+  const stale = lesson.status === 'processing' && Date.now() - lastAt > 15 * 60_000;
+  // Đổi trạng thái có điều kiện = khoá nguyên tử: chỉ MỘT lần chạy đổi được draft/review → processing
+  const claim = await db().from('lessons').update({ status: 'processing' }).eq('id', lessonId)
+    .in('status', stale ? ['processing'] : ['draft', 'review']).select('id');
+  const claimed = (must(claim) as unknown[]).length > 0;
+  if (!claimed) throw new SkipRun('Bộ từ đang được tạo audio ở một lần chạy khác');
 
   const log = new PipelineLog(lessonId);
   const words = await lessonWords(lessonId);
@@ -60,9 +73,16 @@ export async function runPipeline(lessonId: string, deps: PipelineDeps): Promise
 
   // 1. Phiên âm
   const needIpa = words.filter((w) => w.ipa_source !== 'dict');
+  const dictErrors = new Map<string, number>();
   await mapLimit(needIpa, 5, async (w) => {
+    let ipa: string | null = null;
     try {
-      const ipa = await deps.ipa(w.word);
+      ipa = await deps.ipa(w.word);
+    } catch (e) {
+      const k = (e as Error).message || 'lỗi mạng';
+      dictErrors.set(k, (dictErrors.get(k) ?? 0) + 1);
+    }
+    try {
       if (ipa) {
         await setWord(w.id, { ipa, ipa_source: 'dict' });
         sum.ipaDict++;
@@ -74,6 +94,8 @@ export async function runPipeline(lessonId: string, deps: PipelineDeps): Promise
     }
   });
   log.add('ipa', `Phiên âm: ${sum.ipaDict}/${needIpa.length} từ tra được từ điển, còn lại giữ bản AI`);
+  // Không coi là lỗi của từ (bản AI vẫn dùng được), chỉ ghi 1 dòng để biết từ điển có tới được không
+  if (dictErrors.size) log.add('ipa', `Từ điển không trả lời: ${[...dictErrors].map(([k, n]) => `${k} ×${n}`).join(', ')}`);
   await log.flush();
 
   // 2. Audio: mỗi đoạn ≤25 từ một lần gọi, từ nào cắt không sạch thì tạo lại riêng

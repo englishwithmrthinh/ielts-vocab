@@ -24,6 +24,11 @@ const FADE_S = 0.005;
 const EDGE_S = 0.015;
 const EDGE_MAX_RATIO = 0.12;
 const WIN_S = 0.01;
+/** Mốc ký tự của ElevenLabs hay kết thúc trước khi âm gió cuối (s, sh, ch) tắt hẳn, nhất là khi đọc chậm 0.7.
+ *  Sau khi đệm, nếu mép vẫn còn tiếng (> TAIL_RATIO năng lượng của từ) thì kéo dài thêm từng 10ms, tối đa MAX_EXTEND_S,
+ *  nhưng không bao giờ vượt ranh giới với từ bên cạnh. */
+const TAIL_RATIO = 0.05;
+const MAX_EXTEND_S = 0.45;
 
 export interface Alignment {
   characters: string[];
@@ -135,15 +140,22 @@ export function cutWords(pcm: Int16Array, alignment: Alignment, spans: WordSpan[
     }
     const left = i > 0 && Number.isFinite(bounds[i - 1]!) ? bounds[i - 1]! : 0;
     const right = i < bounds.length && Number.isFinite(bounds[i]!) ? bounds[i]! : pcm.length;
-    const s = Math.max(left, t.start - pad);
-    const e = Math.min(right, t.end + pad);
+    const peakWord = Math.max(1, rms(pcm, t.start, t.end));
+    const win = Math.max(1, Math.round(WIN_S * rate));
+    const maxExt = Math.round(MAX_EXTEND_S * rate);
+    let s = Math.max(left, t.start - pad);
+    let e = Math.min(right, t.end + pad);
+    const eLimit = Math.min(right, e + maxExt);
+    while (e < eLimit && rms(pcm, e - win, e) > TAIL_RATIO * peakWord) e = Math.min(eLimit, e + win);
+    const sLimit = Math.max(left, s - maxExt);
+    while (s > sLimit && rms(pcm, s, s + win) > TAIL_RATIO * peakWord) s = Math.max(sLimit, s - win);
     const seg = pcm.slice(s, e);
     for (let k = 0; k < Math.min(fade, seg.length); k++) {
       const g = k / fade;
       seg[k] = Math.round(seg[k]! * g);
       seg[seg.length - 1 - k] = Math.round(seg[seg.length - 1 - k]! * g);
     }
-    const peak = Math.max(1, rms(pcm, t.start, t.end));
+    const peak = peakWord;
     const edgeLoud = rms(seg, fade, fade + edge) / peak > EDGE_MAX_RATIO || rms(seg, seg.length - fade - edge, seg.length - fade) / peak > EDGE_MAX_RATIO;
     return { index: t.span.index, startSample: s, endSample: e, pcm: seg, edgeLoud, speechSeconds: (t.end - t.start) / rate };
   });

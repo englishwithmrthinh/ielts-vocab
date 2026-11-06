@@ -31,6 +31,7 @@ export default function ReviewPage() {
   const [notice, setNotice] = useState('');
   const [success, setSuccess] = useState('');
   const [redraw, setRedraw] = useState<Word | null>(null);
+  const [starting, setStarting] = useState(false);
 
   const load = useCallback(() => adminApi.lessonDetail(id).then(setData, setError), [id]);
   useEffect(() => {
@@ -78,12 +79,16 @@ export default function ReviewPage() {
   const editable = lesson.status !== 'processing';
 
   const run = async () => {
+    if (starting) return; // chống bấm 2 lần (server cũng có khoá)
+    setStarting(true);
     setError(null);
     try {
       await adminApi.runPipeline(lesson.id);
       setData({ ...data, lesson: { ...lesson, status: 'processing', pipeline_log: [] } });
     } catch (e) {
       setError(e);
+    } finally {
+      setTimeout(() => setStarting(false), 3000);
     }
   };
 
@@ -112,11 +117,11 @@ export default function ReviewPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {lesson.status === 'draft' && <Button onClick={run}>Tạo audio</Button>}
+          {lesson.status === 'draft' && <Button onClick={run} disabled={starting}>{starting ? 'Đang bắt đầu…' : 'Tạo audio'}</Button>}
           {lesson.status === 'published' && <Button variant="secondary" onClick={() => setPublishing(true)}>Thêm học sinh…</Button>}
           {lesson.status === 'review' && (
             <>
-              {missingAudio > 0 && <Button variant="secondary" onClick={run}>Tạo audio còn thiếu</Button>}
+              {missingAudio > 0 && <Button variant="secondary" onClick={run} disabled={starting}>Tạo audio còn thiếu</Button>}
               <Button onClick={() => setPublishing(true)}>Phát hành…</Button>
             </>
           )}

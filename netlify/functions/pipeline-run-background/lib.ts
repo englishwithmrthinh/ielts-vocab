@@ -51,8 +51,12 @@ export class PipelineLog {
 // ---------------- Phiên âm: Free Dictionary API ----------------
 export async function lookupIpa(word: string, fetchImpl: typeof fetch = fetch): Promise<string | null> {
   if (word.includes(' ')) return null; // cụm từ: giữ bản AI
-  const res = await fetchImpl(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
-  if (!res.ok) return null;
+  const res = await fetchImpl(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`, {
+    headers: { accept: 'application/json', 'user-agent': 'ielts-vocab/1.0 (teacher tool)' },
+    signal: AbortSignal.timeout(6000),
+  });
+  if (res.status === 404) return null; // từ điển không có từ này
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = (await res.json()) as { phonetic?: string; phonetics?: { text?: string; audio?: string }[] }[];
   for (const entry of data) {
     // ưu tiên phiên âm có kèm audio Anh-Anh/Anh-Mỹ, rồi tới bất kỳ
