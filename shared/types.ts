@@ -220,7 +220,15 @@ export interface Question {
   /** L: blanks[].id = wordId (khớp perWord) */
   blanks?: { id: string; sentence: string }[]; // L
   bank?: Option[];                             // L
+  /** Chấm nhanh trên trình duyệt (shared/check.ts → quickGrade). Server vẫn chấm chính thức. */
+  check?: QuickCheck;
 }
+
+/** Mã băm đáp án: option → h là chuỗi · text → h là chuỗi · match → h[wordId] */
+export type QuickCheck =
+  | { kind: 'option'; salt: string; h: string }
+  | { kind: 'text'; salt: string; h: string }
+  | { kind: 'match'; salt: string; h: Record<UUID, string> };
 
 /** Học sinh gửi lên. Dạng nào dùng trường nào:
  *  A B C E J → optionId · F G H I K M → text · D L → matches */

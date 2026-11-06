@@ -21,6 +21,7 @@ import { dueWords, fillerWords, selectWords } from '../../shared/assignment';
 import { buildQuestion, chooseFixType, chooseType, grade, isTypingType, planNext, type AnswerKey, type QuestionPayload } from '../../shared/questions';
 import { daysLate, scoreForDaysLate, scoreIfSubmittedAt } from '../../shared/lateness';
 import { vnDate, weekStart, addDays, vnStartOfDay } from '../../shared/time';
+import { makeCheck } from '../../shared/check';
 import { requireStudent } from '../lib/auth';
 import { errorResponse, HttpError, json, readJson } from '../lib/http';
 import { db, must } from '../lib/supabase';
@@ -200,14 +201,15 @@ async function next(studentId: string, assignmentId: string, extra: boolean): Pr
 
   if (!plan) { await sync; return { question: null, phase: 'done' }; }
   const built = buildQuestion(plan.type, plan.words, pool, rng);
-  const stored: StoredPayload = { ...built.payload, mode, wordIds: built.wordIds };
+  const stored: StoredPayload = { ...built.payload, check: await makeCheck(built.key), mode, wordIds: built.wordIds };
   const [insR] = await Promise.all([
     db().from('pending_questions').insert({ student_id: studentId, assignment_id: a.id, payload: stored, answer_key: built.key })
       .select('qid').single(),
     sync,
   ]);
   const row = must(insR) as { qid: string };
-  return { question: { ...built.payload, qid: row.qid, mode, progress }, phase };
+  const { mode: _m, wordIds: _ids, ...pub } = stored;
+  return { question: { ...pub, qid: row.qid, mode, progress }, phase };
 }
 
 // ---------------- answer ----------------
