@@ -5,7 +5,10 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
-  included_files = []
+  # sharp có file nhị phân, không gói bằng esbuild được (pipeline cắt ảnh của Claude 3)
+  external_node_modules = ["sharp"]
+  # Prompt vẽ ảnh được đọc lúc chạy
+  included_files = ["prompts/**"]
 
 # API: mỗi function tự khai báo đường dẫn /api/... trong `export const config = { path }`.
 # Mọi đường dẫn khác trả về app React (SPA).

@@ -67,6 +67,10 @@ export const config: Config = { path: '/api/admin/students' };
 
 Các hàm có sẵn trong `netlify/lib/auth.ts`: `requireStudent`, `requireAdmin`, `hashPin`, `randomPin`, `isValidPin`.
 
+Phát hành buổi: `publishLesson(lessonId, studentIds)` trong `netlify/lib/publish.ts` → `{ assigned, skipped, dueIdx }`.
+
+Thuật toán (hàm thuần, dùng được ở cả server và trình duyệt): `shared/srs.ts` (`applyAnswer`), `shared/grading.ts` (`gradeTyping`, `HINT_TEXT`), `shared/lateness.ts`, `shared/milestones.ts`.
+
 ## API đã có
 
 | Đường dẫn | Việc |
