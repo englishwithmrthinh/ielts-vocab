@@ -1,12 +1,14 @@
 // Lớp gọi API khu học sinh. Phiên đăng nhập = cookie httpOnly (server đặt), không lưu token ở trình duyệt.
 // VITE_USE_MOCK=true → dùng dữ liệu giả trong ./mock, không cần backend.
 import type {
-  AnswerResult, AnswerSubmission, HomeResponse, NextQuestionResponse, PreviewResponse,
-  StartAssignmentResponse, SubmitResponse,
+  AddWordResponse, AnswerResult, AnswerSubmission, HomeResponse, MyWordsResponse, NextQuestionResponse, PreviewResponse,
+  ProgressResponse, StartAssignmentResponse, SubmitResponse,
 } from '@shared/types';
 import { api, ApiCallError } from '../lib/api';
+import { COPY } from './lib/copy';
 import { mockHome } from './mock/home';
-import { mockLesson } from './mock/lesson';
+import { mockLesson, mockPractice } from './mock/lesson';
+import { mockAddWord, mockMyWords, mockProgress } from './mock/progress';
 
 export const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 
@@ -132,6 +134,50 @@ export const studentApi = {
     return api<SubmitResponse>('POST', '/api/assignment/submit', { assignmentId });
   },
 
+  // ---- Giai đoạn 3 ----
+  async progress(): Promise<ProgressResponse> {
+    if (USE_MOCK) {
+      await delay();
+      return mockProgress();
+    }
+    return api<ProgressResponse>('GET', '/api/progress');
+  },
+
+  async myWords(): Promise<MyWordsResponse> {
+    if (USE_MOCK) {
+      await delay();
+      return mockMyWords();
+    }
+    return api<MyWordsResponse>('GET', '/api/my-words');
+  },
+
+  /** Thêm từ: có trong kho tổng → 'linked' (gán luôn); chưa có → 'pending' (Chờ duyệt). */
+  async addWord(text: string, note: string | null): Promise<AddWordResponse> {
+    if (USE_MOCK) {
+      await delay(400);
+      return mockAddWord(text, note);
+    }
+    return api<AddWordResponse>('POST', '/api/my-words', { text: text.trim(), note: note ?? undefined });
+  },
+
+  // ---- Luyện thêm: không đổi hộp, không tính điểm, câu đúng +2 XP ----
+  async practiceNext(): Promise<NextQuestionResponse> {
+    if (USE_MOCK) {
+      await delay(150);
+      return mockPractice.next();
+    }
+    return api<NextQuestionResponse>('GET', '/api/practice/next');
+  },
+
+  /** Trả lời câu luyện thêm: dùng chung POST /api/answer, không gửi assignmentId */
+  async practiceAnswer(a: AnswerSubmission): Promise<AnswerResult> {
+    if (USE_MOCK) {
+      await delay(200);
+      return mockPractice.answer(a);
+    }
+    return api<AnswerResult>('POST', '/api/answer', a);
+  },
+
   /** Nút "Câu này có 2 đáp án đúng" */
   async flag(qid: string): Promise<void> {
     if (USE_MOCK) {
@@ -144,6 +190,10 @@ export const studentApi = {
 
 /** Câu báo lỗi cho học sinh: ưu tiên câu server trả về */
 export function errorText(e: unknown): string {
-  if (e instanceof ApiCallError) return e.message;
-  return 'Không kết nối được. Kiểm tra mạng rồi thử lại nhé.';
+  if (e instanceof ApiCallError) {
+    if (e.status === 401 && e.code !== 'wrong_credentials') return COPY.errors.session_expired;
+    if (e.status >= 500) return COPY.errors.server;
+    return e.message;
+  }
+  return COPY.errors.offline;
 }
