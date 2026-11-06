@@ -198,7 +198,9 @@ export interface Question {
   qid: string;
   type: QType;
   mode: AnswerMode;
-  progress: { done: number; required: number; extra: number };
+  /** done: câu BẮT BUỘC đã làm (không gồm câu ôn lại từ sai, không vượt required).
+   *  fixLeft: số từ làm sai còn phải làm đúng lại trước khi được Nộp */
+  progress: { done: number; required: number; extra: number; fixLeft?: number };
   prompt: {
     word?: string;
     meaningVi?: string;
