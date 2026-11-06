@@ -17,7 +17,7 @@ import { monthKey, vnDate, vnStartOfDay, weekStart } from '../../shared/time';
 import { requireStudent } from '../lib/auth';
 import { errorResponse, HttpError, json, readJson } from '../lib/http';
 import { db, must } from '../lib/supabase';
-import { distractorPool, loadPlan, loadStudentWords, streakOf, toCard, toQuiz } from '../lib/learn';
+import { loadPlan, loadStudentWords, poolWords, streakOf, toCard, toQuiz, withPool } from '../lib/learn';
 import { nextMilestoneIdx } from '../lib/publish';
 
 const ALL_BADGES: BadgeCode[] = [
@@ -27,7 +27,13 @@ const ALL_BADGES: BadgeCode[] = [
 
 async function progress(studentId: string): Promise<ProgressResponse> {
   const t = new Date().toISOString();
-  const [words, plan] = await Promise.all([loadStudentWords(studentId), loadPlan(studentId, t)]);
+  const since = vnStartOfDay(weekStart(vnDate(t)));
+  const [words, plan, xpRes, badgeRes, wkRes] = await Promise.all([
+    loadStudentWords(studentId), loadPlan(studentId, t),
+    db().from('xp_events').select('amount').eq('student_id', studentId),
+    db().from('badges').select('code,earned_at').eq('student_id', studentId),
+    db().from('xp_events').select('student_id,amount, s:students(name)').gte('created_at', since),
+  ]);
   const wordsByBox: ProgressResponse['wordsByBox'] = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, pass: 0 };
   for (const w of words) wordsByBox[w.box === PASS_BOX ? 'pass' : (String(w.box) as '1')]++;
 
@@ -36,22 +42,18 @@ async function progress(studentId: string): Promise<ProgressResponse> {
     date: m.date, kind: m.kind, status: plan.status.get(m.id)!, score_pct: plan.assignments.get(m.id)?.score_pct ?? null,
   }));
 
-  const [xpRes, badgeRes] = await Promise.all([
-    db().from('xp_events').select('amount').eq('student_id', studentId),
-    db().from('badges').select('code,earned_at').eq('student_id', studentId),
-  ]);
   const xpTotal = (must(xpRes) as { amount: number }[]).reduce((n, x) => n + x.amount, 0);
   const earned = new Map((must(badgeRes) as { code: BadgeCode; earned_at: string }[]).map((b) => [b.code, b.earned_at]));
 
   // Top 5 tuần (Thứ 2 → nay), chỉ học sinh đang hoạt động
-  const since = vnStartOfDay(weekStart(vnDate(t)));
-  const wk = must(await db().from('xp_events').select('student_id,amount').gte('created_at', since)) as { student_id: string; amount: number }[];
+  const wk = must(wkRes) as unknown as { student_id: string; amount: number; s: { name: string } | null }[];
   const sums = new Map<string, number>();
-  for (const x of wk) sums.set(x.student_id, (sums.get(x.student_id) ?? 0) + x.amount);
+  const names = new Map<string, string>();
+  for (const x of wk) {
+    sums.set(x.student_id, (sums.get(x.student_id) ?? 0) + x.amount);
+    if (x.s) names.set(x.student_id, x.s.name);
+  }
   const top = [...sums.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
-  const names = top.length
-    ? new Map((must(await db().from('students').select('id,name').in('id', top.map(([id]) => id))) as { id: string; name: string }[]).map((s) => [s.id, s.name]))
-    : new Map<string, string>();
 
   return {
     wordsByBox, wordsTotal: words.length, streak: streakOf(plan), xpTotal, calendar,
@@ -61,7 +63,11 @@ async function progress(studentId: string): Promise<ProgressResponse> {
 }
 
 async function myWords(studentId: string): Promise<MyWordsResponse> {
-  const words = await loadStudentWords(studentId);
+  const [words, pendR] = await Promise.all([
+    loadStudentWords(studentId),
+    db().from('suggestions').select('id,text,note,created_at').eq('student_id', studentId).eq('status', 'pending')
+      .order('created_at', { ascending: false }),
+  ]);
   const ids = words.map((w) => w.word_id);
   const lw = ids.length
     ? (must(await db().from('lesson_words').select('word_id,l:lessons(number,status)').in('word_id', ids)) as unknown as
@@ -73,10 +79,7 @@ async function myWords(studentId: string): Promise<MyWordsResponse> {
     const cur = lessonOf.get(r.word_id);
     if (cur === undefined || r.l.number < cur) lessonOf.set(r.word_id, r.l.number);
   }
-  const pending = must(
-    await db().from('suggestions').select('id,text,note,created_at').eq('student_id', studentId).eq('status', 'pending')
-      .order('created_at', { ascending: false }),
-  ) as MyWordsResponse['pending'];
+  const pending = must(pendR) as MyWordsResponse['pending'];
   return {
     words: words
       .filter((w) => w.introduced || w.box > 1)
@@ -105,12 +108,16 @@ async function addWord(studentId: string, text: string, note?: string): Promise<
 
 async function practiceNext(studentId: string): Promise<NextQuestionResponse> {
   // Xoá câu luyện thêm còn treo (không gắn bài) để không tồn đọng
-  must(await db().from('pending_questions').delete().eq('student_id', studentId).is('assignment_id', null));
-  const words = (await loadStudentWords(studentId)).filter((w) => w.introduced || w.box > 1);
+  const [, all, extra] = await Promise.all([
+    db().from('pending_questions').delete().eq('student_id', studentId).is('assignment_id', null).then(must),
+    loadStudentWords(studentId),
+    poolWords(),
+  ]);
+  const words = all.filter((w) => w.introduced || w.box > 1);
   if (!words.length) return { question: null, phase: 'done' };
   const sorted = [...words].sort((a, b) => a.box - b.box || (a.last_answered_at ?? '').localeCompare(b.last_answered_at ?? ''));
   const pick = sorted[Math.floor(Math.random() * Math.min(10, sorted.length))]!;
-  const pool = await distractorPool(words.map(toQuiz));
+  const pool = withPool(words.map(toQuiz), extra);
   const w = toQuiz(pick);
   const type = chooseType(w, null, pool.length, Math.random, ['D', 'L']);
   const built = buildQuestion(type, [w], pool, Math.random);
