@@ -86,7 +86,7 @@ export function ImagesSection({ lessonId, words, onUploaded }: { lessonId: strin
     setResult((r) => ({ ...r, [g.index]: { ok: true, text: '' } }));
     try {
       const r = await adminApi.uploadGrid(lessonId, g.index, dataUrl);
-      setResult((x) => ({ ...x, [g.index]: { ok: true, text: `Đã cắt lưới ${r.layout} thành ${r.updated} ảnh. Kiểm tra từng thẻ bên dưới.` } }));
+      setResult((x) => ({ ...x, [g.index]: { ok: true, text: `Đã cắt lưới ${r.layout}: ${r.updated} ảnh mới${r.kept ? `, giữ ảnh cũ cho ${r.kept} từ đã có` : ''}. Kiểm tra từng thẻ bên dưới.` } }));
       onUploaded();
     } catch (e) {
       setResult((x) => ({ ...x, [g.index]: { ok: false, text: (e as Error).message } }));

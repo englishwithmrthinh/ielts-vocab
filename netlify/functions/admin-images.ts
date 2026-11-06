@@ -3,7 +3,8 @@
  *
  * GET  /api/admin/images/prompts?lesson_id=…   → { grids: GridTask[] }   prompt lưới đã điền sẵn
  * GET  /api/admin/images/single-prompt?word_id=… → { prompt }
- * POST /api/admin/images/grid   { lesson_id, index, image }  → { updated, layout }  hoặc 422 nếu cắt không được
+ * POST /api/admin/images/grid   { lesson_id, index, image }  → { updated, kept, layout, ms }  hoặc 422 nếu cắt không được
+ *      Chỉ ghi ảnh cho từ chưa có ảnh; từ dùng lại từ kho giữ ảnh cũ.
  * POST /api/admin/images/single { word_id, image }           → { word }
  *
  * `image` là data URL / base64 (trình duyệt đã thu cạnh dài ≤2048px để dưới giới hạn ~6 MB của Functions).
@@ -89,18 +90,27 @@ export default async (req: Request): Promise<Response> => {
         const extra = grid.foundCols && grid.foundRows && grid.foundCols * grid.foundRows === g.cols * g.rows ? ` (${grid.reason.toLowerCase()})` : '';
         throw new HttpError(422, 'grid_not_found', `${found}${extra}, cần ${g.cols}×${g.rows} = ${g.cols * g.rows} ô. Vẽ lại hoặc tải ảnh khác.`);
       }
+      const started = Date.now();
       const cells = await cutCells(img, grid, g.words.length);
-      // Ghi ảnh gốc trước; ảnh từng từ ghi song song có giới hạn
-      const infographic = await upload(`infographic/${body.lesson_id}-${g.index + 1}.webp`, await toInfographic(img), 'image/webp');
-      await mapLimit(g.words, 5, async (w, i) => {
-        const imageUrl = await upload(`images/${w.id}.webp`, cells[i]!, 'image/webp');
-        must(await db().from('words').update({ image_url: imageUrl }).eq('id', w.id));
+      // Chỉ ghi ảnh cho từ CHƯA có ảnh (từ dùng lại giữ ảnh cũ — học sinh đã quen).
+      // Ảnh gốc + ảnh từng từ ghi song song tối đa 6.
+      const targets = g.words.map((w, i) => ({ w, cell: cells[i]! })).filter((t) => !t.w.image_url);
+      let infographic = '';
+      await mapLimit([null, ...targets], 6, async (t) => {
+        if (!t) {
+          infographic = await upload(`infographic/${body.lesson_id}-${g.index + 1}.webp`, await toInfographic(img), 'image/webp');
+          return;
+        }
+        const imageUrl = await upload(`images/${t.w.id}.webp`, t.cell, 'image/webp');
+        must(await db().from('words').update({ image_url: imageUrl }).eq('id', t.w.id));
       });
       const lesson = must(await db().from('lessons').select('infographic_urls').eq('id', body.lesson_id).single()) as { infographic_urls: string[] };
       const urls = [...(lesson.infographic_urls ?? [])];
       urls[g.index] = infographic;
       must(await db().from('lessons').update({ infographic_urls: urls.map((u) => u ?? '') }).eq('id', body.lesson_id));
-      return json({ updated: g.words.length, layout: `${grid.cols.length}×${grid.rows.length}` });
+      const ms = Date.now() - started;
+      console.log('upload lưới', body.lesson_id, g.index, `${targets.length} ảnh`, `${ms}ms`);
+      return json({ updated: targets.length, kept: g.words.length - targets.length, layout: `${grid.cols.length}×${grid.rows.length}`, ms });
     }
 
     if (path === '/api/admin/images/single' && req.method === 'POST') {

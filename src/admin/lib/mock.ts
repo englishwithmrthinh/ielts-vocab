@@ -205,8 +205,9 @@ export async function mockApi<T>(method: string, path: string, body?: unknown): 
   }
   if (route === 'POST /api/admin/images/grid') {
     if (String(b.image).length < 5000) throw new ApiCallError(422, 'grid_not_found', 'Ảnh có 4×4 ô, cần 4×5 = 20 ô. Vẽ lại hoặc tải ảnh khác.');
-    demoDetail.words.forEach((w, i) => (w.image_url = demoImage(i + 3)));
-    return ok({ updated: demoDetail.words.length, layout: '5×4' });
+    const miss = demoDetail.words.filter((w) => !w.image_url);
+    miss.forEach((w, i) => (w.image_url = demoImage(i + 3)));
+    return ok({ updated: miss.length, kept: demoDetail.words.length - miss.length, layout: '5×4', ms: 900 });
   }
   if (route === 'POST /api/admin/images/single') {
     const w = demoDetail.words.find((x) => x.id === b.word_id)!;

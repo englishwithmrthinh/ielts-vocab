@@ -69,7 +69,7 @@ export const adminApi = {
   imagePrompts: (lessonId: string) => call<{ grids: GridTask[] }>('GET', `/api/admin/images/prompts?lesson_id=${lessonId}`),
   singlePrompt: (wordId: string) => call<{ prompt: string }>('GET', `/api/admin/images/single-prompt?word_id=${wordId}`),
   uploadGrid: (lessonId: string, index: number, image: string) =>
-    call<{ updated: number; layout: string }>('POST', '/api/admin/images/grid', { lesson_id: lessonId, index, image }),
+    call<{ updated: number; kept: number; layout: string; ms: number }>('POST', '/api/admin/images/grid', { lesson_id: lessonId, index, image }),
   uploadSingle: (wordId: string, image: string) => call<{ word: Word }>('POST', '/api/admin/images/single', { word_id: wordId, image }),
   publish: (lessonId: string, studentIds: string[]) =>
     call<PublishResult>('POST', '/api/admin/lessons/publish', { lesson_id: lessonId, student_ids: studentIds }),
