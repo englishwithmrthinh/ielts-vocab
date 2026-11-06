@@ -1,5 +1,5 @@
 /**
- * Chạy pipeline cho một buổi: phiên âm → audio → ảnh. Chỉ tạo phần CÒN THIẾU,
+ * Chạy pipeline cho một buổi: phiên âm → audio (ảnh: giáo viên tải lên). Chỉ tạo phần CÒN THIẾU,
  * nên chạy lại an toàn (từ dùng lại từ kho đã có media thì bỏ qua).
  * Lỗi ở từ nào thì ghi nhật ký và chạy tiếp, không dừng cả buổi.
  *
@@ -111,9 +111,10 @@ export async function runPipeline(lessonId: string, deps: PipelineDeps): Promise
   log.add('audio', `Audio: tạo ${sum.audioMade}/${needAudio.length} từ (${sum.audioRedo} từ phải tạo lại riêng)`);
   await log.flush();
 
-  // 3. Ảnh: lưới cho CẢ buổi (để infographic đủ ô), chỉ ghi ảnh cho từ chưa có
+  // 3. Ảnh: mặc định giáo viên vẽ tay bằng app Gemini rồi tải lên (admin-images).
+  //    IMAGE_MODE=auto mới gọi Gemini API (tắt sẵn; API ảnh không có gói miễn phí).
   const infographics: string[] = [];
-  if (words.some((w) => !w.image_url)) {
+  if (process.env.IMAGE_MODE === 'auto' && words.some((w) => !w.image_url)) {
     let offset = 0;
     for (const [gi, plan] of gridPlan(words.length).entries()) {
       const group = words.slice(offset, offset + plan.count);
@@ -164,7 +165,9 @@ export async function runPipeline(lessonId: string, deps: PipelineDeps): Promise
       await log.flush();
     }
   }
-  log.add('image', `Ảnh: ${sum.imagesMade} ảnh mới · lưới đạt lần đầu ${sum.grid.firstTry}/${sum.grid.grids}, vẽ lại ${sum.grid.redrawn}, chuyển ảnh lẻ ${sum.grid.fellBackToSingles}`);
+  if (process.env.IMAGE_MODE === 'auto') {
+    log.add('image', `Ảnh: ${sum.imagesMade} ảnh mới · lưới đạt lần đầu ${sum.grid.firstTry}/${sum.grid.grids}, vẽ lại ${sum.grid.redrawn}, chuyển ảnh lẻ ${sum.grid.fellBackToSingles}`);
+  }
 
   log.add('done', `Xong${sum.errors ? `, ${sum.errors} lỗi — xem và tạo lại ở màn Duyệt` : ''}`);
   await log.flush({ status: 'review', ...(infographics.length ? { infographic_urls: infographics } : {}) });

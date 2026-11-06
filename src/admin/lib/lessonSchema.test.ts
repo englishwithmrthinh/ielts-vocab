@@ -51,6 +51,17 @@ describe('parseLessonJson', () => {
   });
 });
 
+describe('seed của Gemini', () => {
+  it('3 buổi seed hợp lệ, không lỗi', async () => {
+    const { readFileSync } = await import('node:fs');
+    for (const f of ['lesson-1', 'lesson-2', 'lesson-3']) {
+      const r = parseLessonJson(readFileSync(new URL(`../../../seed/${f}.json`, import.meta.url), 'utf8'));
+      expect(r.ok, f).toBe(true);
+      expect(r.words, f).toHaveLength(20);
+    }
+  });
+});
+
 describe('containsExact', () => {
   it('khớp theo ranh giới từ', () => {
     expect(containsExact('Take care of the environment.', 'environment')).toBe(true);

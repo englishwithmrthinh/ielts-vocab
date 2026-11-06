@@ -66,6 +66,11 @@ export const adminApi = {
   redoWord: (wordId: string, what: 'audio' | 'image') => call<unknown>('POST', '/api/admin/pipeline/word', { word_id: wordId, what }),
   updateWord: (id: string, patch: Partial<Word>) => call<{ word: Word }>('POST', '/api/admin/words/update', { id, patch }),
   dropImage: (id: string) => call<{ word: Word }>('POST', '/api/admin/words/drop-image', { id }),
+  imagePrompts: (lessonId: string) => call<{ grids: GridTask[] }>('GET', `/api/admin/images/prompts?lesson_id=${lessonId}`),
+  singlePrompt: (wordId: string) => call<{ prompt: string }>('GET', `/api/admin/images/single-prompt?word_id=${wordId}`),
+  uploadGrid: (lessonId: string, index: number, image: string) =>
+    call<{ updated: number; layout: string }>('POST', '/api/admin/images/grid', { lesson_id: lessonId, index, image }),
+  uploadSingle: (wordId: string, image: string) => call<{ word: Word }>('POST', '/api/admin/images/single', { word_id: wordId, image }),
   publish: (lessonId: string, studentIds: string[]) =>
     call<PublishResult>('POST', '/api/admin/lessons/publish', { lesson_id: lessonId, student_ids: studentIds }),
 };
@@ -73,3 +78,5 @@ export const adminApi = {
 export interface LessonDetail { lesson: Lesson; words: Word[]; studentIds: string[] }
 
 export interface PublishResult { assigned: number; skipped: number; dueIdx: number; students: number }
+
+export interface GridTask { index: number; cols: number; rows: number; count: number; wordIds: string[]; missing: number; prompt: string }

@@ -2,7 +2,9 @@
  * Kiểm tra JSON từ skill (mục 5 đặc tả) — dùng cả ở trình duyệt (Tạo buổi)
  * và ở server (admin-lessons). Không phụ thuộc DOM hay Node.
  *
- * Khi Gemini đưa `skill/schema.json` vào repo, các luật ở đây phải khớp với file đó.
+ * Đối chiếu với skill/schema.json (Gemini): luật bắt buộc ở đây là LỖI; các luật
+ * định dạng còn lại của schema (nghĩa ≤6 tiếng, ipa /…/, ví dụ 8–18 từ, ≤3 dạng từ,
+ * gợi ý ảnh ≥10 ký tự) là LƯU Ý — vẫn cho tạo buổi (sếp đã duyệt cách này).
  */
 import type { PartOfSpeech, WordFamilyItem } from '../../../shared/types';
 
@@ -113,9 +115,11 @@ export function parseLessonJson(text: string): ParseResult {
 
     const meaning = str(raw.meaning_vi);
     if (!meaning) add('meaning_vi', 'Thiếu nghĩa tiếng Việt.');
+    else if (meaning.split(/\s+/).length > 6) add('meaning_vi', 'Nghĩa nên ngắn, tối đa 6 tiếng.', 'warning');
 
     const ipa = str(raw.ipa);
     if (!ipa) add('ipa', 'Thiếu phiên âm (hệ thống sẽ tự tra từ điển).', 'warning');
+    else if (!/^\/.+\/$/.test(ipa)) add('ipa', 'Phiên âm nên đặt trong hai dấu /.../.', 'warning');
 
     const syllables = str(raw.syllables);
     if (!syllables) add('syllables', 'Thiếu phần tách âm tiết.', 'warning');
@@ -125,12 +129,17 @@ export function parseLessonJson(text: string): ParseResult {
     const example = str(raw.example);
     if (!example) add('example', 'Thiếu câu ví dụ (dạng J, K, L sẽ không dùng được).', 'warning');
     else if (word && !containsExact(example, word)) add('example', `Câu ví dụ không chứa đúng nguyên dạng "${word}".`);
+    else {
+      const n = example.split(/\s+/).length;
+      if (n < 8 || n > 18) add('example', `Câu ví dụ nên dài 8–18 từ (đang có ${n}).`, 'warning');
+    }
 
     const familyRaw = raw.word_family ?? [];
     const family: WordFamilyItem[] = [];
     if (!Array.isArray(familyRaw)) {
       add('word_family', '"word_family" phải là danh sách [ ... ] (có thể rỗng).');
     } else {
+      if (familyRaw.length > 3) add('word_family', `Tối đa 3 dạng từ (đang có ${familyRaw.length}).`, 'warning');
       familyRaw.forEach((f, fi) => {
         const at = `word_family[${fi + 1}]`;
         if (!isObj(f)) return add(at, 'Mục này không phải object.');
@@ -150,7 +159,9 @@ export function parseLessonJson(text: string): ParseResult {
 
     const hint = str(raw.image_hint);
     if (!hint) add('image_hint', 'Thiếu gợi ý vẽ ảnh.', 'warning');
-    else if (/[^\x00-\x7F]/.test(hint)) add('image_hint', 'Gợi ý vẽ ảnh nên viết bằng tiếng Anh.', 'warning');
+    else if (/[À-ỹĐđ]/.test(hint) && /[ăâđêôơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]/i.test(hint))
+      add('image_hint', 'Gợi ý vẽ ảnh nên viết bằng tiếng Anh.', 'warning');
+    else if (hint.length < 10) add('image_hint', 'Gợi ý vẽ ảnh quá ngắn (tối thiểu 10 ký tự).', 'warning');
 
     if (word && pos) {
       const key = `${normWord(word)}|${pos}`;

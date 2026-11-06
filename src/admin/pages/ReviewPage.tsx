@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { PipelineLogEntry, Student, Word } from '@shared/types';
 import Infographic from '../../shared-ui/Infographic';
+import { ImagesSection, SingleImageDialog } from '../components/ImageTools';
 import { adminApi, type LessonDetail, type PublishResult } from '../lib/adminApi';
 import { Badge, Button, Card, ErrorBox, inputCls } from '../ui';
 
@@ -16,7 +17,7 @@ const STATUS = {
 const STEP_PCT: Record<PipelineLogEntry['step'], number> = { validate: 5, ipa: 20, audio: 50, image: 90, done: 100, error: -1 };
 const REDO_TIMEOUT_MS = 120_000;
 
-type Pending = Record<string, { what: 'audio' | 'image'; before: string | null; since: number }>;
+type Pending = Record<string, { what: 'audio'; before: string | null; since: number }>;
 
 export default function ReviewPage() {
   const { id = '' } = useParams();
@@ -27,6 +28,7 @@ export default function ReviewPage() {
   const [publishing, setPublishing] = useState(false);
   const [notice, setNotice] = useState('');
   const [success, setSuccess] = useState('');
+  const [redraw, setRedraw] = useState<Word | null>(null);
 
   const load = useCallback(() => adminApi.lessonDetail(id).then(setData, setError), [id]);
   useEffect(() => {
@@ -49,12 +51,12 @@ export default function ReviewPage() {
     let changed = false;
     for (const [wid, p] of Object.entries(pending)) {
       const w = data.words.find((x) => x.id === wid);
-      const now = p.what === 'audio' ? w?.audio_url ?? null : w?.image_url ?? null;
+      const now = w?.audio_url ?? null;
       const timedOut = Date.now() - p.since > REDO_TIMEOUT_MS;
       if ((now && now !== p.before) || timedOut) {
         delete next[wid];
         changed = true;
-        if (timedOut && !(now && now !== p.before)) setNotice(`Chưa tạo lại được ${p.what === 'audio' ? 'audio' : 'ảnh'} cho "${w?.word}". Thử lại sau ít phút.`);
+        if (timedOut && !(now && now !== p.before)) setNotice(`Chưa tạo lại được audio cho "${w?.word}". Thử lại sau ít phút.`);
       }
     }
     if (changed) setPending(next);
@@ -83,11 +85,11 @@ export default function ReviewPage() {
     }
   };
 
-  const redo = async (w: Word, what: 'audio' | 'image') => {
+  const redoAudio = async (w: Word) => {
     setNotice('');
     try {
-      await adminApi.redoWord(w.id, what);
-      setPending((p) => ({ ...p, [w.id]: { what, before: what === 'audio' ? w.audio_url : w.image_url, since: Date.now() } }));
+      await adminApi.redoWord(w.id, 'audio');
+      setPending((p) => ({ ...p, [w.id]: { what: 'audio', before: w.audio_url, since: Date.now() } }));
     } catch (e) {
       setError(e);
     }
@@ -108,11 +110,11 @@ export default function ReviewPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {lesson.status === 'draft' && <Button onClick={run}>Tạo audio & ảnh</Button>}
+          {lesson.status === 'draft' && <Button onClick={run}>Tạo audio</Button>}
           {lesson.status === 'published' && <Button variant="secondary" onClick={() => setPublishing(true)}>Thêm học sinh…</Button>}
           {lesson.status === 'review' && (
             <>
-              {(missingAudio > 0 || missingImage > 0) && <Button variant="secondary" onClick={run}>Chạy lại phần còn thiếu</Button>}
+              {missingAudio > 0 && <Button variant="secondary" onClick={run}>Tạo audio còn thiếu</Button>}
               <Button onClick={() => setPublishing(true)}>Phát hành…</Button>
             </>
           )}
@@ -129,13 +131,13 @@ export default function ReviewPage() {
             {lesson.status === 'processing' && (
               <>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium text-slate-800">Đang tạo phiên âm, audio, ảnh…</span>
+                  <span className="font-medium text-slate-800">Đang tra phiên âm và tạo audio…</span>
                   <span className="text-slate-500">{lastPct}%</span>
                 </div>
                 <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
                   <div className="h-full rounded-full bg-teal-600 transition-all duration-700" style={{ width: `${Math.max(4, lastPct)}%` }} />
                 </div>
-                <p className="mt-2 text-xs text-slate-500">Thường mất 1–3 phút. Có thể rời trang, quá trình vẫn chạy.</p>
+                <p className="mt-2 text-xs text-slate-500">Thường dưới 1 phút. Trong lúc chờ, có thể làm ảnh minh hoạ ở dưới.</p>
               </>
             )}
             <details className={lesson.status === 'processing' ? 'mt-3' : ''} open={lesson.status === 'processing'}>
@@ -160,6 +162,8 @@ export default function ReviewPage() {
           </div>
         )}
 
+        {lesson.status !== 'published' && <ImagesSection lessonId={lesson.id} words={words} onUploaded={load} />}
+
         <div className="flex gap-1 border-b border-slate-200">
           {(['cards', 'infographic'] as const).map((t) => (
             <button
@@ -182,9 +186,10 @@ export default function ReviewPage() {
                 word={w}
                 errors={errorsByWord.get(w.id) ?? []}
                 pending={pending[w.id]?.what}
-                editable={editable && lesson.status !== 'draft'}
-                textEditable={editable}
-                onRedo={(what) => redo(w, what)}
+                editable={editable}
+                audioRedo={editable && lesson.status !== 'draft'}
+                onRedoAudio={() => redoAudio(w)}
+                onRedraw={() => setRedraw(w)}
                 onChanged={replaceWord}
               />
             ))}
@@ -194,6 +199,13 @@ export default function ReviewPage() {
         )}
       </div>
 
+      {redraw && (
+        <SingleImageDialog
+          word={redraw}
+          onClose={() => setRedraw(null)}
+          onDone={(nw) => { replaceWord(nw); setRedraw(null); }}
+        />
+      )}
       {publishing && <PublishDialog detail={data} onClose={() => setPublishing(false)} onDone={(r) => {
             setPublishing(false);
             setSuccess(`Đã gán ${r.assigned} từ cho ${r.students} học sinh${r.skipped ? ` (bỏ qua ${r.skipped} từ đã có)` : ''}. Từ mới đến hạn ở mốc ${r.dueIdx}.`);
@@ -207,10 +219,11 @@ function WordCard(props: {
   index: number;
   word: Word;
   errors: string[];
-  pending?: 'audio' | 'image';
+  pending?: 'audio';
   editable: boolean;
-  textEditable: boolean;
-  onRedo: (what: 'audio' | 'image') => void;
+  audioRedo: boolean;
+  onRedoAudio: () => void;
+  onRedraw: () => void;
   onChanged: (w: Word) => void;
 }) {
   const { word: w, pending } = props;
@@ -247,15 +260,14 @@ function WordCard(props: {
     <li className={`overflow-hidden rounded-xl bg-white ring-1 ${props.errors.length ? 'ring-red-300' : 'ring-slate-200'}`}>
       <div className="relative aspect-[4/3] bg-slate-100">
         {w.image_url ? (
-          <img src={w.image_url} alt="" className={`h-full w-full object-cover ${pending === 'image' ? 'opacity-40' : ''}`} />
+          <img src={w.image_url} alt="" className="h-full w-full object-cover" />
         ) : (
           <div className="grid h-full place-items-center text-sm text-slate-400">Không có ảnh</div>
         )}
         <span className="absolute left-2 top-2 rounded-md bg-white/90 px-1.5 py-0.5 text-xs font-medium text-slate-600">{props.index + 1}</span>
-        {pending === 'image' && <span className="absolute inset-0 grid place-items-center text-sm font-medium text-slate-700">Đang vẽ lại…</span>}
-        {props.editable && pending !== 'image' && (
+        {props.editable && (
           <div className="absolute bottom-2 right-2 flex gap-1">
-            <button type="button" onClick={() => props.onRedo('image')} className="rounded-md bg-white/95 px-2 py-1 text-xs font-medium text-slate-700 shadow-sm hover:bg-white">
+            <button type="button" onClick={props.onRedraw} className="rounded-md bg-white/95 px-2 py-1 text-xs font-medium text-slate-700 shadow-sm hover:bg-white">
               Vẽ lại ảnh từ này
             </button>
             {w.image_url && (
@@ -296,8 +308,8 @@ function WordCard(props: {
         </div>
 
         {!w.audio_url && pending !== 'audio' && <p className="text-xs font-medium text-red-700">Chưa có audio</p>}
-        {props.editable && (
-          <button type="button" disabled={pending === 'audio'} onClick={() => props.onRedo('audio')} className="text-xs font-medium text-teal-700 hover:underline disabled:text-slate-400">
+        {props.audioRedo && (
+          <button type="button" disabled={pending === 'audio'} onClick={props.onRedoAudio} className="text-xs font-medium text-teal-700 hover:underline disabled:text-slate-400">
             {pending === 'audio' ? 'Đang tạo lại audio…' : 'Tạo lại audio từ này'}
           </button>
         )}
@@ -318,7 +330,7 @@ function WordCard(props: {
           <>
             <p className="text-sm text-slate-800">{w.meaning_vi}</p>
             {w.example && <p className="text-sm italic text-slate-600">{w.example}</p>}
-            {props.textEditable && (
+            {props.editable && (
               <button type="button" onClick={() => setEditing(true)} className="text-xs font-medium text-slate-600 hover:underline">Sửa nội dung</button>
             )}
             <ErrorBox error={err} />
@@ -352,6 +364,7 @@ function PublishDialog({ detail, onClose, onDone }: { detail: LessonDetail; onCl
   }, []);
 
   const missingAudio = detail.words.filter((w) => !w.audio_url).length;
+  const missingImage = detail.words.filter((w) => !w.image_url).length;
   const already = detail.lesson.status === 'published';
 
   const go = async () => {
@@ -373,7 +386,8 @@ function PublishDialog({ detail, onClose, onDone }: { detail: LessonDetail; onCl
           {detail.words.length} từ sẽ vào hộp 1 của các bạn được chọn và xuất hiện ở bài kế tiếp.
           {already ? ' Bạn đã có từ thì giữ nguyên tiến độ.' : ' Có thể thêm học sinh sau, nhưng không gỡ được.'}
         </p>
-        {missingAudio > 0 && <p className="mt-2 rounded bg-amber-50 px-2 py-1 text-sm text-amber-900">{missingAudio} từ chưa có audio — dạng câu nghe sẽ bỏ qua các từ này.</p>}
+        {missingAudio > 0 && <p className="mt-2 rounded bg-amber-50 px-2 py-1 text-sm text-amber-900">Còn {missingAudio} từ chưa có audio — dạng câu nghe sẽ bỏ qua các từ này.</p>}
+        {missingImage > 0 && <p className="mt-2 rounded bg-amber-50 px-2 py-1 text-sm text-amber-900">Còn {missingImage} từ chưa có ảnh — dạng câu ảnh sẽ bỏ qua các từ này.</p>}
         <div className="mt-3 flex items-center justify-between text-sm">
           <span className="font-medium text-slate-800">Học sinh nhận ({sel.size})</span>
           <span className="text-xs text-slate-500">Mặc định: các bạn có mặt</span>

@@ -193,6 +193,26 @@ export async function mockApi<T>(method: string, path: string, body?: unknown): 
     w.image_url = null;
     return ok({ word: { ...w } });
   }
+  if (route === 'GET /api/admin/images/prompts') {
+    const n = demoDetail.words.length;
+    return ok({ grids: [{ index: 0, cols: 4, rows: Math.ceil(n / 4), count: n, wordIds: demoDetail.words.map((w) => w.id), missing: demoDetail.words.filter((w) => !w.image_url).length,
+      prompt: `Create ONE image: a perfectly even grid of exactly 4 columns and ${Math.ceil(n / 4)} rows (${n} square illustrations in total).\n\nGRID RULES\n- Pure white gutters of equal width separate every cell…\n\nCELL CONTENTS (left to right, top to bottom)\n` +
+        demoDetail.words.map((w, i) => `${i + 1}. ${w.image_hint}`).join('\n') }] });
+  }
+  if (route === 'GET /api/admin/images/single-prompt') {
+    const w = demoDetail.words.find((x) => x.id === url.searchParams.get('word_id'))!;
+    return ok({ prompt: `Create ONE square illustration in modern flat vector style…\nThe picture illustrates the English word "${w.word}", but the word itself must NOT appear.\nScene: ${w.image_hint}` });
+  }
+  if (route === 'POST /api/admin/images/grid') {
+    if (String(b.image).length < 5000) throw new ApiCallError(422, 'grid_not_found', 'Ảnh có 4×4 ô, cần 4×5 = 20 ô. Vẽ lại hoặc tải ảnh khác.');
+    demoDetail.words.forEach((w, i) => (w.image_url = demoImage(i + 3)));
+    return ok({ updated: demoDetail.words.length, layout: '5×4' });
+  }
+  if (route === 'POST /api/admin/images/single') {
+    const w = demoDetail.words.find((x) => x.id === b.word_id)!;
+    w.image_url = String(b.image);
+    return ok({ word: { ...w } });
+  }
   if (route === 'POST /api/admin/lessons/publish') {
     const l = state.lessons.find((x) => x.id === b.lesson_id);
     if (l) {

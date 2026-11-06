@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
 import { cutCells, detectGrid } from './grid';
@@ -49,6 +50,19 @@ describe('detectGrid', () => {
   it('báo sai khi model vẽ 4×4 thay vì 4×5', async () => {
     const g = await detectGrid(await fakeGrid({ cols: 4, rows: 4 }), { cols: 4, rows: 5 });
     expect(g).toMatchObject({ ok: false, foundCols: 4, foundRows: 4 });
+  });
+
+  it('chấp nhận lưới xoay 5×4 khi cần 4×5 (cùng 20 ô)', async () => {
+    const g = await detectGrid(await fakeGrid({ cols: 5, rows: 4, w: 1500, h: 1200 }), { cols: 4, rows: 5 });
+    expect(g.ok).toBe(true);
+    if (g.ok) expect([g.cols.length, g.rows.length]).toEqual([5, 4]);
+  });
+
+  it('ảnh mẫu thật của Gemini (docs/samples) cắt được', async () => {
+    const img = readFileSync(new URL('../../../docs/samples/gemini-grid-environment-5x4.png', import.meta.url));
+    const g = await detectGrid(img, { cols: 4, rows: 5 });
+    expect(g.ok).toBe(true);
+    if (g.ok) expect(await cutCells(img, g, 20)).toHaveLength(20);
   });
 
   it('báo sai khi không có rãnh trắng', async () => {

@@ -76,7 +76,10 @@ export async function detectGrid(image: Buffer, spec: GridSpec): Promise<GridDet
   const cols = bands(colProfile, w);
   const fail = (reason: string): GridDetect => ({ ok: false, reason, foundRows: rows.length, foundCols: cols.length });
 
-  if (rows.length !== spec.rows || cols.length !== spec.cols) {
+  // Model hay vẽ xoay (5 cột × 4 hàng thay vì 4×5): chấp nhận khi đúng số ô.
+  const exact = rows.length === spec.rows && cols.length === spec.cols;
+  const rotated = rows.length === spec.cols && cols.length === spec.rows;
+  if (!exact && !rotated) {
     return fail(`Lưới vẽ ra ${cols.length}×${rows.length}, cần ${spec.cols}×${spec.rows}`);
   }
   if (skewed(rows) || skewed(cols)) return fail('Các ô lệch kích thước quá nhiều');
@@ -121,7 +124,7 @@ export async function toInfographic(image: Buffer): Promise<Buffer> {
   return sharp(image).resize(1600, 1600, { fit: 'inside', withoutEnlargement: true }).webp({ quality: 82 }).toBuffer();
 }
 
-/** Ảnh lẻ → webp cùng cỡ với ô cắt từ lưới */
+/** Ảnh lẻ → cắt vuông giữa ảnh, webp ≤512px (cùng cỡ ô cắt từ lưới) */
 export async function toCell(image: Buffer, maxSide = 512): Promise<Buffer> {
-  return sharp(image).resize(maxSide, maxSide, { fit: 'inside', withoutEnlargement: true }).webp({ quality: 80 }).toBuffer();
+  return sharp(image).flatten({ background: '#ffffff' }).resize(maxSide, maxSide, { fit: 'cover', position: 'centre', withoutEnlargement: true }).webp({ quality: 80 }).toBuffer();
 }

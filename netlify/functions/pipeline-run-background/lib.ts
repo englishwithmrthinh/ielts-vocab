@@ -105,7 +105,7 @@ export function gridPrompt(words: Pick<Word, 'word' | 'image_hint' | 'meaning_vi
   const empty = cols * rows - words.length;
   return fill(loadPrompt('image-grid.md', FALLBACK_GRID), {
     cols, rows, count: words.length, items,
-    emptyNote: empty > 0 ? `; the last ${empty} cell(s) are plain white` : '',
+    emptyNote: empty > 0 ? `The last ${empty} cell(s) stay empty: plain pastel background, nothing drawn.` : '',
   });
 }
 
