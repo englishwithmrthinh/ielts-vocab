@@ -97,17 +97,18 @@ export default function StudentsPage() {
     run(async () => { await adminApi.deleteStudents(ids); setSelected(new Set()); await load(); });
   };
 
+  // Thẻ in: ô 1 = mã lớp, ô 2 = mã học sinh (ghép lại = mã đăng nhập). Không cấp PIN mới nữa.
+  const classCode = new Map(classes.map((c) => [c.id, (c as { code?: string | null }).code ?? null]));
+  const splitCode = (s: Student): StudentCard => {
+    const pre = (s.class_id && classCode.get(s.class_id)) || (s.birth ? 'HS' : null);
+    if (pre && s.code.startsWith(pre) && s.code.length > pre.length) return { id: s.id, name: s.name, code: pre, pin: s.code.slice(pre.length) };
+    return { id: s.id, name: s.name, code: s.code, pin: '' };
+  };
   const printCards = (ids: string[]) => {
     if (!ids.length) return;
-    const msg =
-      `Cấp PIN mới cho ${ids.length} học sinh để in thẻ?\n\n` +
-      'PIN cũ sẽ hết hiệu lực ngay. Học sinh dùng PIN trên thẻ mới để đăng nhập.';
-    if (!confirm(msg)) return;
-    run(async () => {
-      const { cards } = await adminApi.resetPins(ids);
-      setPrintCards(cards);
-      nav('/admin/in-the');
-    });
+    const set = new Set(ids);
+    setPrintCards((students ?? []).filter((s) => set.has(s.id)).map(splitCode).sort((a, b) => a.code.localeCompare(b.code) || a.pin.localeCompare(b.pin)));
+    nav('/admin/in-the');
   };
 
   const move = () => {
@@ -172,7 +173,7 @@ export default function StudentsPage() {
                 <p className="mt-1 text-sm text-teal-900/80">PIN chỉ hiện một lần. In thẻ ngay, hoặc chép lại trước khi rời trang.</p>
               </div>
               <div className="flex gap-2">
-                <Button onClick={() => { setPrintCards(justCreated); nav('/admin/in-the'); }}>In thẻ các bạn này</Button>
+                <Button onClick={() => printCards(justCreated.map((c) => c.id))}>In thẻ các bạn này</Button>
                 <Button variant="ghost" onClick={() => setJustCreated([])}>Đóng</Button>
               </div>
             </div>

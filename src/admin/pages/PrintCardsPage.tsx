@@ -1,4 +1,4 @@
-/** Trang in thẻ mã + PIN: lưới thẻ cắt được, khổ A4 dọc, 10 thẻ/trang. */
+/** Trang in thẻ đăng nhập (Mã lớp + Mã học sinh): lưới thẻ cắt được, khổ A4 dọc, 10 thẻ/trang. */
 import { Link } from 'react-router-dom';
 import { takePrintCards } from '../lib/printStore';
 import { Button } from '../ui';
@@ -16,7 +16,7 @@ export default function PrintCardsPage() {
       <div className="mx-auto flex max-w-[190mm] flex-wrap items-center justify-between gap-3 px-4 py-4 print:hidden">
         <div>
           <h1 className="text-lg font-semibold text-slate-900">In thẻ đăng nhập · {cards.length} thẻ</h1>
-          <p className="text-sm text-slate-500">Cắt theo đường viền. Sau khi in xong, PIN không xem lại được.</p>
+          <p className="text-sm text-slate-500">Cắt theo đường viền. Học sinh gõ ô 1 = Mã lớp, ô 2 = Mã học sinh.</p>
         </div>
         <div className="flex gap-2">
           <Link to="/admin/hoc-sinh"><Button variant="secondary">Quay lại</Button></Link>
@@ -36,15 +36,17 @@ export default function PrintCardsPage() {
               <p className="mt-1 truncate pr-[24mm] text-[13pt] font-semibold text-slate-900">{c.name}</p>
               <div className="mt-3 flex gap-6">
                 <div>
-                  <p className="text-[8pt] uppercase text-slate-500">Mã</p>
+                  <p className="text-[8pt] uppercase text-slate-500">{c.pin ? 'Mã lớp' : 'Mã'}</p>
                   <p className="font-mono text-[20pt] font-bold leading-none tracking-wider">{c.code}</p>
                 </div>
-                <div>
-                  <p className="text-[8pt] uppercase text-slate-500">PIN</p>
-                  <p className="font-mono text-[20pt] font-bold leading-none tracking-[0.2em]">{c.pin}</p>
-                </div>
+                {c.pin && (
+                  <div>
+                    <p className="text-[8pt] uppercase text-slate-500">Mã học sinh</p>
+                    <p className="font-mono text-[20pt] font-bold leading-none tracking-[0.15em]">{c.pin}</p>
+                  </div>
+                )}
               </div>
-              <p className="mt-3 text-[8pt] leading-snug text-slate-500">Quét mã QR hoặc vào <b className="text-slate-700">{site}</b><br />Giữ kín PIN, không cho bạn khác mượn.</p>
+              <p className="mt-3 text-[8pt] leading-snug text-slate-500">Quét mã QR hoặc vào <b className="text-slate-700">{site}</b><br />Giữ kín mã, không cho bạn khác mượn.</p>
             </div>
           ))}
         </div>
