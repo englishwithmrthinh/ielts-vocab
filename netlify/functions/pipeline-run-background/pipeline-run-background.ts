@@ -8,7 +8,7 @@ import { requireAdmin } from '../../lib/auth';
 import { readJson } from '../../lib/http';
 import { db } from '../../lib/supabase';
 import { ttsFromEnv } from './lib';
-import { realDeps, runPipeline } from './run';
+import { realDeps, runPipeline, SkipRun } from './run';
 
 export default async (req: Request): Promise<void> => {
   let lessonId = '';
@@ -20,6 +20,10 @@ export default async (req: Request): Promise<void> => {
     const sum = await runPipeline(lessonId, realDeps(ttsFromEnv()));
     console.log('pipeline xong', lessonId, `${Math.round((Date.now() - started) / 1000)}s`, JSON.stringify(sum));
   } catch (e) {
+    if (e instanceof SkipRun) {
+      console.log('pipeline bỏ qua', lessonId, e.message);
+      return;
+    }
     console.error('pipeline lỗi', lessonId, e);
     if (lessonId) {
       // không để buổi kẹt ở "processing": trả về draft kèm lỗi để chạy lại
