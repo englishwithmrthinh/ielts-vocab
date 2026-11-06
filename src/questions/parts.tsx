@@ -2,6 +2,7 @@
 import { Check, X } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { AnswerResult, Option } from '@shared/types';
+import type { QuickResult } from './index';
 import { Button, cx } from '../student/components/ui';
 
 export function Instruction({ children }: { children: ReactNode }) {
@@ -34,23 +35,31 @@ export function ChoiceList({
   onSubmit,
   disabled,
   result,
+  quick,
   big,
 }: {
   options: Option[];
   onSubmit: (optionId: string) => void;
   disabled?: boolean;
   result?: AnswerResult;
+  quick?: QuickResult;
   big?: boolean;
 }) {
   const [sel, setSel] = useState<string | null>(null);
-  const done = !!result;
+  const done = !!result || !!quick;
   return (
     <>
       <div className="grid gap-2.5" role="radiogroup">
         {options.map((o, i) => {
           const isSel = sel === o.id;
-          const isRight = done && (result.correctOptionId ? o.id === result.correctOptionId : o.text === result.expected);
-          const isWrong = done && isSel && !result.correct;
+          // Có kết quả server: tô ô đúng theo correctOptionId. Mới chấm nhanh: chỉ biết ô đã chọn đúng hay sai.
+          const isRight = result
+            ? result.correctOptionId
+              ? o.id === result.correctOptionId
+              : o.text === result.expected
+            : !!quick && isSel && quick.correct;
+          const correct = result ? result.correct : quick?.correct;
+          const isWrong = done && isSel && correct === false;
           return (
             <button
               key={o.id}
@@ -94,10 +103,13 @@ export function TypeBox({
   placeholder = 'Gõ từ vào đây',
   prefix,
   autoFocus = true,
+  tone,
 }: {
   onSubmit: (text: string) => void;
   disabled?: boolean;
   done?: boolean;
+  /** đúng/sai sau khi chấm → viền xanh/đỏ */
+  tone?: boolean;
   placeholder?: string;
   prefix?: string;
   autoFocus?: boolean;
@@ -137,7 +149,11 @@ export function TypeBox({
           spellCheck={false}
           enterKeyHint="done"
           inputMode="text"
-          className="h-14 w-full rounded-xl border border-line bg-surface-2 px-4 font-serif text-[24px] font-semibold text-ink outline-none transition placeholder:font-sans placeholder:text-base placeholder:font-normal placeholder:text-ink-3/80 focus:border-brand focus:ring-2 focus:ring-brand/25 disabled:opacity-70"
+          className={cx(
+            'h-14 w-full rounded-xl border bg-surface-2 px-4',
+            tone === true ? 'border-ok ring-2 ring-ok/30' : tone === false ? 'border-bad ring-2 ring-bad/30' : 'border-line',
+            'font-serif text-[24px] font-semibold text-ink outline-none transition placeholder:font-sans placeholder:text-base placeholder:font-normal placeholder:text-ink-3/80 focus:border-brand focus:ring-2 focus:ring-brand/25 disabled:opacity-70',
+          )}
           style={{ fontSize: 24 }}
         />
       </div>

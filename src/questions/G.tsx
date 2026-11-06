@@ -6,13 +6,13 @@ import type { QuestionProps } from './index';
 import { cx } from '../student/components/ui';
 import { CheckButton, Instruction } from './parts';
 
-export default function G({ question: q, onSubmit, disabled, result }: QuestionProps) {
+export default function G({ question: q, onSubmit, disabled, result, quick }: QuestionProps) {
   const masked = q.prompt.masked ?? '';
   const chars = [...masked];
   const holes = chars.map((c, i) => (c === '_' ? i : -1)).filter((i) => i >= 0);
   const [fill, setFill] = useState<Record<number, string>>({});
   const refs = useRef<(HTMLInputElement | null)[]>([]);
-  const lock = disabled || !!result;
+  const lock = disabled || !!result || !!quick;
 
   useEffect(() => {
     refs.current[holes[0] ?? -1]?.focus({ preventScroll: true });
@@ -26,7 +26,8 @@ export default function G({ question: q, onSubmit, disabled, result }: QuestionP
   const full = holes.every((i) => fill[i]);
   const text = chars.map((c, i) => (c === '_' ? (fill[i] ?? '') : c)).join('');
   const submit = () => full && !lock && onSubmit({ qid: q.qid, text });
-  const tone = result ? (result.correct ? 'ok' : 'bad') : null;
+  const verdict = result ? result.correct : quick?.correct;
+  const tone = verdict === undefined ? null : verdict ? 'ok' : 'bad';
   // Ô co lại theo độ dài từ để vừa một dòng trên màn 360px
   const cell = chars.length > 10 ? 'w-7' : chars.length > 8 ? 'w-8' : 'w-9';
 
@@ -83,7 +84,7 @@ export default function G({ question: q, onSubmit, disabled, result }: QuestionP
           );
         })}
       </div>
-      {!result && <CheckButton disabled={!full || disabled} onClick={submit} />}
+      {!result && !quick && <CheckButton disabled={!full || disabled} onClick={submit} />}
     </div>
   );
 }

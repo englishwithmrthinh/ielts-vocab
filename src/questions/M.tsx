@@ -3,7 +3,7 @@ import type { QuestionProps } from './index';
 import { POS_VI } from '../student/components/WordCardView';
 import { Instruction, Sentence, TypeBox } from './parts';
 
-export default function M({ question: q, onSubmit, disabled, result }: QuestionProps) {
+export default function M({ question: q, onSubmit, disabled, result, quick }: QuestionProps) {
   return (
     <div>
       <Instruction>Viết dạng đúng của từ trong ngoặc</Instruction>
@@ -18,7 +18,7 @@ export default function M({ question: q, onSubmit, disabled, result }: QuestionP
           )}
         </p>
       </div>
-      <TypeBox key={q.qid} done={!!result} disabled={disabled} onSubmit={(text) => onSubmit({ qid: q.qid, text })} />
+      <TypeBox key={q.qid} done={!!result || !!quick} tone={result ? result.correct : quick?.correct} disabled={disabled} onSubmit={(text) => onSubmit({ qid: q.qid, text })} />
     </div>
   );
 }

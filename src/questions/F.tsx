@@ -7,11 +7,11 @@ import { cx } from '../student/components/ui';
 import { useDragDrop } from './drag';
 import { CheckButton, Instruction } from './parts';
 
-export default function F({ question: q, onSubmit, disabled, result }: QuestionProps) {
+export default function F({ question: q, onSubmit, disabled, result, quick }: QuestionProps) {
   const letters = q.prompt.letters ?? [];
   /** thứ tự chỉ số chữ cái học sinh đã xếp */
   const [seq, setSeq] = useState<number[]>([]);
-  const lock = disabled || !!result;
+  const lock = disabled || !!result || !!quick;
 
   const dd = useDragDrop({
     disabled: lock,
@@ -35,7 +35,8 @@ export default function F({ question: q, onSubmit, disabled, result }: QuestionP
   });
 
   const free = letters.map((c, i) => ({ c, i })).filter((x) => !seq.includes(x.i));
-  const tone = result ? (result.correct ? 'ok' : 'bad') : null;
+  const verdict = result ? result.correct : quick?.correct;
+  const tone = verdict === undefined ? null : verdict ? 'ok' : 'bad';
 
   return (
     <div>
@@ -69,7 +70,7 @@ export default function F({ question: q, onSubmit, disabled, result }: QuestionP
         ))}
       </div>
 
-      {!result && (
+      {!result && !quick && (
         <>
           <div data-drop="bank" className="mt-4 flex min-h-14 flex-wrap justify-center gap-2">
             {free.map(({ c, i }) => (

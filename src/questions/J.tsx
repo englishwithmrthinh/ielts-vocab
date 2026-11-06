@@ -2,7 +2,7 @@
 import type { QuestionProps } from './index';
 import { ChoiceList, Instruction, Sentence } from './parts';
 
-export default function J({ question: q, onSubmit, disabled, result }: QuestionProps) {
+export default function J({ question: q, onSubmit, disabled, result, quick }: QuestionProps) {
   return (
     <div>
       <Instruction>Chọn từ điền vào chỗ trống</Instruction>
@@ -16,7 +16,7 @@ export default function J({ question: q, onSubmit, disabled, result }: QuestionP
           }
         />
       </div>
-      <ChoiceList big options={q.options ?? []} disabled={disabled} result={result} onSubmit={(optionId) => onSubmit({ qid: q.qid, optionId })} />
+      <ChoiceList big options={q.options ?? []} disabled={disabled} result={result} quick={quick} onSubmit={(optionId) => onSubmit({ qid: q.qid, optionId })} />
     </div>
   );
 }

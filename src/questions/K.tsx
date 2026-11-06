@@ -2,7 +2,7 @@
 import type { QuestionProps } from './index';
 import { Instruction, Sentence, TypeBox } from './parts';
 
-export default function K({ question: q, onSubmit, disabled, result }: QuestionProps) {
+export default function K({ question: q, onSubmit, disabled, result, quick }: QuestionProps) {
   const first = q.prompt.firstLetter ?? '';
   return (
     <div>
@@ -20,7 +20,7 @@ export default function K({ question: q, onSubmit, disabled, result }: QuestionP
       </div>
       <TypeBox
         key={q.qid}
-        done={!!result}
+        done={!!result || !!quick} tone={result ? result.correct : quick?.correct}
         disabled={disabled}
         placeholder={first ? `Bắt đầu bằng "${first}"` : 'Gõ từ vào đây'}
         onSubmit={(text) => onSubmit({ qid: q.qid, text })}

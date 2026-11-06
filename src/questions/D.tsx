@@ -4,12 +4,12 @@ import type { QuestionProps } from './index';
 import { Bank, Slot, useAssign } from './assign';
 import { CheckButton, Instruction } from './parts';
 
-export default function D({ question: q, onSubmit, disabled, result }: QuestionProps) {
+export default function D({ question: q, onSubmit, disabled, result, quick }: QuestionProps) {
   const left = q.pairs?.left ?? [];
   const right = q.pairs?.right ?? [];
-  const a = useAssign(right, left.map((l) => l.id), disabled || !!result);
+  const a = useAssign(right, left.map((l) => l.id), disabled || !!result || !!quick);
   const state = (id: string) => {
-    const p = result?.perWord?.find((x) => x.wordId === id);
+    const p = (result?.perWord ?? quick?.perWord)?.find((x) => x.wordId === id);
     return p ? (p.correct ? 'ok' : 'bad') : undefined;
   };
 
@@ -24,8 +24,8 @@ export default function D({ question: q, onSubmit, disabled, result }: QuestionP
           </div>
         ))}
       </div>
-      {!result && <Bank bank={right} a={a} disabled={disabled} />}
-      {!result && (
+      {!result && !quick && <Bank bank={right} a={a} disabled={disabled} />}
+      {!result && !quick && (
         <CheckButton disabled={!a.complete || disabled} onClick={() => onSubmit({ qid: q.qid, matches: a.assign })} />
       )}
     </div>

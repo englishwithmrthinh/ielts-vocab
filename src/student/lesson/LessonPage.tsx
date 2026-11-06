@@ -16,12 +16,23 @@ import { celebrate } from '../lib/celebrate';
 import { COPY, fill, summaryLine } from '../lib/copy';
 import { Preview } from './Preview';
 import { ResultPanel } from './ResultPanel';
+import { prefetch, preloadMedia, type Prefetch } from './flow';
+import { quickGrade } from '@shared/check';
+import type { QuickResult } from '../../questions';
 
 export type Stage =
   | { k: 'loading' }
   | { k: 'error'; msg: string }
   | { k: 'preview'; cards: WordCard[] }
-  | { k: 'question'; q: Question; phase: NextQuestionResponse['phase']; result?: AnswerResult; sending?: boolean }
+  | {
+      k: 'question';
+      q: Question;
+      phase: NextQuestionResponse['phase'];
+      result?: AnswerResult;
+      /** chấm nhanh trên máy — hiện ngay trước khi server trả `result` */
+      quick?: QuickResult;
+      sending?: boolean;
+    }
   | { k: 'summary' }
   | { k: 'submitted'; r: SubmitResponse };
 
@@ -37,11 +48,24 @@ export default function LessonPage() {
 
   const fail = (e: unknown) => setStage({ k: 'error', msg: errorText(e) });
 
-  const loadNext = useCallback(async (aid: string, extra = false) => {
-    const r = await studentApi.next(aid, extra);
+  /** câu tiếp theo đã tải trước trong lúc học sinh đọc thẻ đáp án */
+  const pre = useRef<Prefetch | null>(null);
+
+  const show = useCallback((r: NextQuestionResponse) => {
     if (!r.question || r.phase === 'done') setStage({ k: 'summary' });
-    else setStage({ k: 'question', q: r.question, phase: r.phase });
+    else {
+      preloadMedia(r.question);
+      setStage({ k: 'question', q: r.question, phase: r.phase });
+    }
   }, []);
+
+  const loadNext = useCallback(
+    async (aid: string, extra = false) => {
+      pre.current = null;
+      show(await studentApi.next(aid, extra));
+    },
+    [show],
+  );
 
   const start = useCallback(async () => {
     const s = await studentApi.start(milestoneId);
@@ -67,11 +91,19 @@ export default function LessonPage() {
   }, [milestoneId, start]);
 
   const submitAnswer = async (a: AnswerSubmission) => {
-    if (stage.k !== 'question' || stage.result || stage.sending || !assignmentId) return;
+    if (stage.k !== 'question' || stage.result || stage.sending || stage.quick || !assignmentId) return;
+    const { q, phase } = stage;
+    const sameQ = (cur: Stage) => cur.k === 'question' && cur.q.qid === q.qid;
     setStage({ ...stage, sending: true });
+    // Chấm nhanh trên máy (mã băm) → tô đúng/sai ngay, không chờ mạng
+    quickGrade(q.check, a)
+      .then((quick) => quick && setStage((cur) => (sameQ(cur) && cur.k === 'question' && !cur.result ? { ...cur, quick } : cur)))
+      .catch(() => undefined);
     try {
       const result = await studentApi.answer(assignmentId, a);
-      setStage({ ...stage, sending: false, result });
+      setStage((cur) => (sameQ(cur) && cur.k === 'question' ? { ...cur, sending: false, result } : cur));
+      // Tải trước câu sau trong lúc học sinh đọc thẻ đáp án
+      pre.current = prefetch(() => studentApi.next(assignmentId, phase === 'extra'));
       if (stage.q.mode === 'graded') {
         const n = result.perWord?.length ?? 1;
         const ok = result.perWord ? result.perWord.filter((p) => p.correct).length : result.correct ? 1 : 0;
@@ -87,10 +119,15 @@ export default function LessonPage() {
   };
 
   const goNext = useCallback(() => {
-    if (!assignmentId) return;
+    if (!assignmentId || stage.k !== 'question' || !stage.result) return;
+    const extra = stage.phase === 'extra';
+    const p = pre.current;
+    pre.current = null;
+    if (p?.value) return show(p.value); // đã tải xong → hiện ngay
     setStage({ k: 'loading' });
-    loadNext(assignmentId, stage.k === 'question' && stage.phase === 'extra').catch(fail);
-  }, [assignmentId, loadNext, stage]);
+    if (p && !p.failed) p.promise.then(show).catch(() => loadNext(assignmentId, extra).catch(fail));
+    else loadNext(assignmentId, extra).catch(fail);
+  }, [assignmentId, loadNext, show, stage]);
 
   // Enter = Tiếp tục (bàn phím máy tính)
   useEffect(() => {
@@ -201,6 +238,11 @@ function TopBar({ stage, onClose }: { stage: Stage; onClose: () => void }) {
             <span className="text-sm font-semibold tabular-nums text-cream/90">
               {q.progress.done}/{q.progress.required}
             </span>
+            {!!q.progress.fixLeft && (
+              <span className="rounded-full bg-blush px-2 py-0.5 text-[11px] font-semibold text-blush-ink" title="Số từ làm sai còn phải làm đúng lại">
+                ôn lại {q.progress.fixLeft}
+              </span>
+            )}
           </>
         )}
         {q && phase === 'extra' && <p className="label-caps flex-1 text-cream/90">Làm tiếp · câu thêm {q.progress.extra + 1}</p>}
@@ -229,22 +271,44 @@ export function QuestionView({
       )}
       <div className="paper rounded-[var(--radius-card)] p-4 shadow-[var(--shadow-card)] ring-1 ring-line sm:p-6">
         {Comp ? (
-          <Comp key={stage.q.qid} question={stage.q} onSubmit={onSubmit} disabled={stage.sending} result={stage.result} />
+          <Comp key={stage.q.qid} question={stage.q} onSubmit={onSubmit} disabled={stage.sending} result={stage.result} quick={stage.quick} />
         ) : (
           <p className="text-bad-ink">Dạng câu {stage.q.type} chưa hỗ trợ.</p>
         )}
       </div>
-      {stage.sending && (
-        <div className="mt-4 flex justify-center">
-          <Spinner className="size-5" />
+      {stage.sending && !stage.quick && (
+        <div className="mt-4 flex items-center justify-center gap-2 text-sm text-ink-3" role="status">
+          <Spinner className="size-5" /> Đang chấm…
+        </div>
+      )}
+      {stage.quick && !stage.result && (
+        // Chấm nhanh đã có, đang chờ server lưu + trả thẻ từ
+        <div
+          role="status"
+          aria-live="polite"
+          className={cx(
+            'mt-5 flex items-center gap-2.5 rounded-[var(--radius-card)] p-4 text-lg font-bold ring-1 animate-[fadeIn_.15s_ease-out]',
+            stage.quick.correct ? 'bg-ok-bg text-ok-ink ring-ok/30' : 'bg-bad-bg text-bad-ink ring-bad/30',
+          )}
+        >
+          {stage.quick.correct ? 'Chính xác' : 'Chưa đúng'}
+          <span className="ml-auto flex items-center gap-1.5 text-xs font-medium text-ink-3">
+            <Spinner className="size-4" /> Đang tải thẻ từ…
+          </span>
         </div>
       )}
       {stage.result && <ResultPanel question={stage.q} result={stage.result} />}
-      {stage.result && (
+      {(stage.result || stage.quick) && (
         <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface/95 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur">
           <div className="mx-auto max-w-md">
-            <Button block size="lg" onClick={onNext} autoFocus>
-              Tiếp tục
+            <Button block size="lg" onClick={onNext} autoFocus disabled={!stage.result} aria-busy={!stage.result}>
+              {stage.result ? (
+                'Tiếp tục'
+              ) : (
+                <>
+                  <Spinner className="size-5 border-white/40 border-t-white" /> Đang lưu…
+                </>
+              )}
             </Button>
           </div>
         </div>

@@ -1,9 +1,11 @@
 // Luyện thêm (/hoc/luyen-them): khi không có bài mở. Không đổi hộp, không tính điểm, mỗi câu đúng +2 XP.
 // API: GET /api/practice/next → NextQuestionResponse (mode 'practice'); trả lời qua POST /api/answer (không có assignmentId).
 import { Dumbbell, Home, X, Zap } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { AnswerSubmission } from '@shared/types';
+import type { AnswerSubmission, NextQuestionResponse } from '@shared/types';
+import { quickGrade } from '@shared/check';
+import { prefetch, type Prefetch } from './flow';
 import { ApiCallError } from '../../lib/api';
 import { errorText, studentApi } from '../api';
 import { Button, Card, Spinner } from '../components/ui';
@@ -17,27 +19,51 @@ export default function PracticePage() {
   const [count, setCount] = useState(0);
   const fail = (e: unknown) => setStage({ k: 'error', msg: errorText(e) });
 
-  const loadNext = useCallback(async () => {
-    setStage({ k: 'loading' });
-    const r = await studentApi.practiceNext();
+  const pre = useRef<Prefetch | null>(null);
+
+  const show = useCallback((r: NextQuestionResponse) => {
     if (!r.question || r.phase === 'done') setStage({ k: 'summary' });
     else setStage({ k: 'question', q: r.question, phase: r.phase });
   }, []);
+
+  const loadNext = useCallback(async () => {
+    const p = pre.current;
+    pre.current = null;
+    if (p?.value) return show(p.value); // đã tải trước → hiện ngay
+    setStage({ k: 'loading' });
+    if (p && !p.failed) {
+      try {
+        return show(await p.promise);
+      } catch {
+        /* tải lại bên dưới */
+      }
+    }
+    show(await studentApi.practiceNext());
+  }, [show]);
 
   useEffect(() => {
     loadNext().catch(fail);
   }, [loadNext]);
 
   const submit = async (a: AnswerSubmission) => {
-    if (stage.k !== 'question' || stage.result || stage.sending) return;
+    if (stage.k !== 'question' || stage.result || stage.sending || stage.quick) return;
+    const qid = stage.q.qid;
+    const same = (cur: Stage) => cur.k === 'question' && cur.q.qid === qid;
     setStage({ ...stage, sending: true });
+    quickGrade(stage.q.check, a)
+      .then((quick) => quick && setStage((cur) => (same(cur) && cur.k === 'question' && !cur.result ? { ...cur, quick } : cur)))
+      .catch(() => undefined);
     try {
       const result = await studentApi.practiceAnswer(a);
-      setStage({ ...stage, sending: false, result });
+      setStage((cur) => (same(cur) && cur.k === 'question' ? { ...cur, sending: false, result } : cur));
+      pre.current = prefetch(() => studentApi.practiceNext());
       setXp((v) => v + result.xp);
       setCount((v) => v + 1);
     } catch (e) {
-      if (e instanceof ApiCallError && e.status === 410) loadNext().catch(fail);
+      if (e instanceof ApiCallError && e.status === 410) {
+        pre.current = null;
+        loadNext().catch(fail);
+      }
       else fail(e);
     }
   };
