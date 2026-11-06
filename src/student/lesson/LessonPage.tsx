@@ -4,11 +4,12 @@
 import { Award, CalendarCheck, Clock, Home, Repeat, Trophy, X, Zap } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import type { AnswerResult, AnswerSubmission, BadgeCode, NextQuestionResponse, Question, SubmitResponse, WordCard } from '@shared/types';
+import type { AnswerResult, AnswerSubmission, NextQuestionResponse, Question, SubmitResponse, WordCard } from '@shared/types';
 import { QUESTION_COMPONENTS } from '../../questions';
 import { ApiCallError } from '../../lib/api';
 import { errorText, studentApi } from '../api';
 import { Button, Card, ProgressBar, Spinner, cx } from '../components/ui';
+import { BADGE_VI } from '../lib/badges';
 import { celebrate } from '../lib/celebrate';
 import { Preview } from './Preview';
 import { ResultPanel } from './ResultPanel';
@@ -20,20 +21,6 @@ type Stage =
   | { k: 'question'; q: Question; phase: NextQuestionResponse['phase']; result?: AnswerResult; sending?: boolean }
   | { k: 'summary' }
   | { k: 'submitted'; r: SubmitResponse };
-
-export const BADGE_VI: Record<BadgeCode, string> = {
-  first_submit: 'Bài nộp đầu tiên',
-  perfect_week: 'Tuần hoàn hảo',
-  perfect_month: 'Tháng hoàn hảo',
-  all_sundays_month: 'Đủ mọi Chủ nhật trong tháng',
-  pass_10: 'Thuộc 10 từ',
-  pass_50: 'Thuộc 50 từ',
-  pass_100: 'Thuộc 100 từ',
-  pass_300: 'Thuộc 300 từ',
-  streak_6: 'Chuỗi 6 mốc',
-  streak_12: 'Chuỗi 12 mốc',
-  streak_24: 'Chuỗi 24 mốc',
-};
 
 export default function LessonPage() {
   const { milestoneId = '' } = useParams();

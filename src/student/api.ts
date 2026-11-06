@@ -1,12 +1,13 @@
 // Lớp gọi API khu học sinh. Phiên đăng nhập = cookie httpOnly (server đặt), không lưu token ở trình duyệt.
 // VITE_USE_MOCK=true → dùng dữ liệu giả trong ./mock, không cần backend.
 import type {
-  AnswerResult, AnswerSubmission, HomeResponse, NextQuestionResponse, PreviewResponse,
-  StartAssignmentResponse, SubmitResponse,
+  AnswerResult, AnswerSubmission, HomeResponse, MyWordsResponse, NextQuestionResponse, PreviewResponse,
+  ProgressResponse, StartAssignmentResponse, SubmitResponse,
 } from '@shared/types';
 import { api, ApiCallError } from '../lib/api';
 import { mockHome } from './mock/home';
 import { mockLesson } from './mock/lesson';
+import { mockAddWord, mockMyWords, mockProgress } from './mock/progress';
 
 export const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 
@@ -130,6 +131,32 @@ export const studentApi = {
       return mockLesson.submit(assignmentId);
     }
     return api<SubmitResponse>('POST', '/api/assignment/submit', { assignmentId });
+  },
+
+  // ---- Giai đoạn 3 ----
+  async progress(): Promise<ProgressResponse> {
+    if (USE_MOCK) {
+      await delay();
+      return mockProgress();
+    }
+    return api<ProgressResponse>('GET', '/api/progress');
+  },
+
+  async myWords(): Promise<MyWordsResponse> {
+    if (USE_MOCK) {
+      await delay();
+      return mockMyWords();
+    }
+    return api<MyWordsResponse>('GET', '/api/my-words');
+  },
+
+  /** Thêm từ: có trong kho tổng → 'linked' (gán luôn); chưa có → 'pending' (Chờ duyệt). Kiểu trả về là giả định. */
+  async addWord(text: string, note: string | null): Promise<{ status: 'linked' | 'pending' }> {
+    if (USE_MOCK) {
+      await delay(400);
+      return mockAddWord(text, note);
+    }
+    return api<{ status: 'linked' | 'pending' }>('POST', '/api/my-words', { text: text.trim(), note });
   },
 
   /** Nút "Câu này có 2 đáp án đúng" */
