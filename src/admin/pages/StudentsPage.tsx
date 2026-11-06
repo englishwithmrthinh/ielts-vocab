@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { ClassesResponse, Student } from '@shared/types';
 import { adminApi, type StudentCard } from '../lib/adminApi';
 import { setPrintCards } from '../lib/printStore';
-import { Badge, Button, Card, ErrorBox, PageHeader, inputCls } from '../ui';
+import { Badge, Button, Card, ErrorBox, PageHeader, inputCls, selectCls } from '../ui';
 
 export default function StudentsPage() {
   const nav = useNavigate();
@@ -179,7 +179,7 @@ export default function StudentsPage() {
             <p className="mt-1 text-sm text-slate-500">Mỗi dòng một tên. Mã (HS..) và PIN 4 số được tạo tự động.</p>
             <label className="mt-3 flex flex-wrap items-center gap-2 text-sm text-slate-700">
               Vào lớp
-              <select className={`${inputCls} w-auto`} value={addClassId} onChange={(e) => setAddClassId(e.target.value)}>
+              <select className={selectCls} value={addClassId} onChange={(e) => setAddClassId(e.target.value)}>
                 <option value="">— Chưa xếp lớp —</option>
                 {openClasses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
@@ -214,7 +214,7 @@ export default function StudentsPage() {
               )}
               {selected.size > 0 && openClasses.length + (classes.length ? 1 : 0) > 0 && (
                 <span className="flex items-center gap-1">
-                  <select aria-label="Chuyển sang lớp" className={`${inputCls} w-auto py-1.5`} value={moveTo} onChange={(e) => setMoveTo(e.target.value)}>
+                  <select aria-label="Chuyển sang lớp" className={`${selectCls} py-1.5`} value={moveTo} onChange={(e) => setMoveTo(e.target.value)}>
                     <option value="">Chuyển lớp…</option>
                     {openClasses.map((c) => <option key={c.id} value={c.id}>→ {c.name}</option>)}
                     <option value="none">Bỏ khỏi lớp</option>

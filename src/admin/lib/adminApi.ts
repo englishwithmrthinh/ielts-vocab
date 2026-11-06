@@ -3,7 +3,7 @@
  * Chế độ demo (?demo=1 trên URL): dùng dữ liệu giả trong trình duyệt, không cần
  * máy chủ — để xem giao diện và chụp màn hình khi chưa có Supabase/Netlify.
  */
-import type { Class, ClassesResponse, Lesson, Milestone, Student, Word } from '@shared/types';
+import type { AdminFlagsResponse, AdminReportsResponse, AdminSuggestionsResponse, Class, ClassesResponse, Lesson, Milestone, Student, Word } from '@shared/types';
 import { api } from '../../lib/api';
 import { mockApi } from './mock';
 
@@ -78,6 +78,19 @@ export const adminApi = {
   uploadGrid: (lessonId: string, index: number, image: string) =>
     call<{ updated: number; kept: number; layout: string; ms: number }>('POST', '/api/admin/images/grid', { lesson_id: lessonId, index, image }),
   uploadSingle: (wordId: string, image: string) => call<{ word: Word }>('POST', '/api/admin/images/single', { word_id: wordId, image }),
+  getWord: (id: string) => call<{ word: Word }>('GET', `/api/admin/words/get?id=${id}`),
+
+  reports: (month: string) => call<AdminReportsResponse>('GET', `/api/admin/reports?month=${month}`),
+  updateReport: (id: string, patch: { teacher_comment?: string | null; ai_comment?: string | null }) =>
+    call<{ ok: true }>('POST', '/api/admin/reports/update', { id, ...patch }),
+  finalizeReport: (id: string) => call<{ ok: true }>('POST', '/api/admin/reports/finalize', { id }),
+  runMonthly: (month: string, final: boolean) => call<unknown>('POST', '/api/jobs/monthly', { month, final }),
+
+  suggestions: (status = 'pending') => call<AdminSuggestionsResponse>('GET', `/api/admin/suggestions?status=${status}`),
+  updateSuggestion: (id: string, status: 'added' | 'rejected', wordId?: string) =>
+    call<{ ok: true }>('POST', '/api/admin/suggestions/update', { id, status, ...(wordId ? { word_id: wordId } : {}) }),
+  flags: () => call<AdminFlagsResponse>('GET', '/api/admin/flags'),
+
   publish: (lessonId: string, studentIds: string[]) =>
     call<PublishResult>('POST', '/api/admin/lessons/publish', { lesson_id: lessonId, student_ids: studentIds }),
 };
