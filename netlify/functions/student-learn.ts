@@ -9,6 +9,7 @@
  * POST /api/assignment/submit {assignmentId}               → SubmitResponse
  * POST /api/flag              {qid}                        → { ok }
  */
+import { randomUUID } from 'node:crypto';
 import type { Config } from '@netlify/functions';
 import type {
   AnswerResult, AnswerSubmission, AssignmentCard, BadgeCode, Box, HomeResponse, Milestone, NextQuestionResponse,
@@ -258,7 +259,7 @@ async function answer(studentId: string, sub: AnswerSubmission): Promise<AnswerR
       if (mode === 'practice' && pw.correct) xp += XP.practiceCorrect;
     }
     rows.push({
-      ...(i === 0 ? { id: sub.qid } : {}),
+      id: i === 0 ? sub.qid : randomUUID(), // mọi dòng đều có id: insert nhiều dòng thiếu cột sẽ bị gửi NULL
       student_id: studentId, assignment_id: a?.id ?? null, word_id: pw.wordId, qtype: type, mode,
       given: out.given.slice(0, 500), correct: pw.correct, hint_code: out.hint ?? null,
       box_before: s?.box ?? null, box_after: boxAfter,
