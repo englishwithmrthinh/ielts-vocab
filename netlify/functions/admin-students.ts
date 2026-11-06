@@ -138,7 +138,7 @@ export default async (req: Request): Promise<Response> => {
     if (path === '/api/admin/students/update' && req.method === 'POST') {
       return json({ student: await updateStudent(await readJson(req)) });
     }
-    if (path === '/api/admin/students/reset-pins', '/api/admin/students/delete' && req.method === 'POST') {
+    if (path === '/api/admin/students/reset-pins' && req.method === 'POST') {
       const { ids } = await readJson<{ ids?: unknown }>(req);
       return json({ cards: await resetPins(ids) });
     }
@@ -149,5 +149,5 @@ export default async (req: Request): Promise<Response> => {
 };
 
 export const config: Config = {
-  path: ['/api/admin/students', '/api/admin/students/update', '/api/admin/students/reset-pins'],
+  path: ['/api/admin/students', '/api/admin/students/update', '/api/admin/students/reset-pins', '/api/admin/students/delete'],
 };
