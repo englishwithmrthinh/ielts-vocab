@@ -101,11 +101,41 @@ async function start(studentId: string, milestoneId: string): Promise<StartAssig
 }
 
 // ---------------- next ----------------
+/**
+ * Sửa sai xen kẽ: từ làm sai (câu tính điểm, không bị báo lỗi) được hỏi lại sau ít nhất
+ * RELEARN_GAP câu khác, cho đến khi đúng RELEARN_NEED lần liên tiếp. Sai ở lần sửa thì đếm lại.
+ * Không đổi hộp. Phải sửa xong hết mới được Nộp.
+ */
+const RELEARN_GAP = 4;
+const RELEARN_NEED = 2;
+interface Relearn { id: string; streak: number; gap: number; lastIdx: number }
+function relearnQueue(answers: { word_id: string; mode: string; correct: boolean; flagged: boolean }[], inBai: Set<string>): Relearn[] {
+  const st = new Map<string, Relearn>();
+  answers.forEach((x, i) => {
+    if (!inBai.has(x.word_id)) return;
+    if (x.mode === 'graded' && !x.correct && !x.flagged) st.set(x.word_id, { id: x.word_id, streak: 0, gap: 0, lastIdx: i });
+    else if (x.mode === 'fix' && st.has(x.word_id)) {
+      const r = st.get(x.word_id)!;
+      r.streak = x.correct ? r.streak + 1 : 0;
+      r.lastIdx = i;
+    }
+  });
+  return [...st.values()]
+    .filter((r) => r.streak < RELEARN_NEED)
+    .map((r) => ({ ...r, gap: answers.length - 1 - r.lastIdx }))
+    .sort((p, q) => p.lastIdx - q.lastIdx);
+}
+
 interface StoredPayload extends QuestionPayload { mode: Question['mode']; wordIds: string[] }
 
 async function next(studentId: string, assignmentId: string, extra: boolean): Promise<NextQuestionResponse> {
-  const { a, m } = await getAssignment(studentId, assignmentId);
-  const answers = await answersOf(a.id);
+  const [{ a, m }, answers, pendingR, words] = await Promise.all([
+    getAssignment(studentId, assignmentId),
+    answersOf(assignmentId),
+    db().from('pending_questions').select('qid,payload').eq('assignment_id', assignmentId).eq('student_id', studentId)
+      .order('created_at', { ascending: false }).limit(1),
+    loadStudentWords(studentId),
+  ]);
   const inBai = new Set(a.word_ids);
   const gradedDone = new Set(answers.filter((x) => x.mode === 'graded').map((x) => x.word_id));
   const fillerDone = answers.filter((x) => x.mode === 'practice');
@@ -116,16 +146,12 @@ async function next(studentId: string, assignmentId: string, extra: boolean): Pr
     extra: [...gradedDone].filter((id) => !inBai.has(id)).length,
   };
 
-  const pending = must(
-    await db().from('pending_questions').select('qid,payload').eq('assignment_id', a.id).eq('student_id', studentId)
-      .order('created_at', { ascending: false }).limit(1),
-  ) as { qid: string; payload: StoredPayload }[];
+  const pending = must(pendingR) as { qid: string; payload: StoredPayload }[];
   if (pending[0]) {
     const { mode, wordIds: _w, ...rest } = pending[0].payload;
     return { question: { ...rest, qid: pending[0].qid, mode, progress }, phase: mode === 'fix' ? 'fix' : mode === 'graded' && !inBai.has(_w[0]!) ? 'extra' : 'graded' };
   }
 
-  const words = await loadStudentWords(studentId);
   const byId = new Map(words.map((w) => [w.word_id, w]));
   const pool = await distractorPool(words.map(toQuiz));
   const prev = (answers.at(-1)?.qtype as QType | undefined) ?? null;
@@ -135,27 +161,31 @@ async function next(studentId: string, assignmentId: string, extra: boolean): Pr
   let phase: NextQuestionResponse['phase'] = 'graded';
 
   if (!extra) {
+    const relearn = relearnQueue(answers, inBai).filter((r) => byId.has(r.id));
+    const fixPlan = (r: Relearn) => {
+      const w = toQuiz(byId.get(r.id)!);
+      // Lần sửa đầu: dạng nhận diện dễ; lần sau: dạng theo hộp (thường là dạng gõ/khó hơn)
+      const type = r.streak === 0 ? chooseFixType(w, pool.length, rng) : chooseType(w, prev, pool.length, rng, ['D', 'L']);
+      plan = { type, words: [w] };
+      mode = 'fix'; phase = 'fix';
+    };
+    const ready = relearn.find((r) => r.gap >= RELEARN_GAP);
     const remaining = a.word_ids.filter((id) => !gradedDone.has(id) && byId.has(id)).map((id) => toQuiz(byId.get(id)!));
-    if (remaining.length) {
+    const used = new Set(fillerDone.map((x) => x.word_id));
+    const fillerId = fillerDone.length < fillerTarget ? fillerWords(words, a.word_ids, m.idx ?? 0).find((x) => !used.has(x)) : undefined;
+
+    if (ready) {
+      fixPlan(ready);
+    } else if (remaining.length) {
       plan = planNext(remaining, prev, pool.length, rng);
-    } else if (fillerDone.length < fillerTarget) {
-      const used = new Set(fillerDone.map((x) => x.word_id));
-      const id = fillerWords(words, a.word_ids, m.idx ?? 0).find((x) => !used.has(x));
-      if (id) {
-        const w = toQuiz(byId.get(id)!);
-        plan = { type: chooseType(w, prev, pool.length, rng, ['D', 'L']), words: [w] };
-        mode = 'practice';
-      }
-    }
-    if (!plan) {
-      const fixed = new Set(answers.filter((x) => x.mode === 'fix').map((x) => x.word_id));
-      const wrong = [...new Set(answers.filter((x) => x.mode === 'graded' && !x.correct && !x.flagged && inBai.has(x.word_id)).map((x) => x.word_id))]
-        .filter((id) => !fixed.has(id) && byId.has(id));
-      if (wrong.length) {
-        const w = toQuiz(byId.get(wrong[0]!)!);
-        plan = { type: chooseFixType(w, pool.length, rng), words: [w] };
-        mode = 'fix'; phase = 'fix';
-      }
+    } else if (fillerId) {
+      const w = toQuiz(byId.get(fillerId)!);
+      plan = { type: chooseType(w, prev, pool.length, rng, ['D', 'L']), words: [w] };
+      mode = 'practice';
+    } else if (relearn.length) {
+      // Hết câu khác: hỏi từ chờ lâu nhất, tránh lặp ngay từ vừa làm nếu còn từ khác
+      const lastWord = answers.at(-1)?.word_id;
+      fixPlan(relearn.length > 1 && relearn[0]!.id === lastWord ? relearn[1]! : relearn[0]!);
     }
   } else {
     const ex = dueWords(words, m.idx ?? 0).filter((w) => !inBai.has(w.word_id) && !gradedDone.has(w.word_id)).map(toQuiz);
@@ -183,22 +213,24 @@ async function answer(studentId: string, sub: AnswerSubmission): Promise<AnswerR
   if (!p) throw new HttpError(410, 'question_expired', 'Câu này đã được trả lời. Tải câu tiếp theo nhé.');
 
   // Luyện thêm: không gắn bài, không đổi hộp
-  const ctx = p.assignment_id ? await getAssignment(studentId, p.assignment_id) : null;
+  const [ctx, words, swsR] = await Promise.all([
+    p.assignment_id ? getAssignment(studentId, p.assignment_id) : Promise.resolve(null),
+    getWords(p.payload.wordIds),
+    db().from('student_words').select('word_id,box,typed_ok,wrong_count').eq('student_id', studentId).in('word_id', p.payload.wordIds),
+  ]);
   const a = ctx?.a ?? null;
   const m = ctx?.m ?? null;
   const out = grade(p.answer_key, sub);
   const type = p.payload.type;
   const mode = a ? p.payload.mode : 'practice';
-  const words = await getWords(p.payload.wordIds);
-  const sws = must(
-    await db().from('student_words').select('word_id,box,typed_ok,wrong_count').eq('student_id', studentId).in('word_id', p.payload.wordIds),
-  ) as { word_id: string; box: Box; typed_ok: boolean; wrong_count: number }[];
+  const sws = must(swsR) as { word_id: string; box: Box; typed_ok: boolean; wrong_count: number }[];
   const swBy = new Map(sws.map((s) => [s.word_id, s]));
   const t = now();
 
   let xp = 0;
   let passed = false;
   const rows = [];
+  const writes: PromiseLike<unknown>[] = [];
   for (const [i, pw] of out.perWord.entries()) {
     const s = swBy.get(pw.wordId);
     let boxAfter: Box | null = s?.box ?? null;
@@ -206,13 +238,13 @@ async function answer(studentId: string, sub: AnswerSubmission): Promise<AnswerR
       const r = applyAnswer(s, pw.correct, isTypingType(type), m?.idx ?? 0);
       boxAfter = r.box;
       passed ||= r.passed;
-      must(await db().from('student_words').update({
+      writes.push(db().from('student_words').update({
         box: r.box, due_idx: r.due_idx, typed_ok: r.typed_ok, wrong_count: r.wrong_count, last_answered_at: t,
-      }).eq('student_id', studentId).eq('word_id', pw.wordId));
+      }).eq('student_id', studentId).eq('word_id', pw.wordId).then(must));
       if (pw.correct) xp += isTypingType(type) ? XP.typingCorrect : XP.choiceCorrect;
       if (r.passed) xp += XP.wordPassed;
     } else if (s) {
-      must(await db().from('student_words').update({ last_answered_at: t }).eq('student_id', studentId).eq('word_id', pw.wordId));
+      writes.push(db().from('student_words').update({ last_answered_at: t }).eq('student_id', studentId).eq('word_id', pw.wordId).then(must));
       if (mode === 'practice' && pw.correct) xp += XP.practiceCorrect;
     }
     rows.push({
@@ -222,12 +254,13 @@ async function answer(studentId: string, sub: AnswerSubmission): Promise<AnswerR
       box_before: s?.box ?? null, box_after: boxAfter,
     });
   }
-  must(await db().from('answers').insert(rows));
+  writes.push(db().from('answers').insert(rows).then(must));
   const countsTowardBai = !!a && (mode === 'practice' || (mode === 'graded' && a.word_ids.includes(out.perWord[0]!.wordId)));
   if (a && countsTowardBai) {
-    must(await db().from('assignments').update({ answered_count: a.answered_count + out.perWord.length }).eq('id', a.id));
+    writes.push(db().from('assignments').update({ answered_count: a.answered_count + out.perWord.length }).eq('id', a.id).then(must));
   }
-  await addXp(studentId, xp, a ? `answer:${type}` : `practice:${type}`);
+  writes.push(addXp(studentId, xp, a ? `answer:${type}` : `practice:${type}`));
+  await Promise.all(writes);
 
   const cards = p.payload.wordIds.map((id) => words.get(id)).filter((w) => !!w).map((w) => toCard(w!));
   return {
@@ -250,6 +283,9 @@ async function submit(studentId: string, assignmentId: string): Promise<SubmitRe
   const fillerTarget = (a.required_count ?? 0) - a.word_ids.length;
   if (a.word_ids.some((id) => !gradedDone.has(id)) || fillerDone < fillerTarget) {
     throw new HttpError(409, 'not_ready', 'Còn câu bắt buộc chưa làm');
+  }
+  if (relearnQueue(answers, new Set(a.word_ids)).length) {
+    throw new HttpError(409, 'not_ready', 'Còn từ làm sai chưa làm đúng lại');
   }
   const t = now();
   const late = daysLate(m.date, t);
