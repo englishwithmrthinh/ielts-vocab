@@ -66,7 +66,7 @@ export default function ClassesPage() {
         <ErrorBox error={error} />
         <Card>
           <form onSubmit={add} className="flex flex-wrap gap-2">
-            <input className={`${inputCls} max-w-xs flex-1`} placeholder="Tên lớp, ví dụ: IELTS Foundation T3-T6" value={name} onChange={(e) => setName(e.target.value)} />
+            <input className={`${inputCls} max-w-xs flex-1`} placeholder="Gõ tên lớp mới…" value={name} onChange={(e) => setName(e.target.value)} />
             <Button type="submit" disabled={busy || !name.trim()}>+ Thêm lớp</Button>
           </form>
         </Card>
@@ -114,12 +114,25 @@ export default function ClassesPage() {
                     <>
                       <Link to={`/admin/hoc-sinh?lop=${c.id}`} className="min-w-[10rem] flex-1 hover:underline">
                         <span className="font-semibold text-slate-900">{c.name}</span>
+                        {c.code && <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-700">Mã {c.code}</span>}
                         <span className="ml-2 text-sm text-slate-500">{c.studentCount} học sinh</span>
                       </Link>
                       {!c.active && <Badge>Đã ẩn</Badge>}
                       <div className="ml-auto flex gap-1">
                         <Link to={`/admin/hoc-sinh?lop=${c.id}`}><Button variant="ghost">Xem học sinh</Button></Link>
                         <Button variant="ghost" onClick={() => { setEditId(c.id); setEditName(c.name); }}>Đổi tên</Button>
+                        <Button
+                          variant="ghost"
+                          disabled={busy}
+                          onClick={() => {
+                            const v = prompt(`Mã lớp "${c.name}" (2–4 chữ cái in hoa). Mã của mọi học sinh có ngày sinh trong lớp sẽ đổi theo.`, c.code ?? '')?.trim().toUpperCase();
+                            if (!v) return;
+                            if (!/^[A-Z]{2,4}$/.test(v)) { alert('Mã lớp 2–4 chữ cái, không dấu'); return; }
+                            run(() => adminApi.updateClass(c.id, { code: v }));
+                          }}
+                        >
+                          Đổi mã
+                        </Button>
                         <Button
                           variant={c.active ? 'ghost' : 'secondary'}
                           disabled={busy}

@@ -34,6 +34,8 @@ export interface Student {
   active: boolean;
   /** null = chưa xếp lớp. Mỗi học sinh thuộc tối đa 1 lớp; chuyển lớp giữ nguyên tiến độ */
   class_id?: UUID | null;
+  /** Ngày sinh dạng số (4–8 chữ số). Có ngày sinh thì mã = mã lớp + ngày sinh, đăng nhập chỉ cần gõ mã */
+  birth?: string | null;
   created_at: ISODateTime;
 }
 
@@ -41,6 +43,8 @@ export interface Student {
 export interface Class {
   id: UUID;
   name: string;
+  /** 2–4 chữ in hoa, tiền tố mã học sinh (mã = mã lớp + ngày sinh) */
+  code?: string | null;
   active: boolean;
   created_at: ISODateTime;
 }
