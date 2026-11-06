@@ -50,7 +50,7 @@ export const QTYPE_NEEDS: Record<QType, ('image' | 'audio' | 'example' | 'word_f
   H: ['audio'], I: ['image'], J: ['example'], K: ['example'], L: ['example'], M: ['word_family'],
 };
 
-/** Dạng dễ dùng cho vòng sửa sai cuối bài */
+/** Dạng dễ dùng cho vòng sửa sai cuối bài. Từ sai được hỏi lại (đẩy xuống cuối) đến khi đúng mới được Nộp; không đổi hộp. */
 export const FIX_QTYPES: QType[] = ['A', 'E'];
 
 export const ASSIGNMENT_LIMITS = {

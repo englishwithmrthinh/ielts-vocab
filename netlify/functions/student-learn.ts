@@ -101,6 +101,19 @@ async function start(studentId: string, milestoneId: string): Promise<StartAssig
 }
 
 // ---------------- next ----------------
+/**
+ * Từ sai (câu tính điểm, không bị báo lỗi) chưa được làm ĐÚNG lại ở vòng sửa sai.
+ * Sắp theo lần làm gần nhất cũ nhất trước: từ vừa sai lại bị đẩy xuống cuối.
+ */
+function pendingFixes(answers: { word_id: string; mode: string; correct: boolean; flagged: boolean; created_at: string }[], inBai: Set<string>): string[] {
+  const fixedOk = new Set(answers.filter((x) => x.mode === 'fix' && x.correct).map((x) => x.word_id));
+  const lastTry = new Map<string, string>();
+  for (const x of answers) if (x.mode === 'graded' || x.mode === 'fix') lastTry.set(x.word_id, x.created_at);
+  const wrong = [...new Set(answers.filter((x) => x.mode === 'graded' && !x.correct && !x.flagged && inBai.has(x.word_id)).map((x) => x.word_id))]
+    .filter((id) => !fixedOk.has(id));
+  return wrong.sort((a, b) => (lastTry.get(a) ?? '').localeCompare(lastTry.get(b) ?? ''));
+}
+
 interface StoredPayload extends QuestionPayload { mode: Question['mode']; wordIds: string[] }
 
 async function next(studentId: string, assignmentId: string, extra: boolean): Promise<NextQuestionResponse> {
@@ -149,11 +162,12 @@ async function next(studentId: string, assignmentId: string, extra: boolean): Pr
       }
     }
     if (!plan) {
-      const fixed = new Set(answers.filter((x) => x.mode === 'fix').map((x) => x.word_id));
-      const wrong = [...new Set(answers.filter((x) => x.mode === 'graded' && !x.correct && !x.flagged && inBai.has(x.word_id)).map((x) => x.word_id))]
-        .filter((id) => !fixed.has(id) && byId.has(id));
+      const wrong = pendingFixes(answers, inBai).filter((id) => byId.has(id));
       if (wrong.length) {
-        const w = toQuiz(byId.get(wrong[0]!)!);
+        // Không hỏi lại ngay đúng từ vừa sai nếu còn từ khác
+        const lastWord = answers.at(-1)?.word_id;
+        const id = wrong.length > 1 && wrong[0] === lastWord ? wrong[1]! : wrong[0]!;
+        const w = toQuiz(byId.get(id)!);
         plan = { type: chooseFixType(w, pool.length, rng), words: [w] };
         mode = 'fix'; phase = 'fix';
       }
@@ -254,6 +268,9 @@ async function submit(studentId: string, assignmentId: string): Promise<SubmitRe
   const fillerTarget = (a.required_count ?? 0) - a.word_ids.length;
   if (a.word_ids.some((id) => !gradedDone.has(id)) || fillerDone < fillerTarget) {
     throw new HttpError(409, 'not_ready', 'Còn câu bắt buộc chưa làm');
+  }
+  if (pendingFixes(answers, new Set(a.word_ids)).length) {
+    throw new HttpError(409, 'not_ready', 'Còn từ làm sai chưa làm đúng lại');
   }
   const t = now();
   const late = daysLate(m.date, t);
