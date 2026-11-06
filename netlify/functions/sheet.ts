@@ -41,6 +41,45 @@ function csv(rows: (string | number | null | undefined)[][]): Response {
   });
 }
 
+function html(month: string, tabs: [string, (string | number | null | undefined)[][]][]): Response {
+  const e = (v: unknown) => String(v ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
+  const color = (v: string) => /Nợ|Bỏ/.test(v) ? 'bad' : /Trễ|Đang làm|Chưa làm/.test(v) ? 'mid' : /^✓|Đã nộp/.test(v) ? 'ok' : '';
+  const body = tabs.map(([name, rows], i) => {
+    const hasNote = name === 'Hôm nay';
+    const head = hasNote ? rows.slice(0, 1) : [];
+    const t = hasNote ? rows.slice(1) : rows;
+    const [h, ...r] = t;
+    const csvRows = rows.map((x) => x.map((v) => { const s = String(v ?? ''); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; }).join(',')).join('\n');
+    return `<section id="t${i}" class="tab${i ? '' : ' on'}">
+      ${head.map((x) => `<p class="note">${x.map(e).join(' · ')}</p>`).join('')}
+      <p><button onclick="dl(${i})">⬇ Tải file mở bằng Excel / Google Sheets</button> <span class="cnt">${r.length} dòng</span></p>
+      <div class="wrap"><table><thead><tr>${(h ?? []).map((x) => `<th>${e(x)}</th>`).join('')}</tr></thead>
+      <tbody>${r.length ? r.map((x) => `<tr>${x.map((v) => `<td class="${color(String(v ?? ''))}">${e(v)}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${(h ?? []).length || 1}">Chưa có dữ liệu</td></tr>`}</tbody></table></div>
+      <textarea hidden id="csv${i}">${e(csvRows)}</textarea></section>`;
+  }).join('');
+  const nav = tabs.map(([n], i) => `<a href="#" data-i="${i}" class="${i ? '' : 'on'}">${e(n)}</a>`).join('');
+  const page = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Báo cáo lớp</title><style>
+:root{--bg:#f6f2ea;--card:#fbf9f4;--ink:#2b2622;--line:#e2d9cb;--teal:#1f4e52;--ok:#e2ecdf;--mid:#f5e9cc;--bad:#f2dcdc}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,sans-serif}
+header{background:var(--teal);color:#f3e9d2;padding:16px}h1{margin:0;font:600 22px Georgia,serif;letter-spacing:.04em}
+nav{display:flex;gap:6px;flex-wrap:wrap;padding:12px 16px}nav a{padding:6px 12px;border-radius:99px;background:var(--card);border:1px solid var(--line);color:var(--ink);text-decoration:none}
+nav a.on{background:var(--teal);color:#fff;border-color:var(--teal)}
+.tab{display:none;padding:0 16px 24px}.tab.on{display:block}.note{color:#5c534b}
+.wrap{overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:12px;max-height:75vh}
+table{border-collapse:collapse;width:100%;white-space:nowrap}th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left}
+th{position:sticky;top:0;background:#efe9de;font-weight:600}td.ok{background:var(--ok)}td.mid{background:var(--mid)}td.bad{background:var(--bad)}
+button{background:var(--teal);color:#fff;border:0;border-radius:8px;padding:8px 12px;font:inherit;cursor:pointer}.cnt{color:#7a7067;margin-left:8px}
+form{display:inline;margin-left:8px}input{font:inherit;padding:4px 6px;border-radius:6px;border:1px solid var(--line)}
+</style></head><body><header><h1>BÁO CÁO LỚP</h1><div>Mở lại trang để cập nhật · <form><label>Tháng <input type="month" name="m" value="${e(month)}" onchange="this.form.submit()"></label></form></div></header>
+<nav>${nav}</nav>${body}
+<script>
+document.querySelectorAll('nav a').forEach(a=>a.onclick=ev=>{ev.preventDefault();document.querySelectorAll('nav a,.tab').forEach(x=>x.classList.remove('on'));a.classList.add('on');document.getElementById('t'+a.dataset.i).classList.add('on')});
+function dl(i){const t=document.getElementById("csv"+i).value;const b=new Blob(['\ufeff'+t],{type:'text/csv;charset=utf-8'});const u=URL.createObjectURL(b);const l=document.createElement('a');l.href=u;l.download=document.querySelectorAll('nav a')[i].textContent+'.csv';l.click();URL.revokeObjectURL(u)}
+</script></body></html>`;
+  return new Response(page, { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } });
+}
+
 /** PostgREST trả tối đa 1000 dòng mỗi lần → đọc theo trang */
 async function all<T>(q: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>): Promise<T[]> {
   const out: T[] = [];
@@ -202,6 +241,13 @@ export default async (req: Request): Promise<Response> => {
     const url = new URL(req.url);
     const p = url.pathname;
     const now = new Date().toISOString();
+    if (p === '/bao-cao-lop') {
+      try { requireAdmin(req); } catch { return Response.redirect(`${url.protocol}//${url.host}/admin`, 302); }
+      const qm = url.searchParams.get('m');
+      const month = qm && /^\d{4}-\d{2}$/.test(qm) ? qm : monthKey(vnDate(now));
+      const [a, b, c, d, e] = await Promise.all([homNay(now), chuaLam(now), thang(now, month), deXuat(), baoLoi()]);
+      return html(month, [['Hôm nay', a], ['Chưa làm', b], [`Tháng ${month}`, c], ['Từ HS đề xuất', d], ['Câu báo lỗi', e]]);
+    }
     if (p === '/api/admin/sheet-links') {
       requireAdmin(req);
       const site = `${url.protocol}//${url.host}`;
@@ -234,5 +280,5 @@ export default async (req: Request): Promise<Response> => {
   }
 };
 
-export const config: Config = { path: ['/api/admin/sheet-links', '/api/sheet/:file'] };
+export const config: Config = { path: ['/bao-cao-lop', '/api/admin/sheet-links', '/api/sheet/:file'] };
 
