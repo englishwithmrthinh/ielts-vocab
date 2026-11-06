@@ -177,10 +177,14 @@ export function parseLessonJson(text: string): ParseResult {
   return { words: ok ? words : [], issues, ok };
 }
 
-/** Số ảnh lưới cần cho một buổi (mục 5: ≤20 → 4×5, 21–25 → 5×5, >25 tách 2 ảnh) */
+/**
+ * Số ảnh lưới cần cho một buổi (mục 5: ≤20 → 4 cột, 21–25 → 5 cột, >25 tách 2 ảnh).
+ * Số hàng = vừa đủ chứa số từ (16 từ → 4×4), để không có hàng trắng trọn vẹn
+ * làm bộ dò rãnh đếm sai.
+ */
 export function gridPlan(n: number): { cols: number; rows: number; count: number }[] {
   if (n <= 0) return [];
-  if (n <= 20) return [{ cols: 4, rows: 5, count: n }];
+  if (n <= 20) return [{ cols: 4, rows: Math.ceil(n / 4), count: n }];
   if (n <= 25) return [{ cols: 5, rows: 5, count: n }];
   const first = Math.ceil(n / 2);
   return [...gridPlan(first), ...gridPlan(n - first)];

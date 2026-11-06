@@ -3,7 +3,7 @@
  * Chế độ demo (?demo=1 trên URL): dùng dữ liệu giả trong trình duyệt, không cần
  * máy chủ — để xem giao diện và chụp màn hình khi chưa có Supabase/Netlify.
  */
-import type { Milestone, Student } from '@shared/types';
+import type { Lesson, Milestone, Student, Word } from '@shared/types';
 import { api } from '../../lib/api';
 import { mockApi } from './mock';
 
@@ -60,4 +60,14 @@ export const adminApi = {
     call<{ existing: ExistingWord[] }>('POST', '/api/admin/lessons/check', { words }),
   createLesson: (body: { number: number; taught_on: string; student_ids: string[]; json: string }) =>
     call<{ lesson: { id: string; number: number }; reused: number; created: number }>('POST', '/api/admin/lessons', body),
+
+  lessonDetail: (id: string) => call<LessonDetail>('GET', `/api/admin/lessons/detail?id=${id}`),
+  runPipeline: (lessonId: string) => call<unknown>('POST', '/api/admin/pipeline/run', { lesson_id: lessonId }),
+  redoWord: (wordId: string, what: 'audio' | 'image') => call<unknown>('POST', '/api/admin/pipeline/word', { word_id: wordId, what }),
+  updateWord: (id: string, patch: Partial<Word>) => call<{ word: Word }>('POST', '/api/admin/words/update', { id, patch }),
+  dropImage: (id: string) => call<{ word: Word }>('POST', '/api/admin/words/drop-image', { id }),
+  publish: (lessonId: string, studentIds: string[]) =>
+    call<{ ok: true; assigned: number }>('POST', '/api/admin/lessons/publish', { lesson_id: lessonId, student_ids: studentIds }),
 };
+
+export interface LessonDetail { lesson: Lesson; words: Word[]; studentIds: string[] }

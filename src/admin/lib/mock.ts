@@ -2,11 +2,11 @@
  * Máy chủ giả cho chế độ demo (?demo=1). Dữ liệu chỉ sống trong bộ nhớ tab,
  * tải lại trang là về ban đầu. Không dùng ở bản thật.
  */
-import type { Milestone, Student } from '@shared/types';
+import type { Lesson, Milestone, Student, Word } from '@shared/types';
 import { assignIdx, milestonesOfMonth } from '@shared/milestones';
 import { vnDate } from '@shared/time';
 import { ApiCallError } from '../../lib/api';
-import type { LessonSummary, StudentCard } from './adminApi';
+import type { LessonDetail, LessonSummary, StudentCard } from './adminApi';
 
 const NAMES = [
   'Nguyễn Minh Anh', 'Trần Gia Bảo', 'Lê Khánh Chi', 'Phạm Đức Duy', 'Hoàng Thu Hà',
@@ -29,6 +29,45 @@ const state = {
     { id: 'l1', number: 1, taught_on: '2026-11-02', status: 'published', published_at: '2026-11-02T14:00:00Z', created_at: '2026-11-02T12:00:00Z', word_count: 20, student_count: 12 },
   ] as LessonSummary[],
   knownWords: new Set(['environment|n', 'pollution|n', 'sustainable|adj']),
+};
+
+const DEMO_WORDS: [string, Word['pos'], string, string][] = [
+  ['environment', 'n', 'môi trường', '/ɪnˈvaɪrənmənt/'], ['pollution', 'n', 'sự ô nhiễm', '/pəˈluːʃn/'],
+  ['renewable', 'adj', 'có thể tái tạo', '/rɪˈnjuːəbl/'], ['emission', 'n', 'khí thải', '/iˈmɪʃn/'],
+  ['sustainable', 'adj', 'bền vững', '/səˈsteɪnəbl/'], ['recycle', 'v', 'tái chế', '/ˌriːˈsaɪkl/'],
+  ['deforestation', 'n', 'nạn phá rừng', '/ˌdiːˌfɒrɪˈsteɪʃn/'], ['habitat', 'n', 'môi trường sống', '/ˈhæbɪtæt/'],
+  ['endangered', 'adj', 'có nguy cơ tuyệt chủng', '/ɪnˈdeɪndʒəd/'], ['conserve', 'v', 'bảo tồn', '/kənˈsɜːv/'],
+  ['drought', 'n', 'hạn hán', '/draʊt/'], ['flood', 'n', 'lũ lụt', '/flʌd/'],
+  ['climate', 'n', 'khí hậu', '/ˈklaɪmət/'], ['carbon footprint', 'phr', 'lượng khí thải carbon', '/ˌkɑːbən ˈfʊtprɪnt/'],
+  ['waste', 'n', 'rác thải', '/weɪst/'], ['solar', 'adj', 'thuộc mặt trời', '/ˈsəʊlə(r)/'],
+  ['wildlife', 'n', 'động vật hoang dã', '/ˈwaɪldlaɪf/'], ['ecosystem', 'n', 'hệ sinh thái', '/ˈiːkəʊsɪstəm/'],
+];
+
+function demoImage(i: number): string {
+  const hue = (i * 47) % 360;
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='hsl(${hue},45%,70%)'/><circle cx='${30 + (i % 4) * 12}' cy='40' r='18' fill='hsl(${(hue + 60) % 360},55%,55%)'/><path d='M0 78 Q30 ${60 + (i % 3) * 6} 55 76 T100 70 V100 H0Z' fill='hsl(${(hue + 120) % 360},40%,45%)'/></svg>`;
+  return 'data:image/svg+xml,' + encodeURIComponent(svg);
+}
+
+const demoDetail: LessonDetail = {
+  lesson: {
+    id: 'l2', number: 2, taught_on: '2026-11-04', status: 'review', infographic_urls: [], published_at: null, created_at: '2026-11-04T12:00:00Z',
+    pipeline_log: [
+      { at: '2026-11-04T12:00:01Z', step: 'validate', message: 'Bắt đầu: 18 từ' },
+      { at: '2026-11-04T12:00:04Z', step: 'ipa', message: 'Phiên âm: 16/18 từ tra được từ điển, còn lại giữ bản AI' },
+      { at: '2026-11-04T12:00:19Z', step: 'audio', message: 'Audio: tạo 18/18 từ (1 từ phải tạo lại riêng)' },
+      { at: '2026-11-04T12:01:02Z', step: 'image', message: 'Ảnh: 17 ảnh mới · lưới đạt lần đầu 1/1, vẽ lại 0, chuyển ảnh lẻ 0' },
+      { at: '2026-11-04T12:01:03Z', step: 'error', message: 'image "carbon footprint": ô có nét giống chữ', word_id: 'w13' },
+      { at: '2026-11-04T12:01:03Z', step: 'done', message: 'Xong, 1 lỗi — xem và tạo lại ở màn Duyệt' },
+    ],
+  } as Lesson,
+  words: DEMO_WORDS.map(([word, pos, meaning_vi, ipa], i) => ({
+    id: `w${i}`, word, pos, meaning_vi, ipa, ipa_source: i === 13 || i === 6 ? 'ai' : 'dict',
+    syllables: null, example: `People should care more about the ${word}.`, word_family: [],
+    image_url: i === 13 ? null : demoImage(i), audio_url: i === 3 ? null : 'data:audio/mpeg;base64,', image_hint: `a picture of ${word}`,
+    origin: 'teacher', created_at: '2026-11-04T12:00:00Z',
+  })) as Word[],
+  studentIds: ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9', 's10', 's12'],
 };
 
 function ensureMonth(month: string) {
@@ -121,6 +160,46 @@ export async function mockApi<T>(method: string, path: string, body?: unknown): 
     };
     state.lessons.unshift(lesson);
     return ok({ lesson, reused, created: parsed.words.length - reused });
+  }
+  if (route === 'GET /api/admin/lessons/detail') {
+    const id = url.searchParams.get('id')!;
+    const sum = state.lessons.find((l) => l.id === id);
+    if (!sum) throw new ApiCallError(404, 'not_found', 'Không thấy buổi');
+    if (id !== 'l2') {
+      return ok({ ...demoDetail, lesson: { ...demoDetail.lesson, id, number: sum.number, taught_on: sum.taught_on, status: sum.status, pipeline_log: sum.status === 'draft' ? [] : demoDetail.lesson.pipeline_log } });
+    }
+    return ok({ ...demoDetail, lesson: { ...demoDetail.lesson, status: sum.status } });
+  }
+  if (route === 'POST /api/admin/pipeline/run') {
+    const l = state.lessons.find((x) => x.id === b.lesson_id);
+    if (l) {
+      l.status = 'processing';
+      setTimeout(() => (l.status = 'review'), 2500);
+    }
+    return ok(null);
+  }
+  if (route === 'POST /api/admin/pipeline/word') {
+    const w = demoDetail.words.find((x) => x.id === b.word_id);
+    if (w) setTimeout(() => (b.what === 'image' ? (w.image_url = demoImage(Number(w.id.slice(1)) + 7)) : (w.audio_url = 'data:audio/mpeg;base64,')), 1500);
+    return ok(null);
+  }
+  if (route === 'POST /api/admin/words/update') {
+    const w = demoDetail.words.find((x) => x.id === b.id)!;
+    Object.assign(w, b.patch as Partial<Word>);
+    return ok({ word: { ...w } });
+  }
+  if (route === 'POST /api/admin/words/drop-image') {
+    const w = demoDetail.words.find((x) => x.id === b.id)!;
+    w.image_url = null;
+    return ok({ word: { ...w } });
+  }
+  if (route === 'POST /api/admin/lessons/publish') {
+    const l = state.lessons.find((x) => x.id === b.lesson_id);
+    if (l) {
+      l.status = 'published';
+      l.published_at = new Date().toISOString();
+    }
+    return ok({ ok: true, assigned: (b.student_ids as string[]).length });
   }
   throw new ApiCallError(404, 'not_found', `Demo chưa có ${route}`);
 }
