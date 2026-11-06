@@ -93,6 +93,14 @@ function Shell({ onLogout }: { onLogout: () => void }) {
               </span>
             </NavLink>
           ))}
+          <a href="/bao-cao-lop" target="_blank" rel="noreferrer"
+            className="whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">
+            Bảng báo cáo lớp ↗
+          </a>
+          <a href="/hoc" target="_blank" rel="noreferrer"
+            className="whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">
+            Xem trang học sinh ↗
+          </a>
         </nav>
         <div className="absolute bottom-4 left-3 hidden md:block">
           {DEMO && <p className="mb-2 px-3 text-xs text-amber-700">Chế độ demo · dữ liệu giả</p>}

@@ -128,6 +128,9 @@ export default function Login() {
             {busy ? <Spinner className="size-5" /> : error && <span className="text-bad-ink">{error}</span>}
           </div>
           <p className="mt-auto pt-6 text-center text-xs text-ink-3">Quên PIN? Nhắn thầy để được đặt lại.</p>
+          <p className="pt-2 text-center text-xs text-ink-3">
+            <a href="/admin" className="underline underline-offset-2">Dành cho thầy · Quản trị</a>
+          </p>
         </div>
       )}
       </div>
