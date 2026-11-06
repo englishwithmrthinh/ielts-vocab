@@ -10,7 +10,7 @@ export interface WordRow {
   id: string; word: string; pos: PartOfSpeech; meaning_vi: string; ipa: string | null; syllables: string | null;
   example: string | null; word_family: WordFamilyItem[]; image_url: string | null; audio_url: string | null;
 }
-export interface StudentWordFull extends StudentWordLite { wrong_count: number; w: WordRow }
+export interface StudentWordFull extends StudentWordLite { wrong_count: number; last_answered_at: string | null; w: WordRow }
 
 const WORD_COLS = 'id,word,pos,meaning_vi,ipa,syllables,example,word_family,image_url,audio_url';
 
@@ -32,9 +32,9 @@ export function toQuiz(sw: StudentWordFull): QuizWord {
 export async function loadStudentWords(studentId: string): Promise<StudentWordFull[]> {
   const rows = must(
     await db().from('student_words')
-      .select(`word_id,box,due_idx,introduced,typed_ok,wrong_count,w:words(${WORD_COLS})`)
+      .select(`word_id,box,due_idx,introduced,typed_ok,wrong_count,last_answered_at,w:words(${WORD_COLS})`)
       .eq('student_id', studentId),
-  ) as unknown as (StudentWordLite & { wrong_count: number; w: WordRow })[];
+  ) as unknown as (StudentWordLite & { wrong_count: number; last_answered_at: string | null; w: WordRow })[];
   return rows.filter((r) => r.w).map((r) => ({ ...r, box: r.box as Box }));
 }
 
