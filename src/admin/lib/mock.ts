@@ -2,7 +2,7 @@
  * Máy chủ giả cho chế độ demo (?demo=1). Dữ liệu chỉ sống trong bộ nhớ tab,
  * tải lại trang là về ban đầu. Không dùng ở bản thật.
  */
-import type { Lesson, Milestone, Student, Word } from '@shared/types';
+import type { Class, Lesson, Milestone, Student, Word } from '@shared/types';
 import { assignIdx, milestonesOfMonth } from '@shared/milestones';
 import { vnDate } from '@shared/time';
 import { ApiCallError } from '../../lib/api';
@@ -14,19 +14,26 @@ const NAMES = [
   'Dương Hải Phong', 'Lý Thanh Tâm',
 ];
 
+const CLASSES: Class[] = [
+  { id: 'c1', name: 'IELTS Foundation T3-T6', active: true, created_at: '2026-11-01T02:00:00Z' },
+  { id: 'c2', name: 'IELTS 5.0 Cuối tuần', active: true, created_at: '2026-11-01T02:00:00Z' },
+];
+
 const state = {
   loggedIn: false,
+  classes: [...CLASSES],
   students: NAMES.map<Student>((name, i) => ({
     id: `s${i + 1}`,
     code: 'HS' + String(i + 1).padStart(2, '0'),
     name,
     active: i !== 10,
+    class_id: i < 6 ? 'c1' : i < 10 ? 'c2' : null,
     created_at: '2026-11-01T02:00:00Z',
   })),
   milestones: [] as Milestone[],
   lessons: [
-    { id: 'l2', number: 2, taught_on: '2026-11-04', status: 'review', published_at: null, created_at: '2026-11-04T12:00:00Z', word_count: 18, student_count: 11 },
-    { id: 'l1', number: 1, taught_on: '2026-11-02', status: 'published', published_at: '2026-11-02T14:00:00Z', created_at: '2026-11-02T12:00:00Z', word_count: 20, student_count: 12 },
+    { id: 'l2', number: 2, taught_on: '2026-11-04', status: 'review', published_at: null, created_at: '2026-11-04T12:00:00Z', word_count: 18, student_count: 6, class_names: ['IELTS Foundation T3-T6'], unassigned_count: 0 },
+    { id: 'l1', number: 1, taught_on: '2026-11-02', status: 'published', published_at: '2026-11-02T14:00:00Z', created_at: '2026-11-02T12:00:00Z', word_count: 20, student_count: 11, class_names: ['IELTS 5.0 Cuối tuần', 'IELTS Foundation T3-T6'], unassigned_count: 1 },
   ] as LessonSummary[],
   knownWords: new Set(['environment|n', 'pollution|n', 'sustainable|adj']),
 };
@@ -67,7 +74,7 @@ const demoDetail: LessonDetail = {
     image_url: i === 13 ? null : demoImage(i), audio_url: i === 3 ? null : 'data:audio/mpeg;base64,', image_hint: `a picture of ${word}`,
     origin: 'teacher', created_at: '2026-11-04T12:00:00Z',
   })) as Word[],
-  studentIds: ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9', 's10', 's12'],
+  studentIds: ['s1', 's2', 's3', 's4', 's5', 's6'],
 };
 
 function ensureMonth(month: string) {
@@ -106,7 +113,7 @@ export async function mockApi<T>(method: string, path: string, body?: unknown): 
     const names = (b.names as string[]).map((n) => n.trim()).filter(Boolean);
     const max = Math.max(0, ...state.students.map((s) => Number(s.code.slice(2))));
     const created: StudentCard[] = names.map((name, i) => {
-      const s: Student = { id: `s${Date.now()}${i}`, code: 'HS' + String(max + i + 1).padStart(2, '0'), name, active: true, created_at: new Date().toISOString() };
+      const s: Student = { id: `s${Date.now()}${i}`, code: 'HS' + String(max + i + 1).padStart(2, '0'), name, active: true, class_id: (b.classId as string | null) ?? null, created_at: new Date().toISOString() };
       state.students.push(s);
       return { id: s.id, code: s.code, name, pin: pin() };
     });
@@ -125,6 +132,27 @@ export async function mockApi<T>(method: string, path: string, body?: unknown): 
     return ok({ cards });
   }
 
+  if (route === 'GET /api/admin/classes') {
+    return ok({ classes: state.classes.map((c) => ({ ...c, studentCount: state.students.filter((s) => s.active && s.class_id === c.id).length })).sort((a, b) => a.name.localeCompare(b.name)) });
+  }
+  if (route === 'POST /api/admin/classes') {
+    const name = String(b.name ?? '').trim();
+    if (state.classes.some((c) => c.name.toLowerCase() === name.toLowerCase())) throw new ApiCallError(409, 'duplicate', 'Đã có lớp trùng tên');
+    const c: Class = { id: `c${Date.now()}`, name, active: true, created_at: new Date().toISOString() };
+    state.classes.push(c);
+    return ok({ class: c });
+  }
+  if (route === 'POST /api/admin/classes/update') {
+    const c = state.classes.find((x) => x.id === b.id)!;
+    if (typeof b.name === 'string') c.name = b.name;
+    if (typeof b.active === 'boolean') c.active = b.active;
+    return ok({ class: { ...c } });
+  }
+  if (route === 'POST /api/admin/classes/move') {
+    const ids = b.studentIds as string[];
+    state.students.forEach((s) => { if (ids.includes(s.id)) s.class_id = (b.classId as string | null) ?? null; });
+    return ok({ moved: ids.length });
+  }
   if (route === 'GET /api/admin/milestones') {
     const month = url.searchParams.get('month')!;
     ensureMonth(month);

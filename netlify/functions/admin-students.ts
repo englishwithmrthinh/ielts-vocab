@@ -1,8 +1,8 @@
 /**
  * Quản lý học sinh (cần cookie quản trị) — Claude 3.
  *
- * GET  /api/admin/students                 → { students: Student[] }
- * POST /api/admin/students        { names: string[] }
+ * GET  /api/admin/students[?classId=…|none] → { students: Student[] }   (none = chưa xếp lớp)
+ * POST /api/admin/students        { names: string[], classId? }
  *      → { created: StudentCard[] }  (tự sinh mã HSxx + PIN; PIN chỉ trả về một lần)
  * POST /api/admin/students/update { id, name?, active? } → { student }
  * POST /api/admin/students/reset-pins { ids: string[] }
@@ -23,7 +23,7 @@ export interface StudentCard {
   pin: string;
 }
 
-const COLS = 'id,code,name,active,created_at';
+const COLS = 'id,code,name,active,class_id,created_at';
 const MAX_NAME = 60;
 
 function cleanName(v: unknown): string {
@@ -43,11 +43,14 @@ export function nextCodes(existing: string[], count: number): string[] {
   return Array.from({ length: count }, (_, i) => 'HS' + String(max + 1 + i).padStart(2, '0'));
 }
 
-async function listStudents(): Promise<Student[]> {
-  return must(await db().from('students').select(COLS).order('code')) as Student[];
+async function listStudents(classId?: string | null): Promise<Student[]> {
+  let q = db().from('students').select(COLS).order('code');
+  if (classId === 'none') q = q.is('class_id', null);
+  else if (classId) q = q.eq('class_id', classId);
+  return must(await q) as Student[];
 }
 
-async function createStudents(names: string[]): Promise<StudentCard[]> {
+async function createStudents(names: string[], classId: string | null = null): Promise<StudentCard[]> {
   const clean = names.map(cleanName);
   if (!clean.length) throw new HttpError(400, 'bad_input', 'Chưa nhập tên học sinh');
   if (clean.length > 60) throw new HttpError(400, 'bad_input', 'Mỗi lần thêm tối đa 60 học sinh');
@@ -57,7 +60,7 @@ async function createStudents(names: string[]): Promise<StudentCard[]> {
     const codes = nextCodes((await listStudents()).map((s) => s.code), clean.length);
     const pins = clean.map(() => randomPin());
     const rows = await Promise.all(
-      clean.map(async (name, i) => ({ name, code: codes[i]!, pin_hash: await hashPin(pins[i]!) })),
+      clean.map(async (name, i) => ({ name, code: codes[i]!, pin_hash: await hashPin(pins[i]!), class_id: classId })),
     );
     const res = await db().from('students').insert(rows).select(COLS);
     if (res.error?.message.includes('duplicate')) continue;
@@ -100,12 +103,17 @@ export default async (req: Request): Promise<Response> => {
     requireAdmin(req);
     const path = new URL(req.url).pathname;
     if (path === '/api/admin/students' && req.method === 'GET') {
-      return json({ students: await listStudents() });
+      return json({ students: await listStudents(new URL(req.url).searchParams.get('classId')) });
     }
     if (path === '/api/admin/students' && req.method === 'POST') {
-      const { names } = await readJson<{ names?: unknown }>(req);
+      const { names, classId } = await readJson<{ names?: unknown; classId?: unknown }>(req);
       if (!Array.isArray(names)) throw new HttpError(400, 'bad_input', 'Cần danh sách names');
-      return json({ created: await createStudents(names) });
+      if (classId !== undefined && classId !== null && typeof classId !== 'string') throw new HttpError(400, 'bad_input', 'classId không hợp lệ');
+      if (classId) {
+        const c = must(await db().from('classes').select('id').eq('id', classId).maybeSingle());
+        if (!c) throw new HttpError(404, 'not_found', 'Không tìm thấy lớp');
+      }
+      return json({ created: await createStudents(names, (classId as string | null | undefined) ?? null) });
     }
     if (path === '/api/admin/students/update' && req.method === 'POST') {
       return json({ student: await updateStudent(await readJson(req)) });

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import type { Student } from '@shared/types';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import type { ClassesResponse, Student } from '@shared/types';
 import { adminApi, type StudentCard } from '../lib/adminApi';
 import { setPrintCards } from '../lib/printStore';
 import { Badge, Button, Card, ErrorBox, PageHeader, inputCls } from '../ui';
@@ -17,15 +17,34 @@ export default function StudentsPage() {
   const [editName, setEditName] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showLocked, setShowLocked] = useState(false);
+  const [classes, setClasses] = useState<ClassesResponse['classes']>([]);
+  const [params, setParams] = useSearchParams();
+  const filter = params.get('lop') ?? 'all'; // all | none | <class id>
+  const [moveTo, setMoveTo] = useState('');
+  const [addClassId, setAddClassId] = useState('');
 
-  const load = () => adminApi.students().then((r) => setStudents(r.students), setError);
+  const load = () =>
+    Promise.all([adminApi.students(), adminApi.classes()]).then(([s, c]) => {
+      setStudents(s.students);
+      setClasses(c.classes);
+    }, setError);
   useEffect(() => {
     load();
   }, []);
+  useEffect(() => {
+    setSelected(new Set());
+    setAddClassId(filter !== 'all' && filter !== 'none' ? filter : '');
+  }, [filter]);
 
-  const visible = useMemo(() => (students ?? []).filter((s) => showLocked || s.active), [students, showLocked]);
-  const activeCount = (students ?? []).filter((s) => s.active).length;
-  const lockedCount = (students ?? []).length - activeCount;
+  const className = new Map(classes.map((c) => [c.id, c.name]));
+  const openClasses = classes.filter((c) => c.active);
+  const inFilter = (s: Student) => (filter === 'all' ? true : filter === 'none' ? !s.class_id : s.class_id === filter);
+  const scoped = useMemo(() => (students ?? []).filter(inFilter), [students, filter]); // eslint-disable-line react-hooks/exhaustive-deps
+  const visible = useMemo(() => scoped.filter((s) => showLocked || s.active), [scoped, showLocked]);
+  const activeCount = scoped.filter((s) => s.active).length;
+  const lockedCount = scoped.length - activeCount;
+  const unassignedCount = (students ?? []).filter((s) => s.active && !s.class_id).length;
+  const filterLabel = filter === 'all' ? '' : filter === 'none' ? 'chưa xếp lớp' : `lớp ${className.get(filter) ?? ''}`;
   const names = namesText.split('\n').map((n) => n.trim()).filter(Boolean);
 
   const run = async (fn: () => Promise<void>) => {
@@ -42,7 +61,7 @@ export default function StudentsPage() {
 
   const add = () =>
     run(async () => {
-      const { created } = await adminApi.addStudents(names);
+      const { created } = await adminApi.addStudents(names, addClassId || null);
       setJustCreated(created);
       setNamesText('');
       setAdding(false);
@@ -77,6 +96,21 @@ export default function StudentsPage() {
     });
   };
 
+  const move = () => {
+    if (!selected.size || !moveTo) return;
+    const target = moveTo === 'none' ? null : moveTo;
+    run(async () => {
+      const r = await adminApi.moveStudents([...selected], target);
+      setSelected(new Set());
+      setMoveTo('');
+      await load();
+      setError(null);
+      alertMoved(r.moved, target ? className.get(target) ?? '' : null);
+    });
+  };
+  const [moved, setMoved] = useState('');
+  const alertMoved = (n: number, to: string | null) => setMoved(to ? `Đã chuyển ${n} học sinh sang lớp ${to}.` : `Đã bỏ ${n} học sinh khỏi lớp.`);
+
   const toggleSel = (id: string) =>
     setSelected((prev) => {
       const next = new Set(prev);
@@ -90,18 +124,31 @@ export default function StudentsPage() {
     <>
       <PageHeader
         title="Học sinh"
-        sub={students ? `${activeCount} đang học${lockedCount ? ` · ${lockedCount} đã khoá` : ''}` : undefined}
+        sub={students ? `${filterLabel ? `${filterLabel[0]!.toUpperCase()}${filterLabel.slice(1)}: ` : ''}${activeCount} đang học${lockedCount ? ` · ${lockedCount} đã khoá` : ''}` : undefined}
         actions={
           <>
-            <Button variant="secondary" disabled={busy || !activeCount} onClick={() => printCards((students ?? []).filter((s) => s.active).map((s) => s.id))}>
-              In thẻ cả lớp
+            <Button variant="secondary" disabled={busy || !activeCount} onClick={() => printCards(scoped.filter((s) => s.active).map((s) => s.id))}>
+              {filterLabel ? `In thẻ ${filterLabel}` : 'In thẻ tất cả'}
             </Button>
             <Button onClick={() => setAdding(true)} disabled={adding}>+ Thêm học sinh</Button>
           </>
         }
       />
       <div className="space-y-4">
+        <div className="flex flex-wrap gap-1.5">
+          {[{ id: 'all', name: 'Tất cả' }, ...openClasses.map((c) => ({ id: c.id, name: c.name })), ...(unassignedCount ? [{ id: 'none', name: `Chưa xếp lớp (${unassignedCount})` }] : [])].map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => setParams(f.id === 'all' ? {} : { lop: f.id }, { replace: true })}
+              className={`rounded-full px-3 py-1 text-sm font-medium ring-1 ${filter === f.id ? 'bg-teal-700 text-white ring-teal-700' : 'bg-white text-slate-700 ring-slate-300 hover:bg-slate-50'}`}
+            >
+              {f.name}
+            </button>
+          ))}
+        </div>
         <ErrorBox error={error} />
+        {moved && <p className="rounded-lg bg-teal-50 px-3 py-2 text-sm text-teal-900 ring-1 ring-teal-200" onClick={() => setMoved('')}>{moved}</p>}
 
         {justCreated.length > 0 && (
           <Card className="bg-teal-50/60 ring-teal-200">
@@ -130,6 +177,13 @@ export default function StudentsPage() {
           <Card>
             <h2 className="font-semibold text-slate-900">Thêm học sinh</h2>
             <p className="mt-1 text-sm text-slate-500">Mỗi dòng một tên. Mã (HS..) và PIN 4 số được tạo tự động.</p>
+            <label className="mt-3 flex flex-wrap items-center gap-2 text-sm text-slate-700">
+              Vào lớp
+              <select className={`${inputCls} w-auto`} value={addClassId} onChange={(e) => setAddClassId(e.target.value)}>
+                <option value="">— Chưa xếp lớp —</option>
+                {openClasses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </label>
             <textarea
               autoFocus
               rows={5}
@@ -158,6 +212,16 @@ export default function StudentsPage() {
                   Hiện bạn đã khoá
                 </label>
               )}
+              {selected.size > 0 && openClasses.length + (classes.length ? 1 : 0) > 0 && (
+                <span className="flex items-center gap-1">
+                  <select aria-label="Chuyển sang lớp" className={`${inputCls} w-auto py-1.5`} value={moveTo} onChange={(e) => setMoveTo(e.target.value)}>
+                    <option value="">Chuyển lớp…</option>
+                    {openClasses.map((c) => <option key={c.id} value={c.id}>→ {c.name}</option>)}
+                    <option value="none">Bỏ khỏi lớp</option>
+                  </select>
+                  <Button variant="secondary" disabled={busy || !moveTo} onClick={move}>Chuyển ({selected.size})</Button>
+                </span>
+              )}
               <Button variant="secondary" disabled={busy || !selected.size} onClick={() => printCards([...selected])}>
                 In thẻ ({selected.size})
               </Button>
@@ -166,7 +230,7 @@ export default function StudentsPage() {
           {!students ? (
             <p className="px-4 py-8 text-center text-sm text-slate-500">Đang tải…</p>
           ) : visible.length === 0 ? (
-            <p className="px-4 py-8 text-center text-sm text-slate-500">Chưa có học sinh. Bấm “Thêm học sinh” để bắt đầu.</p>
+            <p className="px-4 py-8 text-center text-sm text-slate-500">{filter === 'all' ? 'Chưa có học sinh. Bấm “Thêm học sinh” để bắt đầu.' : 'Không có học sinh nào ở mục này.'}</p>
           ) : (
             <ul className="divide-y divide-slate-100">
               {visible.map((s) => (
@@ -184,6 +248,7 @@ export default function StudentsPage() {
                       <span className="font-medium">{s.name}</span>
                     )}
                   </div>
+                  {filter === 'all' && editId !== s.id && (s.class_id && className.get(s.class_id) ? <Badge tone="blue">{className.get(s.class_id)}</Badge> : <Badge tone="amber">Chưa xếp lớp</Badge>)}
                   {!s.active && <Badge>Đã khoá</Badge>}
                   {editId !== s.id && (
                     <div className="ml-auto flex gap-1">

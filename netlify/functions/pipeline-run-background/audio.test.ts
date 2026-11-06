@@ -87,6 +87,24 @@ describe('audioForWords + encodeMp3', () => {
     }
   });
 
+  it('chia đoạn 25 từ: 40 từ = 2 lần gọi, đủ 40 file', async () => {
+    const words = Array.from({ length: 40 }, (_, i) => `w${String.fromCharCode(97 + (i % 26))}${i}`);
+    const texts: string[] = [];
+    const res = await audioForWords(words, async (t) => { texts.push(t); return fakeTts(t); });
+    expect(res.calls).toBe(2);
+    expect(texts[1]!.startsWith(words[25]!)).toBe(true);
+    expect(res.mp3.filter(Boolean)).toHaveLength(40 - res.redo.length);
+    expect(res.redo).toEqual([]);
+  });
+
+  it('một đoạn lỗi thì cả đoạn vào danh sách tạo lại, đoạn khác vẫn có file', async () => {
+    const words = Array.from({ length: 30 }, (_, i) => `word${i}`);
+    let n = 0;
+    const res = await audioForWords(words, async (t) => { if (n++ === 1) throw new Error('mạng'); return fakeTts(t); });
+    expect(res.redo).toEqual([25, 26, 27, 28, 29]);
+    expect(res.mp3.slice(0, 25).every(Boolean)).toBe(true);
+  });
+
   it('mã hoá được đoạn rất ngắn', () => {
     expect(encodeMp3(new Int16Array(100)).length).toBeGreaterThan(0);
   });
