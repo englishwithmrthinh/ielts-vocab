@@ -207,12 +207,14 @@ export interface Question {
     /** Có "___" ở chỗ trống (J, K, M) */
     sentence?: string;
     firstLetter?: string; // K
-    baseWord?: string;    // M
+    baseWord?: string;    // M (pos = loại từ của DẠNG CẦN ĐIỀN)
     masked?: string;      // G, ví dụ "en_ir_nm_nt"
     letters?: string[];   // F, đã xáo
   };
   options?: Option[];                          // A, B, C, E, J
+  /** D: left[].id = wordId (khớp perWord) */
   pairs?: { left: Option[]; right: Option[] }; // D
+  /** L: blanks[].id = wordId (khớp perWord) */
   blanks?: { id: string; sentence: string }[]; // L
   bank?: Option[];                             // L
 }
@@ -231,6 +233,8 @@ export interface AnswerResult {
   correct: boolean;
   perWord?: { wordId: UUID; correct: boolean }[];
   expected: string;
+  /** Dạng chọn (A B C E J): id của đáp án đúng, để tô xanh đúng nút */
+  correctOptionId?: string;
   hint?: TypingHint;
   diff?: { char: string; ok: boolean }[];
   wordCard: WordCard;

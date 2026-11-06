@@ -1,0 +1,1009 @@
+{
+  "words": [
+    {
+      "word": "biodiversity",
+      "pos": "n",
+      "meaning_vi": "sự đa dạng sinh học",
+      "ipa": "/ˌbaɪəʊdaɪˈvɜːsəti/",
+      "syllables": "bi·o·di·VER·si·ty",
+      "example": "Logging in tropical rainforests threatens global biodiversity by destroying rare animal and plant species.",
+      "word_family": [
+        {
+          "form": "biodiverse",
+          "pos": "adj",
+          "sentence": "Coral reefs are among the most ___ marine regions on Earth."
+        }
+      ],
+      "image_hint": "a parrot, a frog and a butterfly together on one jungle branch"
+    },
+    {
+      "word": "deforestation",
+      "pos": "n",
+      "meaning_vi": "nạn phá rừng",
+      "ipa": "/diːˌfɒrɪˈsteɪʃn/",
+      "syllables": "de·for·es·TA·tion",
+      "example": "Rapid deforestation in the Amazon basin has left thousands of tree stumps across barren hills.",
+      "word_family": [
+        {
+          "form": "deforest",
+          "pos": "v",
+          "sentence": "Illegal loggers continue to ___ vast areas of protected woodland every year."
+        }
+      ],
+      "image_hint": "a yellow bulldozer beside fresh tree stumps in a cleared forest"
+    },
+    {
+      "word": "contaminate",
+      "pos": "v",
+      "meaning_vi": "làm ô nhiễm",
+      "ipa": "/kənˈtæmɪneɪt/",
+      "syllables": "con·TAM·i·nate",
+      "example": "Toxic chemicals leaking from underground factory pipes can contaminate drinking water supplies for decades.",
+      "word_family": [
+        {
+          "form": "contamination",
+          "pos": "n",
+          "sentence": "Tests revealed severe lead ___ in the local river after the chemical spill."
+        },
+        {
+          "form": "contaminant",
+          "pos": "n",
+          "sentence": "Activated carbon filters remove each harmful ___ from household tap water."
+        }
+      ],
+      "image_hint": "a rusty pipe pouring dark sludge into a clear blue stream"
+    },
+    {
+      "word": "sustainable",
+      "pos": "adj",
+      "meaning_vi": "bền vững",
+      "ipa": "/səˈsteɪnəbl/",
+      "syllables": "sus·TAIN·a·ble",
+      "example": "Switching to solar panels and wind turbines promotes sustainable energy use without harming future generations.",
+      "word_family": [
+        {
+          "form": "sustainability",
+          "pos": "n",
+          "sentence": "Environmental ___ sits at the heart of the city's long-term urban planning strategy."
+        },
+        {
+          "form": "sustainably",
+          "pos": "adv",
+          "sentence": "All timber used in this furniture was ___ harvested from certified forests."
+        }
+      ],
+      "image_hint": "a small green city with wind turbines and solar panels inside a glass globe"
+    },
+    {
+      "word": "ecosystem",
+      "pos": "n",
+      "meaning_vi": "hệ sinh thái",
+      "ipa": "/ˈiːkəʊsɪstəm/",
+      "syllables": "E·co·sys·tem",
+      "example": "Removing apex predators like wolves can destabilize an entire forest ecosystem within a few years.",
+      "word_family": [],
+      "image_hint": "a pond with water lilies, frogs and small fish living together"
+    },
+    {
+      "word": "deplete",
+      "pos": "v",
+      "meaning_vi": "làm cạn kiệt",
+      "ipa": "/dɪˈpliːt/",
+      "syllables": "de·PLETE",
+      "example": "Intensive farming without crop rotation will quickly deplete soil nutrients and reduce agricultural yields.",
+      "word_family": [
+        {
+          "form": "depletion",
+          "pos": "n",
+          "sentence": "Overfishing has caused a dramatic ___ of cod stocks in the North Atlantic."
+        },
+        {
+          "form": "depleted",
+          "pos": "adj",
+          "sentence": "Farmers struggled to grow wheat in the severely ___ groundwater basin."
+        }
+      ],
+      "image_hint": "a large pump draining an underground water tank down to a tiny puddle"
+    },
+    {
+      "word": "conservation",
+      "pos": "n",
+      "meaning_vi": "sự bảo tồn",
+      "ipa": "/ˌkɒnsəˈveɪʃn/",
+      "syllables": "con·ser·VA·tion",
+      "example": "Marine conservation programmes protect sea turtle nesting beaches from commercial development and plastic waste.",
+      "word_family": [
+        {
+          "form": "conserve",
+          "pos": "v",
+          "sentence": "Households are urged to ___ water during the unusually hot summer months."
+        },
+        {
+          "form": "conservationist",
+          "pos": "n",
+          "sentence": "A dedicated wildlife ___ spent ten years tracking snow leopards in the mountains."
+        }
+      ],
+      "image_hint": "two cupped hands protecting a small green island with a panda"
+    },
+    {
+      "word": "emission",
+      "pos": "n",
+      "meaning_vi": "khí thải",
+      "ipa": "/ɪˈmɪʃn/",
+      "syllables": "e·MIS·sion",
+      "example": "Strict government regulations aim to cut carbon emission levels from coal power plants by half.",
+      "word_family": [
+        {
+          "form": "emit",
+          "pos": "v",
+          "sentence": "Old diesel lorries ___ thick clouds of black exhaust into city streets."
+        }
+      ],
+      "image_hint": "tall factory chimneys releasing thick dark grey smoke into the sky"
+    },
+    {
+      "word": "renewable",
+      "pos": "adj",
+      "meaning_vi": "có thể tái tạo",
+      "ipa": "/rɪˈnjuːəbl/",
+      "syllables": "re·NEW·a·ble",
+      "example": "Sunlight, wind, and ocean tides are renewable resources that naturally replenish themselves every single day.",
+      "word_family": [
+        {
+          "form": "renew",
+          "pos": "v",
+          "sentence": "Forests can naturally ___ themselves if logging is halted in time."
+        }
+      ],
+      "image_hint": "white wind turbines on green hills beside a flowing hydroelectric dam"
+    },
+    {
+      "word": "habitat",
+      "pos": "n",
+      "meaning_vi": "môi trường sống",
+      "ipa": "/ˈhæbɪtæt/",
+      "syllables": "HAB·i·tat",
+      "example": "Melting Arctic sea ice is shrinking the natural habitat where polar bears hunt for seals.",
+      "word_family": [],
+      "image_hint": "a polar bear standing on a floating ice floe in the Arctic sea"
+    },
+    {
+      "word": "catastrophe",
+      "pos": "n",
+      "meaning_vi": "thảm họa lớn",
+      "ipa": "/kəˈtæstrəfi/",
+      "syllables": "ca·TAS·tro·phe",
+      "example": "The oil tanker explosion triggered an ecological catastrophe along three hundred kilometres of coastline.",
+      "word_family": [
+        {
+          "form": "catastrophic",
+          "pos": "adj",
+          "sentence": "A two-degree rise in ocean temperature would have ___ consequences for coral reefs."
+        },
+        {
+          "form": "catastrophically",
+          "pos": "adv",
+          "sentence": "When the dam failed ___, floodwaters submerged four downstream villages within minutes."
+        }
+      ],
+      "image_hint": "a broken cargo ship spilling black oil into stormy ocean waves"
+    },
+    {
+      "word": "biodegradable",
+      "pos": "adj",
+      "meaning_vi": "phân hủy sinh học được",
+      "ipa": "/ˌbaɪəʊdɪˈɡreɪdəbl/",
+      "syllables": "bi·o·de·GRAD·a·ble",
+      "example": "Supermarkets are replacing plastic bags with biodegradable packaging made from cornstarch and bamboo fibres.",
+      "word_family": [
+        {
+          "form": "biodegrade",
+          "pos": "v",
+          "sentence": "Conventional styrofoam cups take hundreds of years to ___ in a landfill."
+        }
+      ],
+      "image_hint": "a paper cup and a leaf plate breaking down in dark soil with sprouts"
+    },
+    {
+      "word": "erosion",
+      "pos": "n",
+      "meaning_vi": "sự xói mòn",
+      "ipa": "/ɪˈrəʊʒn/",
+      "syllables": "e·RO·sion",
+      "example": "Planting mangrove trees along the shore prevents coastal erosion caused by powerful monsoon waves.",
+      "word_family": [
+        {
+          "form": "erode",
+          "pos": "v",
+          "sentence": "Heavy autumn rains continue to ___ the steep mud cliffs above the beach."
+        }
+      ],
+      "image_hint": "ocean waves crashing against a crumbling brown cliff with falling rocks"
+    },
+    {
+      "word": "mitigate",
+      "pos": "v",
+      "meaning_vi": "giảm nhẹ",
+      "ipa": "/ˈmɪtɪɡeɪt/",
+      "syllables": "MIT·i·gate",
+      "example": "Building concrete flood barriers helps mitigate the destructive impact of rising sea levels on coastal towns.",
+      "word_family": [
+        {
+          "form": "mitigation",
+          "pos": "n",
+          "sentence": "Flood ___ measures saved thousands of homes during last month's severe typhoon."
+        }
+      ],
+      "image_hint": "a stone seawall blocking huge waves from a small coastal village"
+    },
+    {
+      "word": "poaching",
+      "pos": "n",
+      "meaning_vi": "nạn săn trộm",
+      "ipa": "/ˈpəʊtʃɪŋ/",
+      "syllables": "POACH·ing",
+      "example": "Armed park rangers patrol the savannah at night to stop elephant poaching for illegal ivory.",
+      "word_family": [
+        {
+          "form": "poach",
+          "pos": "v",
+          "sentence": "Criminals enter the national reserve after dark to ___ rhinos for their horns."
+        },
+        {
+          "form": "poacher",
+          "pos": "n",
+          "sentence": "Hidden camera traps helped rangers catch the ___ before he could set wire snares."
+        }
+      ],
+      "image_hint": "a dark silhouette of a hunter with a net creeping towards a rhino"
+    },
+    {
+      "word": "drought",
+      "pos": "n",
+      "meaning_vi": "hạn hán",
+      "ipa": "/draʊt/",
+      "syllables": "DROUGHT",
+      "example": "Months without rainfall caused a severe drought that cracked the dry riverbed and withered crops.",
+      "word_family": [],
+      "image_hint": "cracked dry earth under a blazing sun beside a leafless tree"
+    },
+    {
+      "word": "fumes",
+      "pos": "n",
+      "meaning_vi": "khói độc hại",
+      "ipa": "/fjuːmz/",
+      "syllables": "FUMES",
+      "example": "Commuters wore protective masks to avoid inhaling toxic exhaust fumes during rush hour traffic jams.",
+      "word_family": [],
+      "image_hint": "a cyclist in a mask surrounded by grey exhaust from heavy traffic"
+    },
+    {
+      "word": "degradation",
+      "pos": "n",
+      "meaning_vi": "sự suy thoái",
+      "ipa": "/ˌdeɡrəˈdeɪʃn/",
+      "syllables": "deg·ra·DA·tion",
+      "example": "Overgrazing by livestock accelerates land degradation and turns fertile pastures into dusty desert plains.",
+      "word_family": [
+        {
+          "form": "degrade",
+          "pos": "v",
+          "sentence": "Acid rain and chemical fertilizers gradually ___ the quality of agricultural soil."
+        },
+        {
+          "form": "degraded",
+          "pos": "adj",
+          "sentence": "Reforestation projects aim to restore ___ hillsides across the northern province."
+        }
+      ],
+      "image_hint": "dry dusty farmland with withered plants and patches of bare soil"
+    },
+    {
+      "word": "endangered",
+      "pos": "adj",
+      "meaning_vi": "có nguy cơ tuyệt chủng",
+      "ipa": "/ɪnˈdeɪndʒəd/",
+      "syllables": "en·DAN·gered",
+      "example": "The Javan rhino is critically endangered because fewer than eighty individuals survive in the wild.",
+      "word_family": [
+        {
+          "form": "endanger",
+          "pos": "v",
+          "sentence": "Oil spills in Arctic waters seriously ___ rare species of whales and seabirds."
+        }
+      ],
+      "image_hint": "a lone tiger standing in an empty snowy forest"
+    },
+    {
+      "word": "fossil",
+      "pos": "n",
+      "meaning_vi": "hóa thạch",
+      "ipa": "/ˈfɒsl/",
+      "syllables": "FOS·sil",
+      "example": "Geologists discovered an ancient dinosaur fossil preserved inside layers of sedimentary rock along the cliff.",
+      "word_family": [
+        {
+          "form": "fossilize",
+          "pos": "v",
+          "sentence": "Minerals slowly replace organic bone tissue allowing ancient remains to ___ over millions of years."
+        },
+        {
+          "form": "fossilized",
+          "pos": "adj",
+          "sentence": "Palaeontologists uncovered ___ fern leaves buried deep beneath the coal mine."
+        }
+      ],
+      "image_hint": "an ammonite shell imprinted in a split grey rock beside a small brush"
+    },
+    {
+      "word": "curriculum",
+      "pos": "n",
+      "meaning_vi": "chương trình giảng dạy",
+      "ipa": "/kəˈrɪkjələm/",
+      "syllables": "cur·RIC·u·lum",
+      "example": "The ministry updated the national school curriculum to include computer coding alongside maths and science.",
+      "word_family": [
+        {
+          "form": "curricular",
+          "pos": "adj",
+          "sentence": "All ___ activities must align with the academic standards set by the education board."
+        }
+      ],
+      "image_hint": "an open binder linked to a microscope, a globe and a paint palette"
+    },
+    {
+      "word": "pedagogy",
+      "pos": "n",
+      "meaning_vi": "phương pháp sư phạm",
+      "ipa": "/ˈpedəɡɒdʒi/",
+      "syllables": "PED·a·gog·y",
+      "example": "Modern pedagogy encourages interactive group discussions rather than forcing pupils to memorize textbook facts.",
+      "word_family": [
+        {
+          "form": "pedagogical",
+          "pos": "adj",
+          "sentence": "The training workshop introduced teachers to effective ___ techniques for mixed-ability classrooms."
+        }
+      ],
+      "image_hint": "a teacher guiding four students sitting in a circle around a puzzle"
+    },
+    {
+      "word": "literacy",
+      "pos": "n",
+      "meaning_vi": "trình độ biết chữ",
+      "ipa": "/ˈlɪtərəsi/",
+      "syllables": "LIT·er·a·cy",
+      "example": "Rural library campaigns have raised adult literacy rates by teaching villagers how to read and write.",
+      "word_family": [
+        {
+          "form": "literate",
+          "pos": "adj",
+          "sentence": "In the nineteenth century, only a small fraction of the population was fully ___."
+        },
+        {
+          "form": "illiterate",
+          "pos": "adj",
+          "sentence": "Without access to primary schools, many children in remote areas remain ___."
+        }
+      ],
+      "image_hint": "an elderly woman learning to read a book with a young volunteer"
+    },
+    {
+      "word": "compulsory",
+      "pos": "adj",
+      "meaning_vi": "bắt buộc",
+      "ipa": "/kəmˈpʌlsəri/",
+      "syllables": "com·PUL·so·ry",
+      "example": "Mathematics and English remain compulsory subjects for every secondary student until the age of sixteen.",
+      "word_family": [
+        {
+          "form": "compulsorily",
+          "pos": "adv",
+          "sentence": "All first-year undergraduates are ___ enrolled in an academic writing module."
+        }
+      ],
+      "image_hint": "a line of students in uniform all walking through the same school gate"
+    },
+    {
+      "word": "vocational",
+      "pos": "adj",
+      "meaning_vi": "thuộc về hướng nghiệp",
+      "ipa": "/vəʊˈkeɪʃənl/",
+      "syllables": "vo·CA·tion·al",
+      "example": "Many school leavers choose vocational training in carpentry or culinary arts instead of university degrees.",
+      "word_family": [
+        {
+          "form": "vocation",
+          "pos": "n",
+          "sentence": "She found her true ___ in nursing after volunteering at a community clinic."
+        }
+      ],
+      "image_hint": "a young trainee in safety goggles working at a carpentry workbench"
+    },
+    {
+      "word": "plagiarism",
+      "pos": "n",
+      "meaning_vi": "sự đạo văn",
+      "ipa": "/ˈpleɪdʒərɪzəm/",
+      "syllables": "PLA·gia·rism",
+      "example": "Copying paragraphs from internet articles without citation constitutes plagiarism and leads to automatic disqualification.",
+      "word_family": [
+        {
+          "form": "plagiarize",
+          "pos": "v",
+          "sentence": "Students who ___ another author's research risk being expelled from the university."
+        },
+        {
+          "form": "plagiarist",
+          "pos": "n",
+          "sentence": "Detection software quickly exposed the ___ who had copied an entire chapter word for word."
+        }
+      ],
+      "image_hint": "a student secretly copying a classmate's essay under a magnifying glass"
+    },
+    {
+      "word": "tuition",
+      "pos": "n",
+      "meaning_vi": "học phí",
+      "ipa": "/tjuˈɪʃn/",
+      "syllables": "tu·I·tion",
+      "example": "Rising university tuition fees force many undergraduates to take part-time jobs or student loans.",
+      "word_family": [],
+      "image_hint": "a graduation cap sitting on top of a tall stack of gold coins"
+    },
+    {
+      "word": "assessment",
+      "pos": "n",
+      "meaning_vi": "sự đánh giá",
+      "ipa": "/əˈsesmənt/",
+      "syllables": "as·SESS·ment",
+      "example": "Continuous coursework assessment measures student progress more fairly than a single high-stakes final examination.",
+      "word_family": [
+        {
+          "form": "assess",
+          "pos": "v",
+          "sentence": "Examiners use four clear criteria to ___ each candidate's speaking performance."
+        },
+        {
+          "form": "assessor",
+          "pos": "n",
+          "sentence": "An independent external ___ reviewed the graded exam papers to ensure fairness."
+        }
+      ],
+      "image_hint": "a teacher with a clipboard watching a student give a presentation"
+    },
+    {
+      "word": "comprehend",
+      "pos": "v",
+      "meaning_vi": "hiểu thấu đáo",
+      "ipa": "/ˌkɒmprɪˈhend/",
+      "syllables": "com·pre·HEND",
+      "example": "Young readers often struggle to comprehend dense academic texts filled with unfamiliar technical terminology.",
+      "word_family": [
+        {
+          "form": "comprehension",
+          "pos": "n",
+          "sentence": "Listening ___ improves rapidly when learners watch authentic documentaries without subtitles."
+        },
+        {
+          "form": "comprehensible",
+          "pos": "adj",
+          "sentence": "The professor explained quantum mechanics in simple language that was easily ___ to beginners."
+        }
+      ],
+      "image_hint": "a student reading a thick book with a glowing lightbulb above their head"
+    },
+    {
+      "word": "inquisitive",
+      "pos": "adj",
+      "meaning_vi": "ham học hỏi",
+      "ipa": "/ɪnˈkwɪzətɪv/",
+      "syllables": "in·QUIS·i·tive",
+      "example": "An inquisitive child constantly asks how machines work and loves conducting simple science experiments.",
+      "word_family": [
+        {
+          "form": "inquisitiveness",
+          "pos": "n",
+          "sentence": "Good science teachers nurture natural ___ rather than punishing students for asking tough questions."
+        },
+        {
+          "form": "inquisitively",
+          "pos": "adv",
+          "sentence": "The young pupil peered ___ through the microscope at the moving pond organisms."
+        }
+      ],
+      "image_hint": "a curious child studying a butterfly through a giant magnifying glass"
+    },
+    {
+      "word": "collaborate",
+      "pos": "v",
+      "meaning_vi": "hợp tác làm việc",
+      "ipa": "/kəˈlæbəreɪt/",
+      "syllables": "col·LAB·o·rate",
+      "example": "Engineering students collaborate in small teams to design and build solar-powered model vehicles.",
+      "word_family": [
+        {
+          "form": "collaboration",
+          "pos": "n",
+          "sentence": "The research breakthrough was achieved through close ___ between two medical universities."
+        },
+        {
+          "form": "collaborative",
+          "pos": "adj",
+          "sentence": "Problem-based learning thrives in a ___ classroom environment where everyone shares ideas."
+        }
+      ],
+      "image_hint": "four students joining colourful jigsaw pieces together on a round table"
+    },
+    {
+      "word": "extracurricular",
+      "pos": "adj",
+      "meaning_vi": "ngoại khóa",
+      "ipa": "/ˌekstrəkəˈrɪkjələ/",
+      "syllables": "ex·tra·cur·RIC·u·lar",
+      "example": "Joining extracurricular clubs like debate, chess, or football helps teenagers develop leadership and social skills.",
+      "word_family": [],
+      "image_hint": "students playing football, painting and playing guitar in a schoolyard"
+    },
+    {
+      "word": "proficiency",
+      "pos": "n",
+      "meaning_vi": "sự thành thạo",
+      "ipa": "/prəˈfɪʃnsi/",
+      "syllables": "pro·FI·cien·cy",
+      "example": "Overseas universities require applicants to demonstrate high English proficiency through standardized language tests.",
+      "word_family": [
+        {
+          "form": "proficient",
+          "pos": "adj",
+          "sentence": "After living in Tokyo for three years, she became ___ in spoken Japanese."
+        },
+        {
+          "form": "proficiently",
+          "pos": "adv",
+          "sentence": "Graduates must be able to use spreadsheet software ___ before joining the accounting firm."
+        }
+      ],
+      "image_hint": "a student standing at the top of a staircase holding a gold trophy"
+    },
+    {
+      "word": "discipline",
+      "pos": "n",
+      "meaning_vi": "kỷ luật",
+      "ipa": "/ˈdɪsəplɪn/",
+      "syllables": "DIS·ci·pline",
+      "example": "Mastering a musical instrument requires strict self-control and daily discipline over many years of practice.",
+      "word_family": [
+        {
+          "form": "disciplined",
+          "pos": "adj",
+          "sentence": "Distance learning suits ___ students who can manage their own study schedules."
+        },
+        {
+          "form": "disciplinary",
+          "pos": "adj",
+          "sentence": "The headmaster took strict ___ action against pupils caught cheating in the exam."
+        }
+      ],
+      "image_hint": "a student studying at a tidy desk beside an alarm clock at dawn"
+    },
+    {
+      "word": "enrol",
+      "pos": "v",
+      "meaning_vi": "ghi danh nhập học",
+      "ipa": "/ɪnˈrəʊl/",
+      "syllables": "en·ROL",
+      "example": "Over five hundred freshmen enrol in the introductory psychology course at the start of autumn.",
+      "word_family": [
+        {
+          "form": "enrolment",
+          "pos": "n",
+          "sentence": "University ___ has increased steadily since the government introduced interest-free student loans."
+        }
+      ],
+      "image_hint": "a young student handing a form to a smiling university receptionist"
+    },
+    {
+      "word": "mentor",
+      "pos": "n",
+      "meaning_vi": "người cố vấn",
+      "ipa": "/ˈmentɔː/",
+      "syllables": "MEN·tor",
+      "example": "An experienced professor served as her academic mentor throughout the three-year doctoral research project.",
+      "word_family": [
+        {
+          "form": "mentorship",
+          "pos": "n",
+          "sentence": "The alumni ___ programme pairs final-year students with seasoned industry professionals."
+        }
+      ],
+      "image_hint": "an older professor walking beside a young student on a mountain path"
+    },
+    {
+      "word": "cognitive",
+      "pos": "adj",
+      "meaning_vi": "thuộc về nhận thức",
+      "ipa": "/ˈkɒɡnətɪv/",
+      "syllables": "COG·ni·tive",
+      "example": "Playing chess and learning foreign languages stimulate cognitive development such as memory and logical reasoning.",
+      "word_family": [
+        {
+          "form": "cognition",
+          "pos": "n",
+          "sentence": "Sleep deprivation negatively affects human ___ and slows down decision-making speed."
+        },
+        {
+          "form": "cognitively",
+          "pos": "adv",
+          "sentence": "Bilingual children often perform better on ___ demanding tasks that require switching attention."
+        }
+      ],
+      "image_hint": "a side view of a human head with glowing gears inside the brain"
+    },
+    {
+      "word": "scholarship",
+      "pos": "n",
+      "meaning_vi": "học bổng",
+      "ipa": "/ˈskɒləʃɪp/",
+      "syllables": "SCHOL·ar·ship",
+      "example": "Winning a full academic scholarship allowed the talented student from a poor family to study abroad.",
+      "word_family": [
+        {
+          "form": "scholar",
+          "pos": "n",
+          "sentence": "The visiting ___ published three influential books on ancient Mediterranean history."
+        },
+        {
+          "form": "scholarly",
+          "pos": "adj",
+          "sentence": "All claims in your essay must be supported by peer-reviewed ___ journals."
+        }
+      ],
+      "image_hint": "a smiling student in a graduation gown receiving a rolled certificate"
+    },
+    {
+      "word": "dissertation",
+      "pos": "n",
+      "meaning_vi": "luận văn tốt nghiệp",
+      "ipa": "/ˌdɪsəˈteɪʃn/",
+      "syllables": "dis·ser·TA·tion",
+      "example": "Every master's candidate must write and defend an original research dissertation before graduating in July.",
+      "word_family": [],
+      "image_hint": "a thick hardbound thesis on a desk beside stacks of research books"
+    },
+    {
+      "word": "autonomous",
+      "pos": "adj",
+      "meaning_vi": "tự chủ",
+      "ipa": "/ɔːˈtɒnəməs/",
+      "syllables": "au·TON·o·mous",
+      "example": "University tutors expect undergraduates to become autonomous learners who research topics without constant supervision.",
+      "word_family": [
+        {
+          "form": "autonomy",
+          "pos": "n",
+          "sentence": "Giving teachers greater classroom ___ allows them to tailor lessons to student needs."
+        },
+        {
+          "form": "autonomously",
+          "pos": "adv",
+          "sentence": "By the final semester, students should be able to design lab experiments ___."
+        }
+      ],
+      "image_hint": "a confident student sailing a small boat alone towards a lighthouse"
+    },
+    {
+      "word": "innovation",
+      "pos": "n",
+      "meaning_vi": "sự đổi mới sáng tạo",
+      "ipa": "/ˌɪnəˈveɪʃn/",
+      "syllables": "in·no·VA·tion",
+      "example": "Continuous technological innovation has transformed smartphones from simple calling devices into pocket computers.",
+      "word_family": [
+        {
+          "form": "innovate",
+          "pos": "v",
+          "sentence": "Tech companies that fail to ___ quickly lose market share to agile competitors."
+        },
+        {
+          "form": "innovative",
+          "pos": "adj",
+          "sentence": "Engineers developed an ___ battery design that charges fully in under five minutes."
+        },
+        {
+          "form": "innovator",
+          "pos": "n",
+          "sentence": "As a pioneering ___ in robotics, she holds over forty international patents."
+        }
+      ],
+      "image_hint": "a glowing lightbulb with a tiny rocket launching out of it"
+    },
+    {
+      "word": "automation",
+      "pos": "n",
+      "meaning_vi": "sự tự động hóa",
+      "ipa": "/ˌɔːtəˈmeɪʃn/",
+      "syllables": "au·to·MA·tion",
+      "example": "Factory automation using robotic arms has doubled car production speed while reducing human assembly errors.",
+      "word_family": [
+        {
+          "form": "automate",
+          "pos": "v",
+          "sentence": "Many logistics warehouses now ___ parcel sorting with high-speed conveyor belts."
+        },
+        {
+          "form": "automated",
+          "pos": "adj",
+          "sentence": "Passengers scanned their passports at the ___ border control gates."
+        }
+      ],
+      "image_hint": "orange robotic arms assembling a car on a factory conveyor belt"
+    },
+    {
+      "word": "algorithm",
+      "pos": "n",
+      "meaning_vi": "thuật toán",
+      "ipa": "/ˈælɡərɪðəm/",
+      "syllables": "AL·go·rithm",
+      "example": "Social media platforms use a recommendation algorithm to predict which videos will keep users watching.",
+      "word_family": [
+        {
+          "form": "algorithmic",
+          "pos": "adj",
+          "sentence": "Financial firms rely on ___ trading systems to execute thousands of orders per second."
+        }
+      ],
+      "image_hint": "a machine sorting colourful balls into matching tubes along branching paths"
+    },
+    {
+      "word": "obsolete",
+      "pos": "adj",
+      "meaning_vi": "lỗi thời",
+      "ipa": "/ˈɒbsəliːt/",
+      "syllables": "OB·so·lete",
+      "example": "High-speed cloud storage has rendered floppy disks and compact discs completely obsolete in modern offices.",
+      "word_family": [
+        {
+          "form": "obsolescence",
+          "pos": "n",
+          "sentence": "Consumer groups criticized smartphone makers for planned ___ that forces frequent hardware upgrades."
+        }
+      ],
+      "image_hint": "a dusty old typewriter covered in cobwebs next to a modern laptop"
+    },
+    {
+      "word": "breakthrough",
+      "pos": "n",
+      "meaning_vi": "bước đột phá",
+      "ipa": "/ˈbreɪkθruː/",
+      "syllables": "BREAK·through",
+      "example": "Scientists achieved a major medical breakthrough by developing a vaccine that prevents malaria infection.",
+      "word_family": [],
+      "image_hint": "a beam of golden light smashing through a grey brick wall"
+    },
+    {
+      "word": "surveillance",
+      "pos": "n",
+      "meaning_vi": "sự giám sát",
+      "ipa": "/sɜːˈveɪləns/",
+      "syllables": "sur·VEIL·lance",
+      "example": "Facial recognition cameras mounted on street corners have sparked heated debates over public surveillance.",
+      "word_family": [],
+      "image_hint": "security cameras on a street pole watching people walking below"
+    },
+    {
+      "word": "encryption",
+      "pos": "n",
+      "meaning_vi": "sự mã hóa dữ liệu",
+      "ipa": "/ɪnˈkrɪpʃn/",
+      "syllables": "en·CRYP·tion",
+      "example": "Online banking apps rely on end-to-end encryption to protect customer passwords from cyber thieves.",
+      "word_family": [
+        {
+          "form": "encrypt",
+          "pos": "v",
+          "sentence": "Messaging services automatically ___ private chats so third parties cannot read them."
+        },
+        {
+          "form": "encrypted",
+          "pos": "adj",
+          "sentence": "All medical records are stored on an ___ server inside the hospital network."
+        }
+      ],
+      "image_hint": "an envelope wrapped in heavy chains and locked with a golden padlock"
+    },
+    {
+      "word": "bandwidth",
+      "pos": "n",
+      "meaning_vi": "băng thông mạng",
+      "ipa": "/ˈbændwɪdθ/",
+      "syllables": "BAND·width",
+      "example": "Streaming high-definition video across five devices simultaneously consumes tremendous network bandwidth in a household.",
+      "word_family": [],
+      "image_hint": "a wide glowing tube carrying fast streams of coloured light into a router"
+    },
+    {
+      "word": "simulate",
+      "pos": "v",
+      "meaning_vi": "mô phỏng",
+      "ipa": "/ˈsɪmjuleɪt/",
+      "syllables": "SIM·u·late",
+      "example": "Trainee airline pilots use virtual cockpits to simulate emergency landings during extreme thunderstorm conditions.",
+      "word_family": [
+        {
+          "form": "simulation",
+          "pos": "n",
+          "sentence": "Computer ___ allows architects to test how a skyscraper will withstand strong earthquakes."
+        },
+        {
+          "form": "simulator",
+          "pos": "n",
+          "sentence": "Every astronaut spends hundreds of hours practising inside a zero-gravity flight ___."
+        }
+      ],
+      "image_hint": "a trainee pilot in a flight simulator cockpit facing a virtual runway"
+    },
+    {
+      "word": "cybercrime",
+      "pos": "n",
+      "meaning_vi": "tội phạm mạng",
+      "ipa": "/ˈsaɪbəkraɪm/",
+      "syllables": "CY·ber·crime",
+      "example": "Identity theft and ransomware attacks have made cybercrime a growing threat to global banking systems.",
+      "word_family": [
+        {
+          "form": "cybercriminal",
+          "pos": "n",
+          "sentence": "A notorious ___ was arrested for stealing credit card details from an online retailer."
+        }
+      ],
+      "image_hint": "a hooded hacker at a laptop stealing gold coins out of the screen"
+    },
+    {
+      "word": "gadget",
+      "pos": "n",
+      "meaning_vi": "thiết bị điện tử nhỏ",
+      "ipa": "/ˈɡædʒɪt/",
+      "syllables": "GAD·get",
+      "example": "The waterproof smartwatch is a handy gadget that tracks heart rate, sleep quality, and footsteps.",
+      "word_family": [],
+      "image_hint": "a smartwatch, wireless earbuds and a mini drone arranged on a desk"
+    },
+    {
+      "word": "prototype",
+      "pos": "n",
+      "meaning_vi": "nguyên mẫu thử nghiệm",
+      "ipa": "/ˈprəʊtətaɪp/",
+      "syllables": "PRO·to·type",
+      "example": "Engineers built a working prototype of the folding electric bicycle before launching mass factory production.",
+      "word_family": [],
+      "image_hint": "an engineer adjusting a half-built robot dog on a workbench"
+    },
+    {
+      "word": "integrate",
+      "pos": "v",
+      "meaning_vi": "tích hợp",
+      "ipa": "/ˈɪntɪɡreɪt/",
+      "syllables": "IN·te·grate",
+      "example": "Modern smart homes integrate lighting, heating, and security cameras into a single mobile control application.",
+      "word_family": [
+        {
+          "form": "integration",
+          "pos": "n",
+          "sentence": "Seamless ___ between the payment gateway and inventory database sped up online checkout."
+        },
+        {
+          "form": "integrated",
+          "pos": "adj",
+          "sentence": "The new electric saloon features an ___ voice assistant on the dashboard."
+        }
+      ],
+      "image_hint": "a lightbulb, a thermostat and a camera all connecting to one smartphone"
+    },
+    {
+      "word": "ubiquitous",
+      "pos": "adj",
+      "meaning_vi": "có mặt khắp nơi",
+      "ipa": "/juːˈbɪkwɪtəs/",
+      "syllables": "u·BIQ·ui·tous",
+      "example": "Touchscreen smartphones have become ubiquitous in modern society, seen in every cafe, train, and classroom.",
+      "word_family": [
+        {
+          "form": "ubiquity",
+          "pos": "n",
+          "sentence": "The ___ of free wireless internet has allowed remote workers to work from anywhere."
+        },
+        {
+          "form": "ubiquitously",
+          "pos": "adv",
+          "sentence": "Contactless payment terminals are now ___ installed across supermarkets and bus stations."
+        }
+      ],
+      "image_hint": "people in a park, on a train and in a café all using smartphones"
+    },
+    {
+      "word": "biometrics",
+      "pos": "n",
+      "meaning_vi": "sinh trắc học",
+      "ipa": "/ˌbaɪəʊˈmetrɪks/",
+      "syllables": "bi·o·MET·rics",
+      "example": "Modern airports use biometrics such as fingerprint and iris scanners to verify passenger identities quickly.",
+      "word_family": [
+        {
+          "form": "biometric",
+          "pos": "adj",
+          "sentence": "Employees must scan their thumbs on a ___ pad before entering the server room."
+        }
+      ],
+      "image_hint": "a glowing fingerprint scanner unlocking a glass security door"
+    },
+    {
+      "word": "streamline",
+      "pos": "v",
+      "meaning_vi": "tối ưu hóa quy trình",
+      "ipa": "/ˈstriːmlaɪn/",
+      "syllables": "STREAM·line",
+      "example": "Hospital managers introduced digital booking software to streamline patient registration and reduce waiting room queues.",
+      "word_family": [
+        {
+          "form": "streamlined",
+          "pos": "adj",
+          "sentence": "The ___ customs procedure allowed travellers to clear the airport in ten minutes."
+        }
+      ],
+      "image_hint": "a tangled knot of grey pipes turning into three straight smooth pipes"
+    },
+    {
+      "word": "malfunction",
+      "pos": "v",
+      "meaning_vi": "trục trặc kỹ thuật",
+      "ipa": "/ˌmælˈfʌŋkʃn/",
+      "syllables": "mal·FUNC·tion",
+      "example": "Extreme sub-zero temperatures caused the satellite battery to malfunction and lose contact with ground control.",
+      "word_family": [],
+      "image_hint": "a delivery robot stopped on a pavement with sparks and smoke rising"
+    },
+    {
+      "word": "interface",
+      "pos": "n",
+      "meaning_vi": "giao diện",
+      "ipa": "/ˈɪntəfeɪs/",
+      "syllables": "IN·ter·face",
+      "example": "A clean, intuitive user interface helps elderly people navigate banking applications without feeling confused.",
+      "word_family": [],
+      "image_hint": "a finger tapping colourful buttons and sliders on a large tablet screen"
+    },
+    {
+      "word": "database",
+      "pos": "n",
+      "meaning_vi": "cơ sở dữ liệu",
+      "ipa": "/ˈdeɪtəbeɪs/",
+      "syllables": "DA·ta·base",
+      "example": "The national library digitized millions of historical newspapers and stored them in a searchable database.",
+      "word_family": [],
+      "image_hint": "rows of tall blue server cabinets inside a cool server room"
+    },
+    {
+      "word": "revolutionize",
+      "pos": "v",
+      "meaning_vi": "cách mạng hóa",
+      "ipa": "/ˌrevəˈluːʃənaɪz/",
+      "syllables": "rev·o·LU·tion·ize",
+      "example": "Artificial intelligence tools are poised to revolutionize medical diagnostics by detecting early cancer cells accurately.",
+      "word_family": [
+        {
+          "form": "revolution",
+          "pos": "n",
+          "sentence": "The invention of the printing press sparked a cultural ___ across fifteenth-century Europe."
+        },
+        {
+          "form": "revolutionary",
+          "pos": "adj",
+          "sentence": "Fibre-optic cables brought a ___ increase in international data transmission speeds."
+        }
+      ],
+      "image_hint": "an old wooden abacus transforming into a sleek futuristic computer"
+    }
+  ]
+}
