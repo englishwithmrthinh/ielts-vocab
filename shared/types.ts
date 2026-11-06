@@ -32,8 +32,21 @@ export interface Student {
   code: string;
   name: string;
   active: boolean;
+  /** null = chưa xếp lớp. Mỗi học sinh thuộc tối đa 1 lớp; chuyển lớp giữ nguyên tiến độ */
+  class_id?: UUID | null;
   created_at: ISODateTime;
 }
+
+/** Lớp. Lịch mốc/nghỉ dùng CHUNG cả trung tâm; top 5 tuần tính theo lớp */
+export interface Class {
+  id: UUID;
+  name: string;
+  active: boolean;
+  created_at: ISODateTime;
+}
+
+/** GET /api/admin/classes */
+export interface ClassesResponse { classes: (Class & { studentCount: number })[] }
 
 export interface WordFamilyItem {
   form: string;

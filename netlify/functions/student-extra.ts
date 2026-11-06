@@ -29,12 +29,14 @@ const ALL_BADGES: BadgeCode[] = [
 async function progress(studentId: string): Promise<ProgressResponse> {
   const t = new Date().toISOString();
   const since = vnStartOfDay(weekStart(vnDate(t)));
-  const [words, plan, xpRes, badgeRes, wkRes] = await Promise.all([
+  const [words, plan, xpRes, badgeRes, wkRes, meR] = await Promise.all([
     loadStudentWords(studentId), loadPlan(studentId, t),
     db().from('xp_events').select('amount').eq('student_id', studentId),
     db().from('badges').select('code,earned_at').eq('student_id', studentId),
-    db().from('xp_events').select('student_id,amount, s:students(name)').gte('created_at', since),
+    db().from('xp_events').select('student_id,amount, s:students(name,class_id)').gte('created_at', since),
+    db().from('students').select('class_id').eq('id', studentId).single(),
   ]);
+  const myClass = (must(meR) as { class_id: string | null }).class_id;
   const wordsByBox: ProgressResponse['wordsByBox'] = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, pass: 0 };
   for (const w of words) wordsByBox[w.box === PASS_BOX ? 'pass' : (String(w.box) as '1')]++;
 
@@ -47,7 +49,9 @@ async function progress(studentId: string): Promise<ProgressResponse> {
   const earned = new Map((must(badgeRes) as { code: BadgeCode; earned_at: string }[]).map((b) => [b.code, b.earned_at]));
 
   // Top 5 tuần (Thứ 2 → nay), chỉ học sinh đang hoạt động
-  const wk = must(wkRes) as unknown as { student_id: string; amount: number; s: { name: string } | null }[];
+  // Top 5 tính trong cùng lớp (học sinh chưa xếp lớp so với nhau)
+  const wk = (must(wkRes) as unknown as { student_id: string; amount: number; s: { name: string; class_id: string | null } | null }[])
+    .filter((x) => x.s && x.s.class_id === myClass);
   const sums = new Map<string, number>();
   const names = new Map<string, string>();
   for (const x of wk) {
