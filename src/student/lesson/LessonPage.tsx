@@ -1,7 +1,7 @@
 // Màn làm bài /hoc/bai/:milestoneId
 // Luồng: (xem trước từ mới) → câu tính điểm → vòng sửa sai → tổng kết + Nộp → kết quả (+ Làm tiếp).
 // Mỗi câu lưu ngay trên máy chủ → thoát ra vào lại sẽ tiếp đúng câu đang dở.
-import { Award, CalendarCheck, Clock, Home, Repeat, Trophy, X, Zap } from 'lucide-react';
+import { Home, Repeat, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { AnswerResult, AnswerSubmission, NextQuestionResponse, Question, SubmitResponse, WordCard } from '@shared/types';
@@ -9,7 +9,9 @@ import { QUESTION_COMPONENTS } from '../../questions';
 import { ApiCallError } from '../../lib/api';
 import { errorText, studentApi } from '../api';
 import { Button, Card, ProgressBar, Spinner, cx } from '../components/ui';
-import { BADGE_VI } from '../lib/badges';
+import { BADGE_ICON, BADGE_VI } from '../lib/badges';
+import { ART, Spot, Star4 } from '../components/Art';
+import { WaxSeal } from '../components/WaxSeal';
 import { celebrate } from '../lib/celebrate';
 import { COPY, fill, summaryLine } from '../lib/copy';
 import { Preview } from './Preview';
@@ -75,7 +77,6 @@ export default function LessonPage() {
         const ok = result.perWord ? result.perWord.filter((p) => p.correct).length : result.correct ? 1 : 0;
         setTally((t) => ({ correct: t.correct + ok, total: t.total + n }));
       }
-      if (result.passed) celebrate('small');
     } catch (e) {
       // 410 question_expired: câu đã được trả lời (ví dụ mở 2 tab) → lấy câu tiếp theo
       if (e instanceof ApiCallError && e.status === 410) {
@@ -128,7 +129,7 @@ export default function LessonPage() {
   };
 
   return (
-    <div className="mx-auto min-h-dvh max-w-md px-4 pb-6 pt-[max(0.75rem,env(safe-area-inset-top))]">
+    <div className="mx-auto min-h-dvh max-w-2xl px-4 pb-6">
       <TopBar stage={stage} onClose={() => nav('/hoc')} />
 
       {stage.k === 'loading' && (
@@ -178,31 +179,32 @@ export default function LessonPage() {
 function TopBar({ stage, onClose }: { stage: Stage; onClose: () => void }) {
   const q = stage.k === 'question' ? stage.q : null;
   const phase = stage.k === 'question' ? stage.phase : null;
+  const pct = q && q.progress.required ? Math.min(100, (q.progress.done / q.progress.required) * 100) : 0;
   return (
-    <div className="sticky top-0 z-10 -mx-4 mb-4 bg-page/95 px-4 pb-2 pt-1 backdrop-blur">
-      <div className="flex items-center gap-3">
-        <button type="button" onClick={onClose} aria-label="Thoát (tiến độ đã được lưu)" className="-ml-2 rounded-xl p-2 text-ink-2 hover:bg-surface-2">
-          <X className="size-6" aria-hidden />
+    <div className="sticky top-0 z-10 -mx-4 mb-4 bg-primary pt-[env(safe-area-inset-top)] text-cream shadow-[0_2px_0_var(--color-primary-edge)]">
+      <div className="mx-auto flex h-14 max-w-2xl items-center gap-3 px-4">
+        <button type="button" onClick={onClose} aria-label="Thoát (tiến độ đã được lưu)" className="-ml-2 rounded-full p-2 text-cream/90 hover:bg-white/10">
+          <X className="size-6" strokeWidth={1.6} aria-hidden />
         </button>
-        {q && phase === 'graded' && (
+        {q && phase !== 'extra' && (
           <>
-            <ProgressBar value={q.progress.done} max={q.progress.required} className="h-3 flex-1" label="Tiến độ phần bắt buộc" />
-            <span className="text-sm font-semibold tabular-nums text-ink-2">
+            <div
+              role="progressbar"
+              aria-label="Tiến độ phần bắt buộc"
+              aria-valuemin={0}
+              aria-valuemax={q.progress.required}
+              aria-valuenow={q.progress.done}
+              className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/15"
+            >
+              <div className="h-full rounded-full bg-gold transition-[width] duration-500" style={{ width: `${pct}%` }} />
+            </div>
+            <span className="text-sm font-semibold tabular-nums text-cream/90">
               {q.progress.done}/{q.progress.required}
             </span>
           </>
         )}
-        {q && phase === 'fix' && (
-          <p className="flex-1 rounded-xl bg-mid-bg px-3 py-1.5 text-sm font-semibold text-mid-ink">
-            <Repeat className="mr-1 inline size-4 align-[-3px]" aria-hidden />
-            Vòng sửa sai · không tính điểm
-          </p>
-        )}
-        {q && phase === 'extra' && (
-          <p className="flex-1 rounded-xl bg-brand-tint px-3 py-1.5 text-sm font-semibold text-brand-ink">
-            Làm tiếp · câu thêm {q.progress.extra + 1}
-          </p>
-        )}
+        {q && phase === 'extra' && <p className="label-caps flex-1 text-cream/90">Làm tiếp · câu thêm {q.progress.extra + 1}</p>}
+        {!q && <p className="font-display flex-1 text-[15px] text-cream/90">Học từ vựng</p>}
       </div>
     </div>
   );
@@ -220,11 +222,18 @@ export function QuestionView({
   const Comp = QUESTION_COMPONENTS[stage.q.type];
   return (
     <div data-qtype={stage.q.type} className={cx('pb-24', !stage.result && 'animate-[fadeIn_.2s_ease-out]')}>
-      {Comp ? (
-        <Comp key={stage.q.qid} question={stage.q} onSubmit={onSubmit} disabled={stage.sending} result={stage.result} />
-      ) : (
-        <p className="text-bad-ink">Dạng câu {stage.q.type} chưa hỗ trợ.</p>
+      {stage.phase === 'fix' && (
+        <p className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-blush px-3 py-1 text-xs font-semibold text-blush-ink">
+          <Repeat className="size-3.5" aria-hidden /> Ôn lại từ vừa sai · không tính điểm
+        </p>
       )}
+      <div className="paper rounded-[var(--radius-card)] p-4 shadow-[var(--shadow-card)] ring-1 ring-line sm:p-6">
+        {Comp ? (
+          <Comp key={stage.q.qid} question={stage.q} onSubmit={onSubmit} disabled={stage.sending} result={stage.result} />
+        ) : (
+          <p className="text-bad-ink">Dạng câu {stage.q.type} chưa hỗ trợ.</p>
+        )}
+      </div>
       {stage.sending && (
         <div className="mt-4 flex justify-center">
           <Spinner className="size-5" />
@@ -246,39 +255,22 @@ export function QuestionView({
 
 function Summary({ tally, onSubmit }: { tally: { correct: number; total: number }; onSubmit: () => void }) {
   return (
-    <div className="flex flex-col items-center pt-6 text-center animate-[fadeIn_.25s_ease-out]">
-      <span className="flex size-20 items-center justify-center rounded-3xl bg-brand-tint text-brand-ink animate-[popIn_.4s_ease-out]">
-        <CalendarCheck className="size-10" aria-hidden />
-      </span>
-      <h1 className="mt-4 text-2xl font-bold">Xong phần bắt buộc!</h1>
+    <div className="paper mx-auto mt-2 max-w-md rounded-[var(--radius-card)] px-6 pb-8 pt-8 text-center shadow-[var(--shadow-card)] ring-1 ring-line animate-[fadeIn_.25s_ease-out]">
+      <Spot src={ART.bookPen} className="mx-auto w-28" />
+      <h1 className="font-display mt-3 text-[24px]">Xong phần bắt buộc</h1>
       <p className="mt-1 text-ink-2">Bấm Nộp bài để được tính điểm chuyên cần.</p>
       {tally.total > 0 && (
-        <Card className="mt-6 w-full">
-          <p className="text-sm text-ink-2">Lần này bạn làm đúng</p>
-          <p className="text-3xl font-bold text-brand-ink">
+        <div className="mx-auto mt-5 w-fit rounded-xl bg-blush px-6 py-3">
+          <p className="label-caps text-blush-ink">Lần này đúng</p>
+          <p className="mt-1 text-[30px] font-bold leading-none tabular-nums">
             {tally.correct}/{tally.total}
           </p>
-        </Card>
+        </div>
       )}
       <Button block size="lg" className="mt-6" onClick={onSubmit}>
         Nộp bài
       </Button>
       <p className="mt-2 text-xs text-ink-3">Chỉ bài đã nộp mới được tính.</p>
-    </div>
-  );
-}
-
-function ExtraDone({ onHome }: { onHome: () => void }) {
-  return (
-    <div className="flex flex-col items-center pt-8 text-center animate-[fadeIn_.25s_ease-out]">
-      <span className="flex size-20 items-center justify-center rounded-3xl bg-ok-bg text-ok-ink">
-        <CalendarCheck className="size-10" aria-hidden />
-      </span>
-      <h1 className="mt-4 text-2xl font-bold">Hết từ cần ôn rồi!</h1>
-      <p className="mt-1 text-ink-2">Hẹn gặp lại ở bài sau nhé.</p>
-      <Button block size="lg" className="mt-6" onClick={onHome}>
-        <Home className="size-5" aria-hidden /> Về trang chủ
-      </Button>
     </div>
   );
 }
@@ -296,53 +288,48 @@ function Submitted({
 }) {
   const onTime = r.daysLate === 0;
   return (
-    <div className="flex flex-col items-center pt-4 text-center animate-[fadeIn_.25s_ease-out]">
-      <span
-        className={cx(
-          'flex size-20 items-center justify-center rounded-3xl animate-[popIn_.4s_ease-out]',
-          onTime ? 'bg-ok-bg text-ok-ink' : 'bg-mid-bg text-mid-ink',
-        )}
-      >
-        <Trophy className="size-10" aria-hidden />
-      </span>
-      <h1 className="mt-4 text-2xl font-bold">{r.perfectWeek ? 'Tuần hoàn hảo!' : 'Đã nộp bài'}</h1>
-      <p className="mt-1 text-ink-2">
+    <div className="paper mx-auto mt-2 max-w-md rounded-[var(--radius-card)] px-6 pb-8 pt-7 text-center shadow-[var(--shadow-card)] ring-1 ring-line animate-[fadeIn_.25s_ease-out]">
+      <p className="label-caps text-ink-3">{r.perfectWeek ? 'Tuần hoàn hảo' : 'Trang cuối'}</p>
+      <h1 className="font-display mt-1 text-[26px]">Đã nộp bài</h1>
+      <div className="my-4 flex items-center justify-center gap-3 text-gold" aria-hidden>
+        <span className="h-px w-12 bg-gold/60" />
+        <Star4 className="size-4" />
+        <span className="h-px w-12 bg-gold/60" />
+      </div>
+      <p className={cx('text-[64px] font-bold leading-none tabular-nums', onTime ? 'text-ok-ink' : 'text-mid-ink')}>{r.scorePct}%</p>
+      <p className="label-caps mt-1 text-ink-3">Chuyên cần bài này</p>
+      <p className="mt-3 text-ink-2">
         {r.perfectWeek ? COPY.perfect_week : onTime ? COPY.submit.on_time : fill(COPY.submit.late, { days: r.daysLate, pct: r.scorePct })}
       </p>
-      {r.summary.total > 0 && <p className="mt-1 text-sm text-ink-2">{summaryLine(r.summary.correct, r.summary.total, String(r.summary.correct))}</p>}
+      {r.summary.total > 0 && <p className="mt-1 font-serif text-lg italic text-ink-2">{summaryLine(r.summary.correct, r.summary.total, String(r.summary.correct))}</p>}
 
-      <div className="mt-6 grid w-full grid-cols-3 gap-2">
-        <Metric icon={<Clock className="size-4" aria-hidden />} value={`${r.scorePct}%`} label="chuyên cần" tone={onTime ? 'ok' : 'mid'} />
-        <Metric icon={<CalendarCheck className="size-4" aria-hidden />} value={`${r.summary.correct}/${r.summary.total}`} label="câu đúng" />
-        <Metric icon={<Zap className="size-4" aria-hidden />} value={`+${r.xpGained}`} label={r.xpGained ? 'XP nộp đúng hạn' : 'XP (chỉ khi đúng hạn)'} />
+      <div className="mt-5 grid grid-cols-3 gap-2">
+        <Metric value={`${r.summary.correct}/${r.summary.total}`} label="Câu đúng" />
+        <Metric value={`+${r.xpGained}`} label={r.xpGained ? 'XP đúng hạn' : 'XP (khi đúng hạn)'} />
+        <Metric value={String(r.summary.passedWords)} label="Từ vừa thuộc" />
       </div>
 
-      {r.summary.passedWords > 0 && (
-        <p className="mt-4 rounded-xl bg-ok-bg px-3 py-2 text-sm font-semibold text-ok-ink">
-          Bạn vừa thuộc hẳn {r.summary.passedWords} từ!
-        </p>
-      )}
-
       {r.newBadges.length > 0 && (
-        <Card className="mt-4 w-full text-left">
-          <p className="mb-2 text-sm font-semibold text-ink-2">Huy hiệu mới</p>
-          <div className="flex flex-wrap gap-2">
+        <div className="mt-6">
+          <p className="label-caps mb-3 text-ink-3">Huy hiệu mới</p>
+          <div className="flex flex-wrap justify-center gap-4">
             {r.newBadges.map((b) => (
-              <span key={b} className="inline-flex items-center gap-1.5 rounded-xl bg-mid-bg px-3 py-1.5 text-sm font-semibold text-mid-ink animate-[popIn_.4s_ease-out]">
-                <Award className="size-4" aria-hidden /> {BADGE_VI[b]}
-              </span>
+              <div key={b} className="flex w-24 flex-col items-center animate-[popIn_.4s_ease-out]">
+                <WaxSeal icon={BADGE_ICON[b]} tone={b.startsWith('pass') || b === 'perfect_month' ? 'gold' : 'wine'} size={64} />
+                <span className="mt-1.5 text-xs font-semibold leading-tight">{BADGE_VI[b]}</span>
+              </div>
             ))}
           </div>
-        </Card>
+        </div>
       )}
 
-      <div className="mt-6 w-full space-y-2">
+      <div className="mt-7 space-y-2">
         <Button block size="lg" onClick={onHome}>
           <Home className="size-5" aria-hidden /> Về trang chủ
         </Button>
         {canExtra && (
           <>
-            <Button variant="secondary" block onClick={onExtra}>
+            <Button variant="accent" block onClick={onExtra}>
               Làm tiếp
             </Button>
             <p className="text-xs text-ink-3">Ôn thêm các từ còn đến hạn. Không ảnh hưởng điểm bài đã nộp.</p>
@@ -353,14 +340,24 @@ function Submitted({
   );
 }
 
-function Metric({ icon, value, label, tone }: { icon: ReactNode; value: string; label: string; tone?: 'ok' | 'mid' }) {
+function Metric({ value, label }: { value: string; label: string }) {
   return (
-    <div className={cx('rounded-2xl px-2 py-3', tone === 'ok' ? 'bg-ok-bg text-ok-ink' : tone === 'mid' ? 'bg-mid-bg text-mid-ink' : 'bg-surface text-ink shadow-[var(--shadow-card)]')}>
-      <div className="flex items-center justify-center gap-1 text-lg font-bold">
-        {icon}
-        {value}
-      </div>
-      <div className="text-[11px] opacity-80">{label}</div>
+    <div className="rounded-xl bg-blush px-2 py-3">
+      <div className="text-lg font-bold tabular-nums">{value}</div>
+      <div className="label-caps mt-0.5 !text-[10px] !tracking-[0.04em] leading-tight text-blush-ink">{label}</div>
+    </div>
+  );
+}
+
+function ExtraDone({ onHome }: { onHome: () => void }) {
+  return (
+    <div className="paper mx-auto mt-2 max-w-md rounded-[var(--radius-card)] px-6 pb-8 pt-8 text-center shadow-[var(--shadow-card)] ring-1 ring-line animate-[fadeIn_.25s_ease-out]">
+      <Spot src={ART.emptyShelf} className="mx-auto w-32" />
+      <h1 className="font-display mt-3 text-[24px]">Hết từ cần ôn</h1>
+      <p className="mt-1 text-ink-2">Hẹn gặp lại ở bài sau nhé.</p>
+      <Button block size="lg" className="mt-6" onClick={onHome}>
+        <Home className="size-5" aria-hidden /> Về trang chủ
+      </Button>
     </div>
   );
 }

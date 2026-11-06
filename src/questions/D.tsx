@@ -18,8 +18,8 @@ export default function D({ question: q, onSubmit, disabled, result }: QuestionP
       <Instruction>Nối mỗi từ với nghĩa đúng</Instruction>
       <div className="space-y-2">
         {left.map((l) => (
-          <div key={l.id} className="flex items-center gap-2 rounded-2xl bg-surface p-2 pl-3 shadow-[var(--shadow-card)]">
-            <span className="w-[42%] shrink-0 font-semibold">{l.text}</span>
+          <div key={l.id} className="flex items-center gap-2 rounded-xl bg-surface-2/60 p-2 pl-3 ring-1 ring-line">
+            <span className="w-[42%] shrink-0 font-serif text-[20px] font-bold">{l.text}</span>
             <Slot id={l.id} a={a} state={state(l.id)} placeholder="nghĩa…" className="flex-1" />
           </div>
         ))}

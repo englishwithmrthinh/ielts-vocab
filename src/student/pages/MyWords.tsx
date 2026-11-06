@@ -1,19 +1,23 @@
-// Kho từ của tôi (/hoc/kho-tu): tìm, lọc theo hộp/buổi, bấm xem thẻ từ, Thêm từ → "Chờ duyệt".
-import { Clock3, ImageIcon, Plus, Search, X } from 'lucide-react';
+// Kho từ của tôi (/hoc/kho-tu): kệ sách theo hộp, tìm kiếm, mỗi từ một dòng kiểu từ điển,
+// bấm xem thẻ từ, xem dạng bảng ảnh (Infographic), Thêm từ → "Chờ duyệt".
+// URL: ?hop=1..6 lọc theo hộp (từ kệ sách trang chủ), ?them=1 mở form thêm từ.
+import { Clock3, LayoutGrid, List, Plus, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import type { Box, MyWordsResponse } from '@shared/types';
-import { errorText, studentApi } from '../api';
-import { Button, Card, Spinner, Tag, cx } from '../components/ui';
-import { WordCardView } from '../components/WordCardView';
 import Infographic from '../../shared-ui/Infographic';
+import { errorText, studentApi } from '../api';
+import { ART, Spot } from '../components/Art';
+import { BookCover, SHELF } from '../components/BookCover';
+import { Button, Card, SectionTitle, Spinner, Tag, cx } from '../components/ui';
+import { POS_VI, WordCardView } from '../components/WordCardView';
 import { COPY } from '../lib/copy';
 
 type Word = MyWordsResponse['words'][number];
-type BoxFilter = 'all' | Box;
 
-const BOX_LABEL: Record<Box, string> = { 1: 'H1', 2: 'H2', 3: 'H3', 4: 'H4', 5: 'H5', 6: 'Đã thuộc' };
+const BOX_LABEL: Record<Box, string> = { 1: 'Hộp 1', 2: 'Hộp 2', 3: 'Hộp 3', 4: 'Hộp 4', 5: 'Hộp 5', 6: 'Đã thuộc' };
 
-/** Khung đáy màn hình (bottom sheet) */
+/** Khung đáy màn hình (bottom sheet) — trên máy tính là hộp thoại giữa màn */
 function Sheet({ onClose, children, label }: { onClose: () => void; children: ReactNode; label: string }) {
   useEffect(() => {
     const h = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -21,13 +25,13 @@ function Sheet({ onClose, children, label }: { onClose: () => void; children: Re
     return () => window.removeEventListener('keydown', h);
   }, [onClose]);
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/40" onClick={onClose} role="dialog" aria-modal="true" aria-label={label}>
+    <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/40 lg:items-center" onClick={onClose} role="dialog" aria-modal="true" aria-label={label}>
       <div
-        className="max-h-[88dvh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-page p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] animate-[fadeIn_.2s_ease-out]"
+        className="max-h-[88dvh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-page p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] animate-[fadeIn_.2s_ease-out] lg:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-2 flex justify-end">
-          <button type="button" onClick={onClose} aria-label="Đóng" className="rounded-xl p-2 text-ink-2 hover:bg-surface-2">
+          <button type="button" onClick={onClose} aria-label="Đóng" className="rounded-full p-2 text-ink-2 hover:bg-surface-2">
             <X className="size-5" aria-hidden />
           </button>
         </div>
@@ -38,34 +42,41 @@ function Sheet({ onClose, children, label }: { onClose: () => void; children: Re
 }
 
 export default function MyWords() {
+  const [params, setParams] = useSearchParams();
   const [d, setD] = useState<MyWordsResponse | null>(null);
   const [err, setErr] = useState('');
   const [q, setQ] = useState('');
-  const [box, setBox] = useState<BoxFilter>('all');
-  const [lesson, setLesson] = useState<number | 'all'>('all');
+  const [view, setView] = useState<'list' | 'board'>('list');
   const [open, setOpen] = useState<Word | null>(null);
-  const [adding, setAdding] = useState(false);
   const [toast, setToast] = useState('');
   const [hideMeaning, setHideMeaning] = useState(false);
+
+  const hop = Number(params.get('hop'));
+  const box: Box | null = hop >= 1 && hop <= 6 ? (hop as Box) : null;
+  const adding = params.get('them') === '1';
+  const setParam = (k: string, v: string | null) =>
+    setParams(
+      (p) => {
+        const n = new URLSearchParams(p);
+        if (v == null) n.delete(k);
+        else n.set(k, v);
+        return n;
+      },
+      { replace: true },
+    );
 
   const load = () => studentApi.myWords().then(setD).catch((e: unknown) => setErr(errorText(e)));
   useEffect(() => {
     void load();
   }, []);
 
-  const lessons = useMemo(
-    () => [...new Set((d?.words ?? []).map((w) => w.lessonNumber).filter((n): n is number => n != null))].sort((a, b) => a - b),
-    [d],
-  );
-
   const list = useMemo(() => {
     const t = q.trim().toLowerCase();
     return (d?.words ?? [])
-      .filter((w) => box === 'all' || w.box === box)
-      .filter((w) => lesson === 'all' || w.lessonNumber === lesson)
+      .filter((w) => box == null || w.box === box)
       .filter((w) => !t || w.word.toLowerCase().includes(t) || w.meaningVi.toLowerCase().includes(t))
       .sort((a, b) => a.word.localeCompare(b.word));
-  }, [d, q, box, lesson]);
+  }, [d, q, box]);
 
   if (err) return <p className="p-6 text-center text-bad-ink">{err}</p>;
   if (!d)
@@ -75,108 +86,98 @@ export default function MyWords() {
       </div>
     );
 
-  const count = (b: BoxFilter) => (b === 'all' ? d.words.length : d.words.filter((w) => w.box === b).length);
+  const count = (b: Box) => d.words.filter((w) => w.box === b).length;
 
   return (
-    <div className="px-4 pt-[max(1.25rem,env(safe-area-inset-top))]">
-      <div className="mb-3 flex items-center justify-between">
-        <h1 className="text-[22px] font-bold">Kho từ của tôi</h1>
-        <Button size="md" className="h-10 px-3 text-sm" onClick={() => setAdding(true)}>
-          <Plus className="size-4" aria-hidden /> Thêm từ
+    <div className="px-4 pt-[max(1.25rem,env(safe-area-inset-top))] lg:px-0">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <SectionTitle as="h1" className="!mb-0">
+          Kho từ của tôi
+        </SectionTitle>
+        <Button variant="accent" className="h-10 shrink-0 whitespace-nowrap px-3" onClick={() => setParam('them', '1')}>
+          <Plus className="size-4" aria-hidden /> Thêm
         </Button>
       </div>
 
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-3.5 top-1/2 size-5 -translate-y-1/2 text-ink-3" aria-hidden />
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Tìm từ hoặc nghĩa"
-          aria-label="Tìm từ"
-          autoCorrect="off"
-          autoCapitalize="none"
-          spellCheck={false}
-          className="h-12 w-full rounded-2xl border-2 border-line bg-surface pl-11 pr-4 text-base text-ink outline-none focus:border-brand"
-          style={{ fontSize: 16 }}
-        />
-      </div>
+      <Card>
+        <SectionTitle aside={box ? 'Chạm lại để bỏ lọc' : `${d.words.length} từ`}>Kệ sách</SectionTitle>
+        <div className="grid grid-cols-6 gap-2 sm:gap-3" role="tablist" aria-label="Lọc theo hộp">
+          {SHELF.map((b) => {
+            const on = box === b.box;
+            return (
+              <div key={b.key} role="tab" aria-selected={on} className={cx('transition', box && !on && 'opacity-45')}>
+                <BookCover
+                  title={b.key === 'pass' ? '' : b.key}
+                  tone={b.tone}
+                  emblem={b.emblem}
+                  onClick={() => setParam('hop', on ? null : String(b.box))}
+                  label={`${b.title}: ${count(b.box)} từ${on ? ' (đang lọc)' : ''}`}
+                  className={cx(on && '-translate-y-1 ring-2 ring-gold ring-offset-2 ring-offset-surface')}
+                />
+                <p className="mt-1.5 text-center text-[11px] font-semibold leading-tight text-ink-2">
+                  {b.title}
+                  <span className="block font-normal text-ink-3">{count(b.box)}</span>
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
 
-      <div className="-mx-4 mt-3 flex gap-1.5 overflow-x-auto px-4 pb-1" role="tablist" aria-label="Lọc theo hộp">
-        {(['all', 1, 2, 3, 4, 5, 6] as BoxFilter[]).map((b) => (
-          <button
-            key={String(b)}
-            type="button"
-            role="tab"
-            aria-selected={box === b}
-            onClick={() => setBox(b)}
-            className={cx(
-              'shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold transition',
-              box === b ? 'bg-primary text-white' : 'bg-surface text-ink-2 ring-1 ring-line',
-            )}
-          >
-            {b === 'all' ? 'Tất cả' : BOX_LABEL[b]} <span className="opacity-70">{count(b)}</span>
-          </button>
-        ))}
-      </div>
-
-      {lessons.length > 0 && (
-        <div className="-mx-4 mt-2 flex gap-1.5 overflow-x-auto px-4 pb-1" aria-label="Lọc theo buổi">
-          {(['all', ...lessons] as (number | 'all')[]).map((n) => (
+      <div className="mt-4 flex gap-2">
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 size-5 -translate-y-1/2 text-ink-3" aria-hidden />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Tìm từ hoặc nghĩa"
+            aria-label="Tìm từ"
+            autoCorrect="off"
+            autoCapitalize="none"
+            spellCheck={false}
+            className="h-12 w-full rounded-xl border border-line bg-surface pl-11 pr-4 text-base text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/25"
+            style={{ fontSize: 16 }}
+          />
+        </div>
+        <div className="flex rounded-xl bg-surface-2 p-1 ring-1 ring-line" role="group" aria-label="Cách xem">
+          {(
+            [
+              ['list', List, 'Danh sách'],
+              ['board', LayoutGrid, 'Bảng ảnh'],
+            ] as const
+          ).map(([v, Icon, label]) => (
             <button
-              key={String(n)}
+              key={v}
               type="button"
-              onClick={() => setLesson(n)}
-              aria-pressed={lesson === n}
-              className={cx(
-                'shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition',
-                lesson === n ? 'bg-brand-tint text-brand-ink ring-1 ring-brand' : 'text-ink-2 ring-1 ring-line',
-              )}
+              aria-pressed={view === v}
+              aria-label={label}
+              title={label}
+              onClick={() => setView(v)}
+              className={cx('flex w-10 items-center justify-center rounded-lg transition', view === v ? 'bg-surface text-brand-ink shadow-sm' : 'text-ink-3')}
             >
-              {n === 'all' ? 'Mọi buổi' : `Buổi ${n}`}
+              <Icon className="size-5" strokeWidth={1.6} aria-hidden />
             </button>
           ))}
         </div>
+      </div>
+
+      {box && (
+        <p className="mt-3 flex items-center gap-2 text-sm text-ink-2">
+          Đang xem <Tag tone={box === 6 ? 'ok' : 'brand'}>{BOX_LABEL[box]}</Tag>
+          <button type="button" onClick={() => setParam('hop', null)} className="text-sm font-semibold text-brand-ink underline underline-offset-2">
+            Xem tất cả
+          </button>
+        </p>
       )}
 
-      {lesson !== 'all' && (
-        <div className="mt-3">
-          <div className="mb-2 flex items-center justify-between">
-            <h2 className="flex items-center gap-1.5 text-sm font-semibold text-ink-2">
-              <ImageIcon className="size-4 text-brand" aria-hidden /> Infographic buổi {lesson}
-            </h2>
-            <button
-              type="button"
-              onClick={() => setHideMeaning((v) => !v)}
-              aria-pressed={hideMeaning}
-              className="rounded-lg px-2 py-1 text-xs font-semibold text-brand-ink ring-1 ring-line"
-            >
-              {hideMeaning ? 'Hiện nghĩa' : 'Che nghĩa để tự kiểm tra'}
-            </button>
-          </div>
-          <div className="overflow-hidden rounded-[var(--radius-card)] bg-surface p-2 shadow-[var(--shadow-card)]">
-            <Infographic
-              title={`Buổi ${lesson}`}
-              hideMeaning={hideMeaning}
-              items={d.words
-                .filter((w) => w.lessonNumber === lesson)
-                .map((w) => ({ id: w.wordId, word: w.word, meaningVi: w.meaningVi, imageUrl: w.imageUrl, pos: w.pos }))}
-              onSelect={(it) => {
-                const w = d.words.find((x) => x.wordId === it.id);
-                if (w) setOpen(w);
-              }}
-            />
-          </div>
-        </div>
-      )}
-
-      {d.pending.length > 0 && box === 'all' && lesson === 'all' && !q && (
+      {d.pending.length > 0 && !box && !q && (
         <div className="mt-4">
-          <h2 className="mb-2 text-sm font-semibold text-ink-2">Từ bạn đề xuất</h2>
+          <p className="label-caps mb-2 text-ink-3">Từ bạn đề xuất</p>
           <ul className="space-y-1.5">
             {d.pending.map((p) => (
-              <li key={p.id} className="flex items-center justify-between gap-2 rounded-2xl bg-surface px-4 py-3 ring-1 ring-line">
+              <li key={p.id} className="flex items-center justify-between gap-2 rounded-xl bg-surface px-4 py-3 ring-1 ring-line">
                 <div className="min-w-0">
-                  <p className="font-semibold">{p.text}</p>
+                  <p className="font-serif text-[20px] font-bold leading-tight">{p.text}</p>
                   {p.note && <p className="truncate text-xs text-ink-3">{p.note}</p>}
                 </div>
                 <Tag tone="mid">
@@ -188,47 +189,66 @@ export default function MyWords() {
         </div>
       )}
 
-      <ul className="mt-4 space-y-1.5">
-        {list.map((w) => (
-          <li key={w.wordId}>
+      {view === 'board' && list.length > 0 ? (
+        <div className="mt-4">
+          <div className="mb-2 flex justify-end">
             <button
               type="button"
-              onClick={() => setOpen(w)}
-              className="flex w-full items-center gap-3 rounded-2xl bg-surface px-3 py-2.5 text-left shadow-[var(--shadow-card)] active:bg-brand-wash"
+              onClick={() => setHideMeaning((v) => !v)}
+              aria-pressed={hideMeaning}
+              className="rounded-full px-3 py-1 text-xs font-semibold text-brand-ink ring-1 ring-line"
             >
-              {w.imageUrl ? (
-                <img src={w.imageUrl} alt="" className="size-11 shrink-0 rounded-xl object-cover" />
-              ) : (
-                <span className="size-11 shrink-0 rounded-xl bg-brand-tint" />
-              )}
-              <span className="min-w-0 flex-1">
-                <span className="block font-semibold">{w.word}</span>
-                <span className="block truncate text-sm text-ink-2">{w.meaningVi}</span>
-              </span>
-              <Tag tone={w.box === 6 ? 'ok' : 'brand'}>{BOX_LABEL[w.box]}</Tag>
+              {hideMeaning ? 'Hiện nghĩa' : 'Che nghĩa để tự kiểm tra'}
             </button>
-          </li>
-        ))}
-        {list.length === 0 && (
-          <li className="py-8 text-center text-sm text-ink-3">{d.words.length ? COPY.empty.my_words_search_empty : COPY.empty.no_words_yet}</li>
-        )}
-      </ul>
+          </div>
+          <div className="overflow-hidden rounded-[var(--radius-card)] bg-surface p-2 shadow-[var(--shadow-card)] ring-1 ring-line">
+            <Infographic
+              hideMeaning={hideMeaning}
+              items={list.map((w) => ({ id: w.wordId, word: w.word, meaningVi: w.meaningVi, imageUrl: w.imageUrl, pos: w.pos }))}
+              onSelect={(it) => {
+                const w = list.find((x) => x.wordId === it.id);
+                if (w) setOpen(w);
+              }}
+            />
+          </div>
+        </div>
+      ) : (
+        <ul className="mt-4 divide-y divide-line overflow-hidden rounded-[var(--radius-card)] bg-surface shadow-[var(--shadow-card)] ring-1 ring-line">
+          {list.map((w) => (
+            <li key={w.wordId}>
+              <button type="button" onClick={() => setOpen(w)} className="flex w-full items-center gap-3 px-4 py-3 text-left active:bg-brand-wash">
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-baseline gap-2">
+                    <span className="font-serif text-[22px] font-bold leading-tight text-ink">{w.word}</span>
+                    <span className="shrink-0 font-serif text-[15px] italic text-accent">{POS_VI[w.pos]}</span>
+                  </span>
+                  <span className="block truncate text-sm text-ink-2">{w.meaningVi}</span>
+                </span>
+                <Tag tone={w.box === 6 ? 'ok' : 'brand'}>{BOX_LABEL[w.box]}</Tag>
+              </button>
+            </li>
+          ))}
+          {list.length === 0 && (
+            <li className="flex flex-col items-center px-4 py-8 text-center">
+              <Spot src={ART.emptyShelf} className="w-28" />
+              <p className="mt-2 text-sm text-ink-3">{d.words.length ? COPY.empty.my_words_search_empty : COPY.empty.no_words_yet}</p>
+            </li>
+          )}
+        </ul>
+      )}
 
       {open && (
         <Sheet onClose={() => setOpen(null)} label={`Thẻ từ ${open.word}`}>
           <WordCardView card={open} big />
-          <p className="mt-3 text-center text-sm text-ink-2">
-            {open.box === 6 ? 'Bạn đã thuộc từ này.' : `Đang ở ${BOX_LABEL[open.box].replace('H', 'Hộp ')}.`}
-            {open.lessonNumber != null && ` · Buổi ${open.lessonNumber}`}
-          </p>
+          <p className="mt-3 text-center text-sm text-ink-2">{open.box === 6 ? 'Bạn đã thuộc từ này.' : `Đang ở ${BOX_LABEL[open.box]}.`}</p>
         </Sheet>
       )}
 
       {adding && (
-        <Sheet onClose={() => setAdding(false)} label="Thêm từ">
+        <Sheet onClose={() => setParam('them', null)} label="Thêm từ">
           <AddWordForm
             onDone={(msg) => {
-              setAdding(false);
+              setParam('them', null);
               setToast(msg);
               setTimeout(() => setToast(''), 3500);
               void load();
@@ -238,7 +258,7 @@ export default function MyWords() {
       )}
 
       {toast && (
-        <div role="status" className="fixed inset-x-4 bottom-24 z-30 mx-auto max-w-md rounded-2xl bg-ink px-4 py-3 text-center text-sm font-medium text-page shadow-lg animate-[fadeIn_.2s_ease-out]">
+        <div role="status" className="fixed inset-x-4 bottom-24 z-30 mx-auto max-w-md rounded-xl bg-primary px-4 py-3 text-center text-sm font-medium text-cream shadow-lg animate-[fadeIn_.2s_ease-out]">
           {toast}
         </div>
       )}
@@ -262,7 +282,7 @@ function AddWordForm({ onDone }: { onDone: (msg: string) => void }) {
     setErr('');
     try {
       const r = await studentApi.addWord(text, note.trim() || null);
-      onDone(r.status === 'linked' ? `Đã thêm "${text.trim()}" vào kho của bạn.` : `Đã gửi "${text.trim()}" cho cô duyệt.`);
+      onDone(r.status === 'linked' ? `Đã thêm "${text.trim()}" vào kho của bạn.` : `Đã gửi "${text.trim()}" cho thầy duyệt.`);
     } catch (e2) {
       setErr(errorText(e2));
       setBusy(false);
@@ -270,11 +290,13 @@ function AddWordForm({ onDone }: { onDone: (msg: string) => void }) {
   };
 
   return (
-    <form onSubmit={submit} className="space-y-3">
-      <h2 className="text-lg font-bold">Thêm từ muốn học</h2>
-      <p className="text-sm text-ink-2">Từ đã có trong kho của lớp sẽ được thêm ngay. Từ mới sẽ chờ cô duyệt rồi vào buổi học sau.</p>
+    <form onSubmit={submit} className="space-y-3 rounded-[var(--radius-card)] bg-highlight p-4 ring-1 ring-highlight-line">
+      <SectionTitle as="h2" className="!mb-1">
+        Thêm từ muốn học
+      </SectionTitle>
+      <p className="text-sm text-ink-2">Từ đã có trong kho của lớp sẽ được thêm ngay. Từ mới sẽ chờ thầy duyệt rồi vào bộ từ sau.</p>
       <label className="block">
-        <span className="mb-1 block text-sm font-semibold text-ink-2">Từ / cụm từ</span>
+        <span className="label-caps mb-1 block text-ink-2">Từ / cụm từ</span>
         <input
           value={text}
           onChange={(e) => {
@@ -286,17 +308,17 @@ function AddWordForm({ onDone }: { onDone: (msg: string) => void }) {
           autoCorrect="off"
           autoCapitalize="none"
           spellCheck={false}
-          className="h-12 w-full rounded-2xl border-2 border-line bg-surface px-4 text-ink outline-none focus:border-brand"
+          className="h-12 w-full rounded-xl border border-highlight-line bg-surface px-4 text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/25"
           style={{ fontSize: 16 }}
         />
       </label>
       <label className="block">
-        <span className="mb-1 block text-sm font-semibold text-ink-2">Ghi chú (không bắt buộc)</span>
+        <span className="label-caps mb-1 block text-ink-2">Ghi chú (không bắt buộc)</span>
         <input
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder="Gặp trong bài đọc Unit 3"
-          className="h-12 w-full rounded-2xl border-2 border-line bg-surface px-4 text-ink outline-none focus:border-brand"
+          className="h-12 w-full rounded-xl border border-highlight-line bg-surface px-4 text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/25"
           style={{ fontSize: 16 }}
         />
       </label>

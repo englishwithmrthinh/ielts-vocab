@@ -66,8 +66,8 @@ export function Bank({
               disabled={disabled}
               {...a.dragProps(b.id, b.text)}
               className={cx(
-                'min-h-11 select-none rounded-xl bg-surface px-3 py-2 text-left font-medium shadow-[var(--shadow-card)] ring-2 transition',
-                a.selected === b.id ? 'ring-brand bg-brand-wash' : 'ring-transparent',
+                'min-h-11 select-none rounded-lg bg-surface px-3 py-2 text-left font-medium shadow-[0_1px_0_var(--color-line)] ring-1 transition',
+                a.selected === b.id ? 'ring-2 ring-brand bg-brand-tint' : 'ring-line',
                 a.draggingId === b.id && 'opacity-30',
               )}
             >

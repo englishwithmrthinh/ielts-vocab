@@ -7,7 +7,7 @@ export default function M({ question: q, onSubmit, disabled, result }: QuestionP
   return (
     <div>
       <Instruction>Viết dạng đúng của từ trong ngoặc</Instruction>
-      <div className="mb-5 rounded-2xl bg-surface p-4 shadow-[var(--shadow-card)]">
+      <div className="mb-5 rounded-xl border-l-4 border-gold/70 bg-surface-2/60 p-4">
         <Sentence text={q.prompt.sentence ?? ''} />
         <p className="mt-3 text-sm text-ink-2">
           Từ gốc: <b className="text-base font-bold text-brand-ink">({q.prompt.baseWord})</b>

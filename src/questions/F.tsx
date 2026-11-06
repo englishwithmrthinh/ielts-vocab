@@ -46,7 +46,7 @@ export default function F({ question: q, onSubmit, disabled, result }: QuestionP
         data-drop="end"
         className={cx(
           'flex min-h-16 flex-wrap items-center justify-center gap-1.5 rounded-2xl border-2 p-2',
-          tone === 'ok' ? 'border-ok bg-ok-bg' : tone === 'bad' ? 'border-bad bg-bad-bg' : 'border-brand bg-brand-wash',
+          tone === 'ok' ? 'border-ok bg-ok-bg' : tone === 'bad' ? 'border-bad bg-bad-bg' : 'border-dashed border-brand bg-brand-tint/40',
         )}
         aria-label="Từ đang xếp"
       >
@@ -58,7 +58,7 @@ export default function F({ question: q, onSubmit, disabled, result }: QuestionP
               disabled={lock}
               {...dd.dragProps(`a:${i}`, letters[i])}
               className={cx(
-                'size-11 rounded-xl bg-surface text-xl font-bold shadow-[var(--shadow-card)] transition',
+                'size-11 rounded-lg bg-surface font-serif text-[26px] font-bold shadow-[var(--shadow-card)] ring-1 ring-line transition',
                 dd.draggingId === `a:${i}` && 'opacity-30',
                 dd.overId === `s:${pos}` && 'ring-2 ring-brand',
               )}
@@ -79,7 +79,7 @@ export default function F({ question: q, onSubmit, disabled, result }: QuestionP
                 disabled={lock}
                 {...dd.dragProps(`b:${i}`, c)}
                 className={cx(
-                  'size-12 rounded-xl bg-surface text-xl font-bold text-ink shadow-[0_3px_0_var(--color-line)] ring-1 ring-line transition active:translate-y-[2px] active:shadow-none',
+                  'size-12 rounded-lg bg-surface-2 font-serif text-[28px] font-bold text-ink shadow-[0_3px_0_var(--color-line)] ring-1 ring-line transition active:translate-y-[2px] active:shadow-none',
                   dd.draggingId === `b:${i}` && 'opacity-30',
                 )}
               >

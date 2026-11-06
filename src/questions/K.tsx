@@ -7,11 +7,11 @@ export default function K({ question: q, onSubmit, disabled, result }: QuestionP
   return (
     <div>
       <Instruction>Gõ từ còn thiếu (gõ cả từ)</Instruction>
-      <div className="mb-5 rounded-2xl bg-surface p-4 shadow-[var(--shadow-card)]">
+      <div className="mb-5 rounded-xl border-l-4 border-gold/70 bg-surface-2/60 p-4">
         <Sentence
           text={q.prompt.sentence ?? ''}
           blank={
-            <span className="mx-1 inline-block min-w-20 border-b-2 border-brand px-1 font-semibold text-brand-ink">
+            <span className="mx-1 inline-block min-w-20 border-b-2 border-brand px-1 font-bold text-brand-ink">
               {first}
               <span className="text-ink-3">…</span>
             </span>

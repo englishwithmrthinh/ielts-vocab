@@ -39,7 +39,7 @@ export default function G({ question: q, onSubmit, disabled, result }: QuestionP
           if (c === ' ') return <span key={i} className="w-3" />;
           if (c !== '_')
             return (
-              <span key={i} className={cx('flex h-12 items-center justify-center text-2xl font-bold text-ink-2', cell)}>
+              <span key={i} className={cx('flex h-12 items-center justify-center font-serif text-[30px] font-bold text-ink-2', cell)}>
                 {c}
               </span>
             );
@@ -75,10 +75,10 @@ export default function G({ question: q, onSubmit, disabled, result }: QuestionP
               }}
               className={cx(
                 cell,
-                'h-12 rounded-lg border-2 bg-surface text-center text-2xl font-bold text-brand-ink outline-none transition focus:border-brand',
+                'h-12 rounded-md border bg-surface-2 text-center font-serif text-[28px] font-bold text-brand-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/25',
                 tone === 'ok' ? 'border-ok' : tone === 'bad' ? 'border-bad' : 'border-line',
               )}
-              style={{ fontSize: 22 }}
+              style={{ fontSize: 28 }}
             />
           );
         })}

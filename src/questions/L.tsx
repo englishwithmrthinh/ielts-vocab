@@ -20,7 +20,7 @@ export default function L({ question: q, onSubmit, disabled, result }: QuestionP
         {blanks.map((b, i) => {
           const [x, y] = b.sentence.split('___');
           return (
-            <li key={b.id} className="rounded-2xl bg-surface p-3 leading-loose shadow-[var(--shadow-card)]">
+            <li key={b.id} className="rounded-xl bg-surface-2/60 p-3 font-serif text-[19px] leading-loose ring-1 ring-line">
               <span className="mr-1 text-sm font-semibold text-ink-3">{i + 1}.</span>
               {x}
               <Slot id={b.id} a={a} state={state(b.id)} placeholder="……" className="mx-1 align-middle" />

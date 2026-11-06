@@ -7,7 +7,7 @@ import type { AnswerSubmission } from '@shared/types';
 import { ApiCallError } from '../../lib/api';
 import { errorText, studentApi } from '../api';
 import { Button, Card, Spinner } from '../components/ui';
-import { celebrate } from '../lib/celebrate';
+import { ART, Spot } from '../components/Art';
 import { QuestionView, type Stage } from './LessonPage';
 
 export default function PracticePage() {
@@ -36,7 +36,6 @@ export default function PracticePage() {
       setStage({ ...stage, sending: false, result });
       setXp((v) => v + result.xp);
       setCount((v) => v + 1);
-      if (result.passed) celebrate('small');
     } catch (e) {
       if (e instanceof ApiCallError && e.status === 410) loadNext().catch(fail);
       else fail(e);
@@ -44,18 +43,20 @@ export default function PracticePage() {
   };
 
   return (
-    <div className="mx-auto min-h-dvh max-w-md px-4 pb-6 pt-[max(0.75rem,env(safe-area-inset-top))]">
-      <div className="sticky top-0 z-10 -mx-4 mb-4 flex items-center gap-3 bg-page/95 px-4 pb-2 pt-1 backdrop-blur">
-        <button type="button" onClick={() => nav('/hoc')} aria-label="Thoát" className="-ml-2 rounded-xl p-2 text-ink-2 hover:bg-surface-2">
-          <X className="size-6" aria-hidden />
-        </button>
-        <p className="flex-1 rounded-xl bg-brand-tint px-3 py-1.5 text-sm font-semibold text-brand-ink">
-          <Dumbbell className="mr-1 inline size-4 align-[-3px]" aria-hidden />
-          Luyện thêm · không tính điểm
-        </p>
-        <span className="flex items-center gap-1 text-sm font-semibold text-brand-ink">
-          <Zap className="size-4" aria-hidden />+{xp}
-        </span>
+    <div className="mx-auto min-h-dvh max-w-2xl px-4 pb-6">
+      <div className="sticky top-0 z-10 -mx-4 mb-4 bg-accent pt-[env(safe-area-inset-top)] text-cream">
+        <div className="mx-auto flex h-14 max-w-2xl items-center gap-3 px-4">
+          <button type="button" onClick={() => nav('/hoc')} aria-label="Thoát" className="-ml-2 rounded-full p-2 text-cream/90 hover:bg-white/10">
+            <X className="size-6" strokeWidth={1.6} aria-hidden />
+          </button>
+          <p className="label-caps flex-1 text-cream">
+            <Dumbbell className="mr-1.5 inline size-4 align-[-3px]" aria-hidden />
+            Luyện thêm · không tính điểm
+          </p>
+          <span className="flex items-center gap-1 text-sm font-semibold text-cream">
+            <Zap className="size-4" aria-hidden />+{xp}
+          </span>
+        </div>
       </div>
 
       {stage.k === 'loading' && (
@@ -73,11 +74,9 @@ export default function PracticePage() {
       )}
       {stage.k === 'question' && <QuestionView stage={stage} onSubmit={submit} onNext={() => loadNext().catch(fail)} />}
       {stage.k === 'summary' && (
-        <div className="flex flex-col items-center pt-8 text-center animate-[fadeIn_.25s_ease-out]">
-          <span className="flex size-20 items-center justify-center rounded-3xl bg-brand-tint text-brand-ink">
-            <Dumbbell className="size-10" aria-hidden />
-          </span>
-          <h1 className="mt-4 text-2xl font-bold">{count ? 'Luyện xong rồi!' : 'Chưa có từ để luyện'}</h1>
+        <div className="paper mx-auto mt-2 flex max-w-md flex-col items-center rounded-[var(--radius-card)] px-6 pb-8 pt-8 text-center shadow-[var(--shadow-card)] ring-1 ring-line animate-[fadeIn_.25s_ease-out]">
+          <Spot src={count ? ART.bookGlasses : ART.emptyShelf} className="w-28" />
+          <h1 className="font-display mt-3 text-[24px]">{count ? 'Luyện xong rồi' : 'Chưa có từ để luyện'}</h1>
           <p className="mt-1 text-ink-2">{count ? `Bạn đã luyện ${count} câu, được +${xp} XP.` : 'Từ sẽ có sau buổi học đầu tiên.'}</p>
           <Button block size="lg" className="mt-6" onClick={() => nav('/hoc')}>
             <Home className="size-5" aria-hidden /> Về trang chủ
