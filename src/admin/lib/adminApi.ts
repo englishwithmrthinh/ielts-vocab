@@ -1,0 +1,63 @@
+/**
+ * Mọi lời gọi API của khu quản trị đi qua đây.
+ * Chế độ demo (?demo=1 trên URL): dùng dữ liệu giả trong trình duyệt, không cần
+ * máy chủ — để xem giao diện và chụp màn hình khi chưa có Supabase/Netlify.
+ */
+import type { Milestone, Student } from '@shared/types';
+import { api } from '../../lib/api';
+import { mockApi } from './mock';
+
+export interface StudentCard { id: string; code: string; name: string; pin: string }
+
+export interface LessonSummary {
+  id: string;
+  number: number;
+  taught_on: string;
+  status: 'draft' | 'processing' | 'review' | 'published';
+  published_at: string | null;
+  created_at: string;
+  word_count: number;
+  student_count: number;
+}
+
+export interface ExistingWord { word: string; pos: string; id: string; has_audio: boolean; has_image: boolean }
+
+type Method = 'GET' | 'POST';
+
+function readDemoFlag(): boolean {
+  try {
+    const q = new URLSearchParams(window.location.search).get('demo');
+    if (q === '1') sessionStorage.setItem('admin-demo', '1');
+    if (q === '0') sessionStorage.removeItem('admin-demo');
+    return sessionStorage.getItem('admin-demo') === '1';
+  } catch {
+    return new URLSearchParams(window.location.search).get('demo') === '1';
+  }
+}
+
+export const DEMO = typeof window !== 'undefined' && readDemoFlag();
+
+function call<T>(method: Method, path: string, body?: unknown): Promise<T> {
+  return DEMO ? mockApi<T>(method, path, body) : api<T>(method, path, body);
+}
+
+export const adminApi = {
+  me: () => call<{ ok: true }>('GET', '/api/admin/me'),
+  login: (password: string) => call<{ ok: true }>('POST', '/api/admin/login', { password }),
+  logout: () => call<{ ok: true }>('POST', '/api/admin/logout'),
+
+  students: () => call<{ students: Student[] }>('GET', '/api/admin/students'),
+  addStudents: (names: string[]) => call<{ created: StudentCard[] }>('POST', '/api/admin/students', { names }),
+  updateStudent: (id: string, patch: { name?: string; active?: boolean }) =>
+    call<{ student: Student }>('POST', '/api/admin/students/update', { id, ...patch }),
+  resetPins: (ids: string[]) => call<{ cards: StudentCard[] }>('POST', '/api/admin/students/reset-pins', { ids }),
+
+  milestones: (month: string) => call<{ milestones: Milestone[] }>('GET', `/api/admin/milestones?month=${month}`),
+  setOff: (id: string, off: boolean) => call<{ ok: true }>('POST', '/api/admin/milestones/off', { id, off }),
+
+  lessons: () => call<{ lessons: LessonSummary[]; nextNumber: number }>('GET', '/api/admin/lessons'),
+  checkWords: (words: { word: string; pos: string }[]) =>
+    call<{ existing: ExistingWord[] }>('POST', '/api/admin/lessons/check', { words }),
+  createLesson: (body: { number: number; taught_on: string; student_ids: string[]; json: string }) =>
+    call<{ lesson: { id: string; number: number }; reused: number; created: number }>('POST', '/api/admin/lessons', body),
+};
