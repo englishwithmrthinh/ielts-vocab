@@ -3,12 +3,19 @@ import '@fontsource/be-vietnam-pro/400.css';
 import '@fontsource/be-vietnam-pro/500.css';
 import '@fontsource/be-vietnam-pro/600.css';
 import '@fontsource/be-vietnam-pro/700.css';
+// Chữ có chân "sách" (có bộ chữ tiếng Việt; trình duyệt chỉ tải phần chữ cần dùng)
+import '@fontsource/cormorant-sc/600.css';
+import '@fontsource/cormorant-sc/700.css';
+import '@fontsource/cormorant-garamond/500.css';
+import '@fontsource/cormorant-garamond/600.css';
+import '@fontsource/cormorant-garamond/700.css';
+import '@fontsource/cormorant-garamond/500-italic.css';
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
-import { BottomNav } from './components/BottomNav';
+import { BottomNav, SideNav } from './components/BottomNav';
 import { Spinner } from './components/ui';
 import LessonPage from './lesson/LessonPage';
 import PracticePage from './lesson/PracticePage';
-import Home from './pages/Home';
+import Home, { Assignments } from './pages/Home';
 import MyWords from './pages/MyWords';
 import Progress from './pages/Progress';
 import Login from './pages/Login';
@@ -27,10 +34,14 @@ function RequireLogin() {
   return <Outlet />;
 }
 
+/** Khung có điều hướng: điện thoại = thanh dưới; máy tính = thanh bên trái + nội dung rộng */
 function WithNav() {
   return (
-    <div className="mx-auto max-w-md pb-24">
-      <Outlet />
+    <div className="lg:flex lg:min-h-dvh">
+      <SideNav />
+      <div className="mx-auto w-full max-w-md pb-24 lg:max-w-5xl lg:px-8 lg:pb-12 lg:pt-6">
+        <Outlet />
+      </div>
       <BottomNav />
     </div>
   );
@@ -47,6 +58,7 @@ export default function StudentApp() {
               <Route index element={<Home />} />
               <Route path="tien-do" element={<Progress />} />
               <Route path="kho-tu" element={<MyWords />} />
+              <Route path="bai-can-lam" element={<Assignments />} />
             </Route>
             <Route path="bai/:milestoneId" element={<LessonPage />} />
             <Route path="luyen-them" element={<PracticePage />} />

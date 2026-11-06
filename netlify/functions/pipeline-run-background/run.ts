@@ -76,7 +76,7 @@ export async function runPipeline(lessonId: string, deps: PipelineDeps): Promise
   log.add('ipa', `Phiên âm: ${sum.ipaDict}/${needIpa.length} từ tra được từ điển, còn lại giữ bản AI`);
   await log.flush();
 
-  // 2. Audio: một lần gọi cho cả buổi, từ nào cắt không sạch thì tạo lại riêng
+  // 2. Audio: mỗi đoạn ≤25 từ một lần gọi, từ nào cắt không sạch thì tạo lại riêng
   const needAudio = words.filter((w) => !w.audio_url);
   if (needAudio.length) {
     let redo: number[] = needAudio.map((_, i) => i);

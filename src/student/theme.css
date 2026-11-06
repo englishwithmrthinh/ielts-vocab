@@ -1,100 +1,157 @@
-/* Design tokens khu học sinh + phụ huynh — bộ 06 Teal & White, font Be Vietnam Pro.
-   Dùng token theo VAI TRÒ (primary, surface, ink…) để dark mode chỉ cần đổi biến.
-   Quy ước màu trạng thái dùng thống nhất cả app (khớp ô mốc Google Sheet):
+/* Design tokens khu học sinh + phụ huynh — phong cách "Thư viện cổ điển" (06/11).
+   Token theo VAI TRÒ (primary, surface, ink…) → dark mode chỉ cần đổi biến.
+   Màu trạng thái giữ NGHĨA cũ (khớp ô mốc Google Sheet):
      ok = đúng hạn / đúng (xanh lá) · mid = trễ 50–90% (vàng) · low = trễ 30–40% (cam)
      bad = đang nợ / bỏ bài / sai (đỏ) · off = nghỉ (xám)
-   Được nạp từ src/index.css (sau @import "tailwindcss") — sếp đồng ý 06/11. */
-
+   Được nạp từ src/index.css (sau @import "tailwindcss"). */
 
 @theme {
-
   /* Thương hiệu */
-  --color-primary: #0f766e;        /* nút chính, thanh đầu trang — chữ trắng 5.5:1 */
-  --color-primary-hover: #115e59;
-  --color-primary-edge: #134e4a;   /* gờ dưới của nút */
-  --color-brand: #14b8a6;          /* thanh tiến độ, icon, viền */
-  --color-brand-soft: #5eead4;     /* hover, phần đã xong, hiệu ứng */
-  --color-brand-tint: #ccfbf1;     /* nền nhạt: rãnh thanh tiến độ, mục đang chọn */
-  --color-brand-wash: #f0fdfa;     /* nền rất nhạt khi hover */
-  --color-brand-ink: #0f766e;      /* chữ màu thương hiệu trên nền sáng */
+  --color-primary: #1f4e52;        /* xanh cổ vịt — nút chính, dải đầu trang. Chữ trắng 8.9:1 */
+  --color-primary-hover: #183f42;
+  --color-primary-edge: #12302f;
+  --color-accent: #7b2d34;         /* đỏ rượu vang — nút phụ, bìa sách, điểm nhấn. Chữ trắng 9.6:1 */
+  --color-accent-hover: #64242a;
+  --color-gold: #c9a24a;           /* vàng kim — khung bìa sách, sao, hiệu ứng Pass (chỉ trang trí) */
+  --color-gold-ink: #7a5a14;       /* chữ vàng kim đậm trên nền sáng */
+  --color-cream: #f3e9d2;          /* chữ kem trên bìa sách / dải đầu trang */
+  --color-brand: #2f6b6f;          /* thanh tiến độ, icon */
+  --color-brand-soft: #8fb3b0;
+  --color-brand-tint: #e3ece9;     /* rãnh thanh tiến độ, mục đang chọn */
+  --color-brand-wash: #f1ede4;     /* hover rất nhạt */
+  --color-brand-ink: #1f4e52;      /* chữ màu thương hiệu */
 
-  /* Nền, chữ, đường kẻ */
-  --color-page: #f0fdfa;
-  --color-surface: #ffffff;
-  --color-surface-2: #f8fafc;
-  --color-ink: #0f172a;
-  --color-ink-2: #475569;
-  --color-ink-3: #64748b;
-  --color-line: #d5efeb;
+  /* Nền giấy */
+  --color-page: #f6f2ea;           /* kem ngà */
+  --color-surface: #fbf9f4;        /* thẻ */
+  --color-surface-2: #efe9de;      /* khối be, thanh bên, ô đáp án */
+  --color-highlight: #f5e6c8;      /* khối vàng đào ("Đang làm", form thêm từ) */
+  --color-highlight-line: #e6cf9f;
+  --color-blush: #f4e2da;          /* ô số liệu nhỏ, chip */
+  --color-blush-ink: #6e2f2a;
+  --color-ink: #2b2622;            /* nâu than */
+  --color-ink-2: #5c534b;
+  --color-ink-3: #6f655c;          /* 4.9:1 trên page, 4.6:1 trên surface-2 */
+  --color-line: #e2d9cb;
 
-  /* Trạng thái: fg = màu đậm (chấm, thanh), bg = nền nhạt, ink = chữ trên nền nhạt */
-  --color-ok: #16a34a;
-  --color-ok-bg: #dcfce7;
-  --color-ok-ink: #166534;
-  --color-mid: #ca8a04;
-  --color-mid-bg: #fef9c3;
-  --color-mid-ink: #854d0e;
-  --color-low: #ea580c;
-  --color-low-bg: #ffedd5;
-  --color-low-ink: #9a3412;
-  --color-bad: #dc2626;
-  --color-bad-bg: #fee2e2;
-  --color-bad-ink: #991b1b;
-  --color-off: #94a3b8;
-  --color-off-bg: #f1f5f9;
-  --color-off-ink: #475569;
+  /* Trạng thái — tông trầm, giữ nghĩa */
+  --color-ok: #3f7a4f;
+  --color-ok-bg: #e2ecdf;
+  --color-ok-ink: #2c5838;
+  --color-mid: #b8862b;
+  --color-mid-bg: #f5e9cc;
+  --color-mid-ink: #6e4f12;
+  --color-low: #b5602f;
+  --color-low-bg: #f3e0d2;
+  --color-low-ink: #7a3c18;
+  --color-bad: #9e2f35;
+  --color-bad-bg: #f2dcdc;
+  --color-bad-ink: #6e1f24;
+  --color-off: #a39a8f;
+  --color-off-bg: #ece7df;
+  --color-off-ink: #5c534b;
 
-  --radius-card: 18px;
-  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.05), 0 4px 16px rgb(15 23 42 / 0.06);
+  --radius-card: 16px;
+  --shadow-card: 0 1px 2px rgb(43 38 34 / 0.05), 0 6px 18px rgb(43 38 34 / 0.06);
+
+  --font-display: 'Cormorant SC', 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+  --font-serif: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+  --font-sans: 'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
-/* Dark mode: theo cài đặt của máy. Chỉ trên màn hình — bản in luôn nền trắng. */
+/* Dark mode "thư viện ban đêm" — chỉ trên màn hình, bản in luôn nền sáng */
 @media screen and (prefers-color-scheme: dark) {
   .student-root {
-    --color-primary: #0f766e;
-    --color-primary-hover: #0d9488;
-    --color-primary-edge: #042f2e;
-    --color-brand: #2dd4bf;
-    --color-brand-soft: #5eead4;
-    --color-brand-tint: #134e4a;
-    --color-brand-wash: #0f2a28;
-    --color-brand-ink: #5eead4;
+    --color-primary: #2f6b6f;
+    --color-primary-hover: #377a7e;
+    --color-primary-edge: #173d40;
+    --color-accent: #a3434b;
+    --color-accent-hover: #b24f57;
+    --color-gold: #d6b25e;
+    --color-gold-ink: #e3c47a;
+    --color-cream: #f3e9d2;
+    --color-brand: #6fa5a3;
+    --color-brand-soft: #8fb3b0;
+    --color-brand-tint: #2b3b39;
+    --color-brand-wash: #242a28;
+    --color-brand-ink: #9cc7c3;
 
-    --color-page: #0a1615;
-    --color-surface: #12211f;
-    --color-surface-2: #182b29;
-    --color-ink: #e6f2f0;
-    --color-ink-2: #a7bcb8;
-    --color-ink-3: #8aa09c;
-    --color-line: #23403c;
+    --color-page: #171a19;
+    --color-surface: #1f2321;
+    --color-surface-2: #262b29;
+    --color-highlight: #3a3222;
+    --color-highlight-line: #574a2f;
+    --color-blush: #3a2a28;
+    --color-blush-ink: #f0c9bf;
+    --color-ink: #ece6dc;
+    --color-ink-2: #c3bbb0;
+    --color-ink-3: #a59d92;
+    --color-line: #353b38;
 
-    --color-ok: #22c55e;
-    --color-ok-bg: #0f2e1c;
-    --color-ok-ink: #86efac;
-    --color-mid: #eab308;
-    --color-mid-bg: #33290a;
-    --color-mid-ink: #fde047;
-    --color-low: #f97316;
-    --color-low-bg: #36200f;
-    --color-low-ink: #fdba74;
-    --color-bad: #ef4444;
-    --color-bad-bg: #3a1414;
-    --color-bad-ink: #fca5a5;
-    --color-off: #64748b;
-    --color-off-bg: #1e293b;
-    --color-off-ink: #cbd5e1;
+    --color-ok: #6aa77a;
+    --color-ok-bg: #1f3125;
+    --color-ok-ink: #a9d6b4;
+    --color-mid: #d4a64a;
+    --color-mid-bg: #3a3020;
+    --color-mid-ink: #ecd193;
+    --color-low: #d68250;
+    --color-low-bg: #3a2a1f;
+    --color-low-ink: #f0bf9c;
+    --color-bad: #cf5d63;
+    --color-bad-bg: #3d2224;
+    --color-bad-ink: #f2b3b6;
+    --color-off: #7d776f;
+    --color-off-bg: #2a2d2b;
+    --color-off-ink: #c3bbb0;
 
-    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3);
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.35);
     color-scheme: dark;
   }
 }
 
 .student-root {
-  font-family: 'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--font-sans);
   background: var(--color-page);
   color: var(--color-ink);
   min-height: 100dvh;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Kiểu chữ "sách" */
+.font-display {
+  font-family: var(--font-display);
+  font-variant-numeric: lining-nums;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.font-serif {
+  font-family: var(--font-serif);
+  font-variant-numeric: lining-nums;
+}
+.label-caps {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+/* Trang giấy có đường kẻ mờ (màn làm bài) */
+.paper {
+  background-color: var(--color-surface);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 31px,
+    color-mix(in srgb, var(--color-line) 55%, transparent) 31px,
+    color-mix(in srgb, var(--color-line) 55%, transparent) 32px
+  );
+}
+/* Dòng dấu chấm dẫn (mục lục) */
+.leader {
+  flex: 1;
+  border-bottom: 2px dotted var(--color-line);
+  transform: translateY(-4px);
+  margin: 0 6px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -122,6 +179,18 @@
   0% { transform: scale(0.6); opacity: 0; }
   70% { transform: scale(1.08); opacity: 1; }
   100% { transform: scale(1); }
+}
+/* Con dấu sáp PASS: đóng xuống rồi nằm yên (< 1,2 giây) */
+@keyframes stamp {
+  0% { transform: scale(2.2) rotate(-18deg); opacity: 0; }
+  55% { transform: scale(0.92) rotate(-8deg); opacity: 1; }
+  75% { transform: scale(1.05) rotate(-10deg); }
+  100% { transform: scale(1) rotate(-10deg); }
+}
+@keyframes twinkle {
+  0%, 100% { transform: scale(0.4) rotate(0deg); opacity: 0; }
+  40% { transform: scale(1.15) rotate(20deg); opacity: 1; }
+  70% { transform: scale(0.9) rotate(35deg); opacity: 0.9; }
 }
 
 /* In / Lưu PDF (trang phụ huynh) */

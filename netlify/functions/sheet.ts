@@ -52,15 +52,20 @@ async function all<T>(q: (from: number, to: number) => PromiseLike<{ data: T[] |
   }
 }
 
-interface Stu { id: string; code: string; name: string; created_at: string }
+interface Stu { id: string; code: string; name: string; created_at: string; class_id: string | null; cls: string }
 
 async function base() {
-  const [stR, msR, as] = await Promise.all([
-    db().from('students').select('id,code,name,created_at').eq('active', true).order('code'),
+  const [stR, msR, as, clR] = await Promise.all([
+    db().from('students').select('id,code,name,created_at,class_id').eq('active', true).order('code'),
     db().from('milestones').select('*').order('date'),
     all<Assignment>((f, t) => db().from('assignments').select('*').range(f, t)),
+    db().from('classes').select('id,name'),
   ]);
-  const students = must(stR) as Stu[];
+  const clsName = new Map((must(clR) as { id: string; name: string }[]).map((c) => [c.id, c.name]));
+  // Một tab cho tất cả, có cột Lớp, sắp theo lớp rồi theo mã (chưa xếp lớp ở cuối)
+  const students = (must(stR) as Omit<Stu, 'cls'>[])
+    .map((s) => ({ ...s, cls: (s.class_id && clsName.get(s.class_id)) || '' }))
+    .sort((a, b) => (a.cls ? 0 : 1) - (b.cls ? 0 : 1) || a.cls.localeCompare(b.cls, 'vi') || a.code.localeCompare(b.code));
   const milestones = must(msR) as Milestone[];
   const byKey = new Map(as.map((a) => [`${a.student_id}|${a.milestone_id}`, a]));
   const statusOf = (s: Stu, m: Milestone, now: string): AssignmentStatus | null => {
@@ -104,14 +109,14 @@ async function homNay(now: string) {
   const rows: (string | number | null)[][] = [[
     `Cập nhật ${new Date(now).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}`,
     m ? `Mốc: ${KIND[m.kind]} ${m.date}` : 'Chưa có mốc',
-  ], ['Mã', 'Tên', 'Trạng thái mốc', 'Tiến độ', 'Điểm', 'Câu hôm nay', 'Đúng hôm nay %', 'Số bài đang nợ', 'Từ đã Pass']];
+  ], ['Lớp', 'Mã', 'Tên', 'Trạng thái mốc', 'Tiến độ', 'Điểm', 'Câu hôm nay', 'Đúng hôm nay %', 'Số bài đang nợ', 'Từ đã Pass']];
   for (const s of students) {
     const a = m ? byKey.get(`${s.id}|${m.id}`) : undefined;
     const st = m ? statusOf(s, m, now) : null;
     const mine = ans.filter((x) => x.student_id === s.id);
     const owing = milestones.filter((x) => statusOf(s, x, now) === 'owing').length;
     rows.push([
-      s.code, s.name, st ? STATUS_VI[st] : '',
+      s.cls, s.code, s.name, st ? STATUS_VI[st] : '',
       a ? `${a.answered_count}/${a.required_count ?? '?'}` : '',
       a?.score_pct ?? (st === 'owing' && m ? `nếu nộp giờ: ${scoreIfSubmittedAt(m.date, now)}%` : ''),
       mine.length, mine.length ? Math.round((100 * mine.filter((x) => x.correct).length) / mine.length) : '',
@@ -123,14 +128,14 @@ async function homNay(now: string) {
 
 async function chuaLam(now: string) {
   const { students, milestones, byKey, statusOf } = await base();
-  const rows: (string | number | null)[][] = [['Mã', 'Tên', 'Mốc', 'Hạn', 'Trạng thái', 'Đã làm', 'Trễ (ngày)', 'Điểm nếu nộp hôm nay']];
+  const rows: (string | number | null)[][] = [['Lớp', 'Mã', 'Tên', 'Mốc', 'Hạn', 'Trạng thái', 'Đã làm', 'Trễ (ngày)', 'Điểm nếu nộp hôm nay']];
   for (const s of students) {
     for (const m of milestones) {
       const st = statusOf(s, m, now);
       if (st !== 'open' && st !== 'owing') continue;
       const a = byKey.get(`${s.id}|${m.id}`);
       rows.push([
-        s.code, s.name, `${KIND[m.kind]} ${m.date}`,
+        s.cls, s.code, s.name, `${KIND[m.kind]} ${m.date}`,
         new Date(m.deadline_at).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
         STATUS_VI[st], a ? `${a.answered_count}/${a.required_count ?? '?'}` : '0',
         daysLate(m.date, now), scoreIfSubmittedAt(m.date, now),
@@ -149,7 +154,7 @@ async function thang(now: string, month: string) {
     db().from('answers').select('student_id,correct').eq('mode', 'graded').eq('flagged', false)
       .gte('created_at', from).lt('created_at', to).range(f, t));
   const rows: (string | number | null)[][] = [[
-    'Mã', 'Tên', ...ms.map((m) => `${KIND[m.kind]} ${m.date.slice(8)}/${m.date.slice(5, 7)}`),
+    'Lớp', 'Mã', 'Tên', ...ms.map((m) => `${KIND[m.kind]} ${m.date.slice(8)}/${m.date.slice(5, 7)}`),
     'Đã nộp', 'Đúng hạn', 'Trễ', 'Bỏ', 'Đang nợ', 'Chuyên cần %', 'Đúng %',
   ]];
   for (const s of students) {
@@ -167,7 +172,7 @@ async function thang(now: string, month: string) {
     }
     const mine = ans.filter((x) => x.student_id === s.id);
     rows.push([
-      s.code, s.name, ...cells, sub, onTime, late, ab, owing,
+      s.cls, s.code, s.name, ...cells, sub, onTime, late, ab, owing,
       total ? Math.round(scoreSum / total) : '',
       mine.length ? Math.round((100 * mine.filter((x) => x.correct).length) / mine.length) : '',
     ]);

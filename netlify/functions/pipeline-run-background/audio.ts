@@ -1,5 +1,5 @@
 /**
- * Audio cả buổi: một lần gọi ElevenLabs with-timestamps (PCM 16-bit mono),
+ * Audio cả bộ từ: gọi ElevenLabs with-timestamps theo đoạn ≤25 từ (PCM 16-bit mono, tốc độ 0.7),
  * rồi cắt từng từ theo mốc thời gian ký tự.
  *
  * Cắt:
@@ -16,6 +16,9 @@
 import { Mp3Encoder } from '@breezystack/lamejs';
 
 export const SAMPLE_RATE = 24_000; // pcm_24000: có ở mọi gói ElevenLabs (44.1k cần gói Pro)
+export const TTS_SPEED = 0.7;
+/** Mỗi lần gọi ElevenLabs tối đa 25 từ: đoạn dài dễ đọc nhanh dần và mốc thời gian lệch về cuối */
+export const CHUNK_WORDS = 25;
 const PAD_S = 0.08;
 const FADE_S = 0.005;
 const EDGE_S = 0.015;
@@ -171,8 +174,8 @@ export async function elevenLabsTts(text: string, opts: { apiKey: string; voiceI
     body: JSON.stringify({
       text,
       model_id: opts.modelId ?? 'eleven_multilingual_v2',
-      // đọc chậm, đều để có khoảng lặng rõ giữa các từ
-      voice_settings: { stability: 0.75, similarity_boost: 0.75, speed: 0.9 },
+      // đọc chậm (0.7 = mức chậm nhất ElevenLabs cho phép), đều, khoảng lặng rõ giữa các từ
+      voice_settings: { stability: 0.75, similarity_boost: 0.75, speed: TTS_SPEED },
     }),
   });
   if (!res.ok) throw new Error(`ElevenLabs ${res.status}: ${(await res.text()).slice(0, 300)}`);
@@ -182,22 +185,34 @@ export async function elevenLabsTts(text: string, opts: { apiKey: string; voiceI
   return { pcm: pcmFromBase64(data.audio_base64), alignment };
 }
 
-/** Tạo mp3 cho cả danh sách từ bằng MỘT lần gọi. Trả về mp3 theo thứ tự + từ cần tạo lại riêng. */
-export async function audioForWords(words: string[], tts: (text: string) => Promise<TtsResult>): Promise<{ mp3: (Buffer | null)[]; redo: number[] }> {
-  const { text, spans } = buildScript(words);
-  const { pcm, alignment } = await tts(text);
-  const cuts = cutWords(pcm, alignment, spans);
-  const mp3: (Buffer | null)[] = [];
+/**
+ * Tạo mp3 cho danh sách từ: mỗi đoạn ≤25 từ là MỘT lần gọi (20 từ = 1 lần, 40 từ = 2 lần).
+ * Trả về mp3 theo thứ tự + vị trí các từ cần tạo lại riêng. Đoạn nào lỗi thì cả đoạn vào danh sách tạo lại.
+ */
+export async function audioForWords(
+  words: string[],
+  tts: (text: string) => Promise<TtsResult>,
+  chunkSize = CHUNK_WORDS,
+): Promise<{ mp3: (Buffer | null)[]; redo: number[]; calls: number }> {
+  const mp3: (Buffer | null)[] = new Array(words.length).fill(null);
   const redo: number[] = [];
-  for (const c of cuts) {
-    if (c.edgeLoud || c.speechSeconds < 0.15) {
-      redo.push(c.index);
-      mp3.push(null);
-    } else {
-      mp3.push(encodeMp3(c.pcm));
+  let calls = 0;
+  for (let start = 0; start < words.length; start += chunkSize) {
+    const part = words.slice(start, start + chunkSize);
+    calls++;
+    try {
+      const { text, spans } = buildScript(part);
+      const { pcm, alignment } = await tts(text);
+      for (const c of cutWords(pcm, alignment, spans)) {
+        const at = start + c.index;
+        if (c.edgeLoud || c.speechSeconds < 0.15) redo.push(at);
+        else mp3[at] = encodeMp3(c.pcm);
+      }
+    } catch {
+      part.forEach((_, i) => redo.push(start + i));
     }
   }
-  return { mp3, redo };
+  return { mp3, redo, calls };
 }
 
 /** Một từ lẻ (tạo lại): gọi riêng, cắt bỏ khoảng lặng hai đầu theo alignment */

@@ -1,4 +1,5 @@
-import { ArrowLeft, BookOpenCheck } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
+import { Banner, Star4 } from '../components/Art';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { errorText, studentApi, USE_MOCK } from '../api';
@@ -56,18 +57,20 @@ export default function Login() {
   };
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col px-6 pb-8 pt-[max(2.5rem,env(safe-area-inset-top))]">
+    <div className="flex min-h-dvh flex-col">
+      <Banner className="h-28 shrink-0 sm:h-36" />
+      <div className="mx-auto -mt-10 flex w-full max-w-md flex-1 flex-col px-4 pb-8">
+      <div className="relative flex flex-1 flex-col rounded-[var(--radius-card)] bg-surface px-5 pb-6 pt-6 shadow-[var(--shadow-card)] ring-1 ring-line">
       <div className="flex flex-col items-center text-center">
-        <div className="mb-4 flex size-16 items-center justify-center rounded-3xl bg-primary text-white shadow-[0_4px_0_var(--color-primary-edge)]">
-          <BookOpenCheck className="size-8" aria-hidden />
-        </div>
-        <h1 className="text-2xl font-bold tracking-tight">Ôn từ vựng IELTS</h1>
-        <p className="mt-1 text-ink-2">Mỗi ngày một chút, nhớ lâu hơn nhiều.</p>
+        <Star4 className="mb-2 size-5 text-gold" />
+        <h1 className="font-display text-[22px] leading-tight">Học từ vựng</h1>
+        <p className="label-caps mt-1 text-ink-3">Mr Thinh Class</p>
+        <p className="mt-3 font-serif text-lg italic text-ink-2">Mỗi ngày một trang, nhớ lâu hơn nhiều.</p>
       </div>
 
       {step === 'code' ? (
         <form onSubmit={goPin} className="mt-10 flex flex-1 flex-col">
-          <label htmlFor="code" className="mb-2 text-sm font-semibold text-ink-2">
+          <label htmlFor="code" className="label-caps mb-2 text-ink-2">
             Mã học sinh
           </label>
           <input
@@ -84,7 +87,7 @@ export default function Login() {
             autoCorrect="off"
             spellCheck={false}
             enterKeyHint="next"
-            className="h-14 rounded-2xl border-2 border-line bg-surface px-4 text-center text-xl font-semibold tracking-[0.2em] text-ink outline-none transition placeholder:text-ink-3/60 focus:border-brand"
+            className="h-14 rounded-xl border border-line bg-surface-2 px-4 text-center text-xl font-semibold tracking-[0.2em] text-ink outline-none transition placeholder:text-ink-3/60 focus:border-brand focus:ring-2 focus:ring-brand/25"
           />
           {error && (
             <p role="alert" className="mt-2 text-sm text-bad-ink">
@@ -111,7 +114,7 @@ export default function Login() {
           >
             <ArrowLeft className="size-4" aria-hidden /> Mã: <b className="font-semibold">{code}</b> · Đổi
           </button>
-          <p className="mb-5 font-semibold">Nhập PIN 4 số</p>
+          <p className="label-caps mb-5 text-ink-2">Nhập PIN 4 số</p>
           <PinPad
             value={pin}
             onChange={(v) => {
@@ -124,9 +127,11 @@ export default function Login() {
           <div className="mt-5 min-h-6 text-center text-sm" aria-live="polite">
             {busy ? <Spinner className="size-5" /> : error && <span className="text-bad-ink">{error}</span>}
           </div>
-          <p className="mt-auto pt-6 text-center text-xs text-ink-3">Quên PIN? Nhắn cô giáo để được đặt lại.</p>
+          <p className="mt-auto pt-6 text-center text-xs text-ink-3">Quên PIN? Nhắn thầy để được đặt lại.</p>
         </div>
       )}
+      </div>
+      </div>
     </div>
   );
 }

@@ -3,11 +3,13 @@ import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from 'react';
 
 export const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(' ');
 
-type BtnVariant = 'primary' | 'secondary' | 'ghost';
+type BtnVariant = 'primary' | 'accent' | 'secondary' | 'ghost';
 const BTN: Record<BtnVariant, string> = {
   primary:
-    'bg-primary text-white hover:bg-primary-hover shadow-[0_3px_0_var(--color-primary-edge)] active:shadow-none active:translate-y-[3px]',
-  secondary: 'bg-surface text-brand-ink ring-2 ring-inset ring-brand hover:bg-brand-wash',
+    'bg-primary text-white hover:bg-primary-hover shadow-[0_2px_0_var(--color-primary-edge)] active:shadow-none active:translate-y-[2px]',
+  accent:
+    'bg-accent text-white hover:bg-accent-hover shadow-[0_2px_0_color-mix(in_srgb,var(--color-accent)_60%,black)] active:shadow-none active:translate-y-[2px]',
+  secondary: 'bg-surface text-brand-ink ring-1 ring-inset ring-brand hover:bg-brand-wash',
   ghost: 'text-brand-ink hover:bg-brand-wash',
 };
 
@@ -23,9 +25,9 @@ export function Button({
       type="button"
       {...p}
       className={cx(
-        'inline-flex items-center justify-center gap-2 rounded-2xl font-semibold transition select-none',
+        'inline-flex items-center justify-center gap-2 rounded-xl font-semibold uppercase tracking-[0.06em] transition select-none',
         'disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
-        size === 'lg' ? 'h-14 px-6 text-[17px]' : 'h-12 px-5 text-base',
+        size === 'lg' ? 'h-14 px-6 text-[15px]' : 'h-12 px-5 text-sm',
         block && 'w-full',
         BTN[variant],
         className,
@@ -35,10 +37,21 @@ export function Button({
 }
 
 export function Card({ className, ...p }: HTMLAttributes<HTMLDivElement>) {
-  return <div {...p} className={cx('rounded-[var(--radius-card)] bg-surface p-4 shadow-[var(--shadow-card)]', className)} />;
+  return <div {...p} className={cx('rounded-[var(--radius-card)] bg-surface p-4 shadow-[var(--shadow-card)] ring-1 ring-line', className)} />;
+}
+
+/** Tiêu đề khối kiểu sách: chữ có chân VIẾT HOA, có thể kèm nhãn phụ bên phải */
+export function SectionTitle({ children, aside, className, as: Tag = 'h2' }: { children: ReactNode; aside?: ReactNode; className?: string; as?: 'h1' | 'h2' | 'h3' }) {
+  return (
+    <div className={cx('mb-3 flex items-baseline justify-between gap-2', className)}>
+      <Tag className={cx('font-display text-ink', Tag === 'h1' ? 'text-[23px] leading-tight sm:text-[26px]' : 'text-[19px] leading-tight')}>{children}</Tag>
+      {aside && <span className="label-caps text-ink-3">{aside}</span>}
+    </div>
+  );
 }
 
 type Tone = 'ok' | 'mid' | 'low' | 'bad' | 'off' | 'brand';
+type TagTone = Tone | 'blush';
 
 const BAR_FILL: Record<Tone, string> = {
   ok: 'bg-ok', mid: 'bg-mid', low: 'bg-low', bad: 'bg-bad', off: 'bg-off', brand: 'bg-brand',
@@ -62,24 +75,25 @@ export function ProgressBar({
       aria-valuemax={max}
       aria-valuenow={value}
       aria-label={label}
-      className={cx('h-2.5 w-full overflow-hidden rounded-full', BAR_TRACK[tone], className)}
+      className={cx('h-1.5 w-full overflow-hidden rounded-full', BAR_TRACK[tone], className)}
     >
       <div className={cx('h-full rounded-full transition-[width] duration-500', BAR_FILL[tone])} style={{ width: `${pct}%` }} />
     </div>
   );
 }
 
-const TAG: Record<Tone, string> = {
+const TAG: Record<TagTone, string> = {
   ok: 'bg-ok-bg text-ok-ink',
   mid: 'bg-mid-bg text-mid-ink',
   low: 'bg-low-bg text-low-ink',
   bad: 'bg-bad-bg text-bad-ink',
   off: 'bg-off-bg text-off-ink',
   brand: 'bg-brand-tint text-brand-ink',
+  blush: 'bg-blush text-blush-ink',
 };
-export function Tag({ tone = 'brand', children, className }: { tone?: Tone; children: ReactNode; className?: string }) {
+export function Tag({ tone = 'brand', children, className }: { tone?: TagTone; children: ReactNode; className?: string }) {
   return (
-    <span className={cx('inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-semibold', TAG[tone], className)}>
+    <span className={cx('inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.06em]', TAG[tone], className)}>
       {children}
     </span>
   );

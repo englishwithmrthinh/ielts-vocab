@@ -1,7 +1,8 @@
 /** Chi tiết buổi: chạy pipeline, thanh tiến trình, Duyệt từng thẻ, xem infographic, Phát hành. */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import type { PipelineLogEntry, Student, Word } from '@shared/types';
+import type { Class, PipelineLogEntry, Student, Word } from '@shared/types';
+import StudentPicker from '../components/StudentPicker';
 import Infographic from '../../shared-ui/Infographic';
 import { ImagesSection, SingleImageDialog } from '../components/ImageTools';
 import { adminApi, type LessonDetail, type PublishResult } from '../lib/adminApi';
@@ -99,14 +100,14 @@ export default function ReviewPage() {
 
   return (
     <>
-      <div className="mb-1 text-sm"><Link to="/admin/buoi-hoc" className="text-teal-700 hover:underline">← Buổi học</Link></div>
+      <div className="mb-1 text-sm"><Link to="/admin/bo-tu" className="text-teal-700 hover:underline">← Bộ từ</Link></div>
       <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="flex items-center gap-2 text-xl font-semibold text-slate-900 sm:text-2xl">
-            Buổi {lesson.number} <Badge tone={status.tone}>{status.label}</Badge>
+            Bộ từ {lesson.number} <Badge tone={status.tone}>{status.label}</Badge>
           </h1>
           <p className="mt-1 text-sm text-slate-500">
-            {lesson.taught_on.split('-').reverse().join('/')} · {words.length} từ · {data.studentIds.length} học sinh có mặt
+            {words.length} từ · thêm {lesson.taught_on.split('-').reverse().join('/')} · giao cho {data.studentIds.length} học sinh
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -195,7 +196,7 @@ export default function ReviewPage() {
             ))}
           </ul>
         ) : (
-          <Infographic title={`Buổi ${lesson.number}`} items={words.map((w) => ({ id: w.id, word: w.word, meaningVi: w.meaning_vi, imageUrl: w.image_url, pos: w.pos }))} />
+          <Infographic title={`Bộ từ ${lesson.number}`} items={words.map((w) => ({ id: w.id, word: w.word, meaningVi: w.meaning_vi, imageUrl: w.image_url, pos: w.pos }))} />
         )}
       </div>
 
@@ -356,11 +357,13 @@ function Field({ label, value, onChange, mono, multiline }: { label: string; val
 function PublishDialog({ detail, onClose, onDone }: { detail: LessonDetail; onClose: () => void; onDone: (r: PublishResult) => void }) {
   const [students, setStudents] = useState<Student[]>([]);
   const [sel, setSel] = useState<Set<string>>(new Set(detail.studentIds));
+  const [classes, setClasses] = useState<Class[]>([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<unknown>(null);
 
   useEffect(() => {
     adminApi.students().then((r) => setStudents(r.students.filter((s) => s.active)), setErr);
+    adminApi.classes().then((r) => setClasses(r.classes.filter((c) => c.active)), () => undefined);
   }, []);
 
   const missingAudio = detail.words.filter((w) => !w.audio_url).length;
@@ -381,7 +384,7 @@ function PublishDialog({ detail, onClose, onDone }: { detail: LessonDetail; onCl
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-slate-900/40 p-4" role="dialog" aria-modal="true">
       <div className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
-        <h2 className="text-lg font-semibold text-slate-900">{already ? 'Thêm học sinh vào' : 'Phát hành'} buổi {detail.lesson.number}</h2>
+        <h2 className="text-lg font-semibold text-slate-900">{already ? 'Thêm học sinh vào' : 'Phát hành'} bộ từ {detail.lesson.number}</h2>
         <p className="mt-1 text-sm text-slate-600">
           {detail.words.length} từ sẽ vào hộp 1 của các bạn được chọn và xuất hiện ở bài kế tiếp.
           {already ? ' Bạn đã có từ thì giữ nguyên tiến độ.' : ' Có thể thêm học sinh sau, nhưng không gỡ được.'}
@@ -390,24 +393,18 @@ function PublishDialog({ detail, onClose, onDone }: { detail: LessonDetail; onCl
         {missingImage > 0 && <p className="mt-2 rounded bg-amber-50 px-2 py-1 text-sm text-amber-900">Còn {missingImage} từ chưa có ảnh — dạng câu ảnh sẽ bỏ qua các từ này.</p>}
         <div className="mt-3 flex items-center justify-between text-sm">
           <span className="font-medium text-slate-800">Học sinh nhận ({sel.size})</span>
-          <span className="text-xs text-slate-500">Mặc định: các bạn có mặt</span>
+          <span className="text-xs text-slate-500">Bấm lớp để chọn cả lớp</span>
         </div>
-        <ul className="mt-2 max-h-64 space-y-0.5 overflow-y-auto rounded-lg ring-1 ring-slate-200">
-          {students.map((s) => (
-            <li key={s.id}>
-              <label className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-slate-50">
-                <input
-                  type="checkbox"
-                  checked={sel.has(s.id)}
-                  onChange={() => setSel((p) => { const n = new Set(p); if (n.has(s.id)) n.delete(s.id); else n.add(s.id); return n; })}
-                />
-                <span className="w-10 font-mono text-xs text-slate-500">{s.code}</span>
-                {s.name}
-                {!detail.studentIds.includes(s.id) && <span className="ml-auto text-xs text-slate-400">vắng</span>}
-              </label>
-            </li>
-          ))}
-        </ul>
+        <div className="mt-2 rounded-lg p-3 ring-1 ring-slate-200">
+          <StudentPicker
+            students={students}
+            classes={classes}
+            selected={sel}
+            onChange={setSel}
+            maxHeight="max-h-56"
+            note={(s) => (already && detail.studentIds.includes(s.id) ? 'đã giao' : !already && !detail.studentIds.includes(s.id) ? 'chưa chọn' : undefined)}
+          />
+        </div>
         <div className="mt-3"><ErrorBox error={err} /></div>
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose} disabled={busy}>Huỷ</Button>

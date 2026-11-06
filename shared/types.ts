@@ -32,8 +32,21 @@ export interface Student {
   code: string;
   name: string;
   active: boolean;
+  /** null = chưa xếp lớp. Mỗi học sinh thuộc tối đa 1 lớp; chuyển lớp giữ nguyên tiến độ */
+  class_id?: UUID | null;
   created_at: ISODateTime;
 }
+
+/** Lớp. Lịch mốc/nghỉ dùng CHUNG cả trung tâm; top 5 tuần tính theo lớp */
+export interface Class {
+  id: UUID;
+  name: string;
+  active: boolean;
+  created_at: ISODateTime;
+}
+
+/** GET /api/admin/classes */
+export interface ClassesResponse { classes: (Class & { studentCount: number })[] }
 
 export interface WordFamilyItem {
   form: string;
@@ -339,3 +352,26 @@ export interface ParentReportResponse {
 export interface AddWordResponse { status: 'linked' | 'pending' }
 
 export interface ApiError { error: string; code: string }
+
+// ---------------- Admin: báo cáo tháng, đề xuất, báo lỗi (Sếp) ----------------
+/** GET /api/admin/reports?month= */
+export interface AdminReportsResponse {
+  month: MonthKey;
+  reports: {
+    id: UUID; studentId: UUID; code: string; name: string; classId: UUID | null;
+    status: 'draft' | 'final'; finalizedAt: ISODateTime | null;
+    /** Link gửi phụ huynh */
+    link: string;
+    aiComment: string | null; teacherComment: string | null; stats: MonthlyStats;
+  }[];
+}
+
+/** GET /api/admin/suggestions?status=pending */
+export interface AdminSuggestionsResponse {
+  suggestions: { id: UUID; text: string; note: string | null; status: SuggestionStatus; createdAt: ISODateTime; code: string; name: string }[];
+}
+
+/** GET /api/admin/flags */
+export interface AdminFlagsResponse {
+  flags: { id: UUID; createdAt: ISODateTime; qtype: QType; given: string | null; code: string; name: string; wordId: UUID; word: string; meaningVi: string }[];
+}

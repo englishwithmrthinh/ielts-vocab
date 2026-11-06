@@ -20,11 +20,19 @@ import K from './K';
 import L from './L';
 import M from './M';
 
+/** Kết quả chấm nhanh trên máy (shared/check.ts) — có trước khi server trả AnswerResult */
+export interface QuickResult {
+  correct: boolean;
+  perWord?: { wordId: string; correct: boolean }[];
+}
+
 export interface QuestionProps {
   question: Question;
   onSubmit: (answer: AnswerSubmission) => void;
   disabled?: boolean;
   result?: AnswerResult;
+  /** chấm nhanh: tô đúng/sai ngay, trước khi có `result` */
+  quick?: QuickResult;
 }
 
 export const QUESTION_COMPONENTS: Partial<Record<QType, ComponentType<QuestionProps>>> = {

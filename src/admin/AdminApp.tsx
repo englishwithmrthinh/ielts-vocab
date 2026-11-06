@@ -1,9 +1,10 @@
 /** KHU QUẢN TRỊ — Claude 3. Router con dưới /admin/*. */
 import { useEffect, useState, type FormEvent } from 'react';
-import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
+import { NavLink, Navigate, Route, Routes, useParams } from 'react-router-dom';
 import { adminApi, DEMO } from './lib/adminApi';
 import { Button, ErrorBox, inputCls } from './ui';
 import StudentsPage from './pages/StudentsPage';
+import ClassesPage from './pages/ClassesPage';
 import PrintCardsPage from './pages/PrintCardsPage';
 import CalendarPage from './pages/CalendarPage';
 import CreateLessonPage from './pages/CreateLessonPage';
@@ -11,8 +12,9 @@ import LessonsPage from './pages/LessonsPage';
 import ReviewPage from './pages/ReviewPage';
 
 const NAV = [
-  { to: 'buoi-hoc', label: 'Buổi học' },
-  { to: 'tao-buoi', label: 'Tạo buổi' },
+  { to: 'bo-tu', label: 'Bộ từ' },
+  { to: 'them-bo-tu', label: 'Thêm bộ từ' },
+  { to: 'lop', label: 'Lớp' },
   { to: 'hoc-sinh', label: 'Học sinh' },
   { to: 'lich-moc', label: 'Lịch mốc' },
 ];
@@ -70,13 +72,18 @@ function Shell({ onLogout }: { onLogout: () => void }) {
       </aside>
       <main className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 md:py-8">
         <Routes>
-          <Route index element={<Navigate to="buoi-hoc" replace />} />
-          <Route path="buoi-hoc" element={<LessonsPage />} />
-          <Route path="buoi-hoc/:id" element={<ReviewPage />} />
-          <Route path="tao-buoi" element={<CreateLessonPage />} />
+          <Route index element={<Navigate to="bo-tu" replace />} />
+          <Route path="bo-tu" element={<LessonsPage />} />
+          <Route path="bo-tu/:id" element={<ReviewPage />} />
+          <Route path="them-bo-tu" element={<CreateLessonPage />} />
+          {/* đường dẫn cũ */}
+          <Route path="buoi-hoc" element={<Navigate to="/admin/bo-tu" replace />} />
+          <Route path="buoi-hoc/:id" element={<LegacyLesson />} />
+          <Route path="tao-buoi" element={<Navigate to="/admin/them-bo-tu" replace />} />
+          <Route path="lop" element={<ClassesPage />} />
           <Route path="hoc-sinh" element={<StudentsPage />} />
           <Route path="lich-moc" element={<CalendarPage />} />
-          <Route path="*" element={<Navigate to="buoi-hoc" replace />} />
+          <Route path="*" element={<Navigate to="bo-tu" replace />} />
         </Routes>
       </main>
     </div>
@@ -115,4 +122,9 @@ function Login({ onDone }: { onDone: () => void }) {
       </form>
     </div>
   );
+}
+
+function LegacyLesson() {
+  const { id } = useParams();
+  return <Navigate to={`/admin/bo-tu/${id}`} replace />;
 }
