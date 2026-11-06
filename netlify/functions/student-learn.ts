@@ -102,16 +102,28 @@ async function start(studentId: string, milestoneId: string): Promise<StartAssig
 
 // ---------------- next ----------------
 /**
- * Từ sai (câu tính điểm, không bị báo lỗi) chưa được làm ĐÚNG lại ở vòng sửa sai.
- * Sắp theo lần làm gần nhất cũ nhất trước: từ vừa sai lại bị đẩy xuống cuối.
+ * Sửa sai xen kẽ: từ làm sai (câu tính điểm, không bị báo lỗi) được hỏi lại sau ít nhất
+ * RELEARN_GAP câu khác, cho đến khi đúng RELEARN_NEED lần liên tiếp. Sai ở lần sửa thì đếm lại.
+ * Không đổi hộp. Phải sửa xong hết mới được Nộp.
  */
-function pendingFixes(answers: { word_id: string; mode: string; correct: boolean; flagged: boolean; created_at: string }[], inBai: Set<string>): string[] {
-  const fixedOk = new Set(answers.filter((x) => x.mode === 'fix' && x.correct).map((x) => x.word_id));
-  const lastTry = new Map<string, string>();
-  for (const x of answers) if (x.mode === 'graded' || x.mode === 'fix') lastTry.set(x.word_id, x.created_at);
-  const wrong = [...new Set(answers.filter((x) => x.mode === 'graded' && !x.correct && !x.flagged && inBai.has(x.word_id)).map((x) => x.word_id))]
-    .filter((id) => !fixedOk.has(id));
-  return wrong.sort((a, b) => (lastTry.get(a) ?? '').localeCompare(lastTry.get(b) ?? ''));
+const RELEARN_GAP = 4;
+const RELEARN_NEED = 2;
+interface Relearn { id: string; streak: number; gap: number; lastIdx: number }
+function relearnQueue(answers: { word_id: string; mode: string; correct: boolean; flagged: boolean }[], inBai: Set<string>): Relearn[] {
+  const st = new Map<string, Relearn>();
+  answers.forEach((x, i) => {
+    if (!inBai.has(x.word_id)) return;
+    if (x.mode === 'graded' && !x.correct && !x.flagged) st.set(x.word_id, { id: x.word_id, streak: 0, gap: 0, lastIdx: i });
+    else if (x.mode === 'fix' && st.has(x.word_id)) {
+      const r = st.get(x.word_id)!;
+      r.streak = x.correct ? r.streak + 1 : 0;
+      r.lastIdx = i;
+    }
+  });
+  return [...st.values()]
+    .filter((r) => r.streak < RELEARN_NEED)
+    .map((r) => ({ ...r, gap: answers.length - 1 - r.lastIdx }))
+    .sort((p, q) => p.lastIdx - q.lastIdx);
 }
 
 interface StoredPayload extends QuestionPayload { mode: Question['mode']; wordIds: string[] }
@@ -149,28 +161,31 @@ async function next(studentId: string, assignmentId: string, extra: boolean): Pr
   let phase: NextQuestionResponse['phase'] = 'graded';
 
   if (!extra) {
+    const relearn = relearnQueue(answers, inBai).filter((r) => byId.has(r.id));
+    const fixPlan = (r: Relearn) => {
+      const w = toQuiz(byId.get(r.id)!);
+      // Lần sửa đầu: dạng nhận diện dễ; lần sau: dạng theo hộp (thường là dạng gõ/khó hơn)
+      const type = r.streak === 0 ? chooseFixType(w, pool.length, rng) : chooseType(w, prev, pool.length, rng, ['D', 'L']);
+      plan = { type, words: [w] };
+      mode = 'fix'; phase = 'fix';
+    };
+    const ready = relearn.find((r) => r.gap >= RELEARN_GAP);
     const remaining = a.word_ids.filter((id) => !gradedDone.has(id) && byId.has(id)).map((id) => toQuiz(byId.get(id)!));
-    if (remaining.length) {
+    const used = new Set(fillerDone.map((x) => x.word_id));
+    const fillerId = fillerDone.length < fillerTarget ? fillerWords(words, a.word_ids, m.idx ?? 0).find((x) => !used.has(x)) : undefined;
+
+    if (ready) {
+      fixPlan(ready);
+    } else if (remaining.length) {
       plan = planNext(remaining, prev, pool.length, rng);
-    } else if (fillerDone.length < fillerTarget) {
-      const used = new Set(fillerDone.map((x) => x.word_id));
-      const id = fillerWords(words, a.word_ids, m.idx ?? 0).find((x) => !used.has(x));
-      if (id) {
-        const w = toQuiz(byId.get(id)!);
-        plan = { type: chooseType(w, prev, pool.length, rng, ['D', 'L']), words: [w] };
-        mode = 'practice';
-      }
-    }
-    if (!plan) {
-      const wrong = pendingFixes(answers, inBai).filter((id) => byId.has(id));
-      if (wrong.length) {
-        // Không hỏi lại ngay đúng từ vừa sai nếu còn từ khác
-        const lastWord = answers.at(-1)?.word_id;
-        const id = wrong.length > 1 && wrong[0] === lastWord ? wrong[1]! : wrong[0]!;
-        const w = toQuiz(byId.get(id)!);
-        plan = { type: chooseFixType(w, pool.length, rng), words: [w] };
-        mode = 'fix'; phase = 'fix';
-      }
+    } else if (fillerId) {
+      const w = toQuiz(byId.get(fillerId)!);
+      plan = { type: chooseType(w, prev, pool.length, rng, ['D', 'L']), words: [w] };
+      mode = 'practice';
+    } else if (relearn.length) {
+      // Hết câu khác: hỏi từ chờ lâu nhất, tránh lặp ngay từ vừa làm nếu còn từ khác
+      const lastWord = answers.at(-1)?.word_id;
+      fixPlan(relearn.length > 1 && relearn[0]!.id === lastWord ? relearn[1]! : relearn[0]!);
     }
   } else {
     const ex = dueWords(words, m.idx ?? 0).filter((w) => !inBai.has(w.word_id) && !gradedDone.has(w.word_id)).map(toQuiz);
@@ -269,7 +284,7 @@ async function submit(studentId: string, assignmentId: string): Promise<SubmitRe
   if (a.word_ids.some((id) => !gradedDone.has(id)) || fillerDone < fillerTarget) {
     throw new HttpError(409, 'not_ready', 'Còn câu bắt buộc chưa làm');
   }
-  if (pendingFixes(answers, new Set(a.word_ids)).length) {
+  if (relearnQueue(answers, new Set(a.word_ids)).length) {
     throw new HttpError(409, 'not_ready', 'Còn từ làm sai chưa làm đúng lại');
   }
   const t = now();

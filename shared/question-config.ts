@@ -50,7 +50,7 @@ export const QTYPE_NEEDS: Record<QType, ('image' | 'audio' | 'example' | 'word_f
   H: ['audio'], I: ['image'], J: ['example'], K: ['example'], L: ['example'], M: ['word_family'],
 };
 
-/** Dạng dễ dùng cho vòng sửa sai cuối bài. Từ sai được hỏi lại (đẩy xuống cuối) đến khi đúng mới được Nộp; không đổi hộp. */
+/** Dạng dễ cho lần sửa sai đầu tiên. Từ sai được chèn lại sau 4 câu, cần đúng 2 lần liên tiếp (RELEARN_* trong student-learn.ts); không đổi hộp; xong hết mới được Nộp. */
 export const FIX_QTYPES: QType[] = ['A', 'E'];
 
 export const ASSIGNMENT_LIMITS = {
