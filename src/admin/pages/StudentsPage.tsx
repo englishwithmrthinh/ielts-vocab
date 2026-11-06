@@ -84,9 +84,9 @@ export default function StudentsPage() {
     });
 
   const setBirth = (s: Student) => {
-    const v = prompt(`Ngày + tháng sinh của ${s.name} (sinh 24/02 thì gõ 2402).\nMã đăng nhập sẽ thành: mã lớp + ngày tháng sinh.`, s.birth ?? '')?.replace(/\D/g, '');
+    const v = prompt(`Mã học sinh của ${s.name} (2–8 chữ/số, thường là ngày + tháng sinh: 24/02 → 2402).\nMã đăng nhập = mã lớp + mã học sinh.`, s.birth ?? '')?.trim();
     if (!v) return;
-    if (v.length < 4 || v.length > 8) { alert('Ngày sinh 4–8 chữ số'); return; }
+    if (!/^[A-Za-z0-9/.\- ]{2,12}$/.test(v)) { alert('Mã học sinh 2–8 chữ hoặc số'); return; }
     run(async () => { const { student } = await adminApi.updateStudent(s.id, { birth: v }); alert(`Mã mới của ${s.name}: ${student.code}`); await load(); });
   };
 
@@ -190,7 +190,7 @@ export default function StudentsPage() {
         {adding && (
           <Card>
             <h2 className="font-semibold text-slate-900">Thêm học sinh</h2>
-            <p className="mt-1 text-sm text-slate-500">Mỗi dòng: tên, dấu phẩy, ngày + tháng sinh. Ví dụ <span className="font-mono">Nguyễn Minh Anh, 2402</span> (sinh 24/02). Mã đăng nhập = mã lớp + ngày tháng sinh (vd <span className="font-mono">GB072402</span>); 2 em trùng ngày sinh trong lớp thì em sau tự thêm số 2 (2402 → 24022).</p>
+            <p className="mt-1 text-sm text-slate-500">Mỗi dòng: tên, dấu phẩy, mã học sinh (thường là ngày + tháng sinh, có thể có chữ). Ví dụ <span className="font-mono">Nguyễn Minh Anh, 2402</span>. Mã đăng nhập = mã lớp + mã học sinh (vd <span className="font-mono">GB072402</span>); 2 em trùng ngày sinh trong lớp thì em sau tự thêm số 2 (2402 → 24022).</p>
             <label className="mt-3 flex flex-wrap items-center gap-2 text-sm text-slate-700">
               Vào lớp
               <select className={selectCls} value={addClassId} onChange={(e) => setAddClassId(e.target.value)}>
@@ -270,7 +270,7 @@ export default function StudentsPage() {
                   {editId !== s.id && (
                     <div className="ml-auto flex gap-1">
                       <Button variant="ghost" onClick={() => { setEditId(s.id); setEditName(s.name); }}>Sửa tên</Button>
-                      <Button variant="ghost" disabled={busy} onClick={() => setBirth(s)}>Ngày sinh</Button>
+                      <Button variant="ghost" disabled={busy} onClick={() => setBirth(s)}>Mã HS</Button>
                       <Button variant="ghost" disabled={busy} onClick={() => remove([s.id], `${s.name} (${s.code})`)}>
                         <span className="text-red-700">Xoá</span>
                       </Button>
