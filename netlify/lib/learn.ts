@@ -66,10 +66,14 @@ export interface StudentPlan {
 }
 
 export async function loadPlan(studentId: string, now: string): Promise<StudentPlan> {
-  const st = must(await db().from('students').select('created_at').eq('id', studentId).single()) as { created_at: string };
-  const ms = (must(await db().from('milestones').select('*').eq('is_off', false).order('date')) as Milestone[])
-    .filter((m) => Date.parse(m.deadline_at) >= Date.parse(st.created_at));
-  const as = must(await db().from('assignments').select('*').eq('student_id', studentId)) as Assignment[];
+  const [stR, msR, asR] = await Promise.all([
+    db().from('students').select('created_at').eq('id', studentId).single(),
+    db().from('milestones').select('*').eq('is_off', false).order('date'),
+    db().from('assignments').select('*').eq('student_id', studentId),
+  ]);
+  const st = must(stR) as { created_at: string };
+  const ms = (must(msR) as Milestone[]).filter((m) => Date.parse(m.deadline_at) >= Date.parse(st.created_at));
+  const as = must(asR) as Assignment[];
   const assignments = new Map(as.map((a) => [a.milestone_id, a]));
   const status = new Map<string, AssignmentStatus>();
   for (const m of ms) {
@@ -101,10 +105,12 @@ export function streakOf(plan: StudentPlan): number {
 }
 
 export async function getAssignment(studentId: string, id: string): Promise<{ a: Assignment; m: Milestone }> {
-  const a = must(await db().from('assignments').select('*').eq('id', id).eq('student_id', studentId).maybeSingle()) as Assignment | null;
-  if (!a) throw new HttpError(404, 'not_found', 'Không tìm thấy bài');
-  const m = must(await db().from('milestones').select('*').eq('id', a.milestone_id).single()) as Milestone;
-  return { a, m };
+  const row = must(
+    await db().from('assignments').select('*, m:milestones(*)').eq('id', id).eq('student_id', studentId).maybeSingle(),
+  ) as (Assignment & { m: Milestone }) | null;
+  if (!row) throw new HttpError(404, 'not_found', 'Không tìm thấy bài');
+  const { m, ...a } = row;
+  return { a: a as Assignment, m };
 }
 
 export interface AnswerLite { id: string; word_id: string; mode: string; correct: boolean; flagged: boolean; qtype: string; box_before: number | null; box_after: number | null; created_at: string }
