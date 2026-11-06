@@ -34,7 +34,7 @@ export default function CreateLessonPage() {
   const [existing, setExisting] = useState<ExistingWord[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
-  const [done, setDone] = useState<{ number: number; reused: number; created: number } | null>(null);
+  const [done, setDone] = useState<{ id: string; number: number; reused: number; created: number } | null>(null);
   const [usedNumbers, setUsedNumbers] = useState<number[]>([]);
 
   useEffect(() => {
@@ -66,15 +66,14 @@ export default function CreateLessonPage() {
   const warnings = parsed?.issues.filter((i) => i.level === 'warning') ?? [];
   const n = Number(number);
   const numberTaken = usedNumbers.includes(n);
-  const canSubmit = !!parsed?.ok && present.size > 0 && Number.isInteger(n) && n > 0 && !!taughtOn && !busy;
+  const canSubmit = !!parsed?.ok && present.size > 0 && Number.isInteger(n) && n > 0 && !numberTaken && !!taughtOn && !busy;
 
   const submit = async () => {
-    if (numberTaken && !confirm(`Đã có buổi số ${n}. Vẫn tạo thêm buổi trùng số?`)) return;
     setBusy(true);
     setError(null);
     try {
       const r = await adminApi.createLesson({ number: n, taught_on: taughtOn, student_ids: [...present], json: text });
-      setDone({ number: r.lesson.number, reused: r.reused, created: r.created });
+      setDone({ id: r.lesson.id, number: r.lesson.number, reused: r.reused, created: r.created });
     } catch (e) {
       setError(e);
     } finally {
@@ -89,12 +88,12 @@ export default function CreateLessonPage() {
         <p className="mt-2 text-sm text-slate-600">
           {done.created} từ mới vào kho · {done.reused} từ dùng lại (không tạo lại audio, ảnh). Buổi đang ở trạng thái Nháp.
         </p>
-        <p className="mt-1 text-xs text-slate-500">Tạo audio, ảnh và duyệt sẽ có ở giai đoạn 2.</p>
+        <p className="mt-1 text-xs text-slate-500">Bước tiếp: mở buổi, bấm “Tạo audio & ảnh”, rồi duyệt.</p>
         <div className="mt-5 flex justify-center gap-2">
           <Button variant="secondary" onClick={() => { setDone(null); setText(''); setNumber(String(done.number + 1)); setUsedNumbers((u) => [...u, done.number]); }}>
             Tạo buổi khác
           </Button>
-          <Button onClick={() => nav('/admin/buoi-hoc')}>Xem danh sách buổi</Button>
+          <Button onClick={() => nav(`/admin/buoi-hoc/${done.id}`)}>Mở buổi {done.number}</Button>
         </div>
       </Card>
     );
@@ -186,7 +185,7 @@ export default function CreateLessonPage() {
               <label className="block text-sm font-medium text-slate-700">
                 Số buổi
                 <input type="number" min={1} className={`${inputCls} mt-1`} value={number} onChange={(e) => setNumber(e.target.value)} />
-                {numberTaken && <span className="mt-1 block text-xs font-normal text-amber-700">Đã có buổi số {n}</span>}
+                {numberTaken && <span className="mt-1 block text-xs font-normal text-red-700">Buổi số {n} đã có. Chọn số khác.</span>}
               </label>
               <label className="block text-sm font-medium text-slate-700">
                 Ngày dạy
@@ -233,7 +232,7 @@ export default function CreateLessonPage() {
           </Button>
           {!canSubmit && !busy && (
             <p className="text-center text-xs text-slate-500">
-              {!parsed ? 'Dán JSON để bắt đầu' : !parsed.ok ? 'Sửa hết lỗi JSON trước' : !present.size ? 'Tick ít nhất 1 học sinh' : 'Kiểm tra số buổi, ngày dạy'}
+              {!parsed ? 'Dán JSON để bắt đầu' : !parsed.ok ? 'Sửa hết lỗi JSON trước' : !present.size ? 'Tick ít nhất 1 học sinh' : numberTaken ? 'Số buổi bị trùng' : 'Kiểm tra số buổi, ngày dạy'}
             </p>
           )}
         </div>

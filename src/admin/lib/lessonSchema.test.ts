@@ -51,6 +51,17 @@ describe('parseLessonJson', () => {
   });
 });
 
+describe('seed của Gemini', () => {
+  it('3 buổi seed hợp lệ, không lỗi', async () => {
+    const { readFileSync } = await import('node:fs');
+    for (const f of ['lesson-1', 'lesson-2', 'lesson-3']) {
+      const r = parseLessonJson(readFileSync(new URL(`../../../seed/${f}.json`, import.meta.url), 'utf8'));
+      expect(r.ok, f).toBe(true);
+      expect(r.words, f).toHaveLength(20);
+    }
+  });
+});
+
 describe('containsExact', () => {
   it('khớp theo ranh giới từ', () => {
     expect(containsExact('Take care of the environment.', 'environment')).toBe(true);
@@ -63,7 +74,8 @@ describe('gridPlan', () => {
   it('chia lưới theo số từ', () => {
     expect(gridPlan(18)).toEqual([{ cols: 4, rows: 5, count: 18 }]);
     expect(gridPlan(23)).toEqual([{ cols: 5, rows: 5, count: 23 }]);
-    expect(gridPlan(30).map((g) => g.count)).toEqual([15, 15]);
+    expect(gridPlan(30).map((g) => `${g.cols}x${g.rows}:${g.count}`)).toEqual(['4x4:15', '4x4:15']);
+    expect(gridPlan(20)).toEqual([{ cols: 4, rows: 5, count: 20 }]);
     expect(gridPlan(48).map((g) => `${g.cols}x${g.rows}:${g.count}`)).toEqual(['5x5:24', '5x5:24']);
   });
 });
