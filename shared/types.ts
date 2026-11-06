@@ -352,3 +352,26 @@ export interface ParentReportResponse {
 export interface AddWordResponse { status: 'linked' | 'pending' }
 
 export interface ApiError { error: string; code: string }
+
+// ---------------- Admin: báo cáo tháng, đề xuất, báo lỗi (Sếp) ----------------
+/** GET /api/admin/reports?month= */
+export interface AdminReportsResponse {
+  month: MonthKey;
+  reports: {
+    id: UUID; studentId: UUID; code: string; name: string; classId: UUID | null;
+    status: 'draft' | 'final'; finalizedAt: ISODateTime | null;
+    /** Link gửi phụ huynh */
+    link: string;
+    aiComment: string | null; teacherComment: string | null; stats: MonthlyStats;
+  }[];
+}
+
+/** GET /api/admin/suggestions?status=pending */
+export interface AdminSuggestionsResponse {
+  suggestions: { id: UUID; text: string; note: string | null; status: SuggestionStatus; createdAt: ISODateTime; code: string; name: string }[];
+}
+
+/** GET /api/admin/flags */
+export interface AdminFlagsResponse {
+  flags: { id: UUID; createdAt: ISODateTime; qtype: QType; given: string | null; code: string; name: string; wordId: UUID; word: string; meaningVi: string }[];
+}
