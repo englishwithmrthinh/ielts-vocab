@@ -214,3 +214,7 @@ end $$;
 insert into storage.buckets (id, name, public)
 values ('media', 'media', true)
 on conflict (id) do nothing;
+
+-- ---------- Bổ sung 06/11/2026 ----------
+-- Số buổi không được trùng (trả lời câu hỏi của Claude 3). Chạy lại cả file vẫn an toàn.
+create unique index if not exists lessons_number_uq on lessons (number);
