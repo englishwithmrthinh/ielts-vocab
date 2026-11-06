@@ -1,8 +1,9 @@
-/** Tạo buổi: số buổi, ngày dạy, học sinh có mặt, dán JSON từ skill. */
+/** Thêm bộ từ: dán JSON từ skill, chọn học sinh được giao. Số bộ từ tự lấy. */
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Student } from '@shared/types';
 import { vnDate } from '@shared/time';
+import { ApiCallError } from '../../lib/api';
 import { adminApi, type ExistingWord } from '../lib/adminApi';
 import { gridPlan, parseLessonJson, type SchemaIssue } from '../lib/lessonSchema';
 import { Badge, Button, Card, ErrorBox, PageHeader, inputCls } from '../ui';
@@ -28,14 +29,13 @@ export default function CreateLessonPage() {
   const nav = useNavigate();
   const [students, setStudents] = useState<Student[]>([]);
   const [present, setPresent] = useState<Set<string>>(new Set());
-  const [number, setNumber] = useState('');
+  const [nextNumber, setNextNumber] = useState<number | null>(null);
   const [taughtOn, setTaughtOn] = useState(vnDate(new Date()));
   const [text, setText] = useState('');
   const [existing, setExisting] = useState<ExistingWord[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [done, setDone] = useState<{ id: string; number: number; reused: number; created: number } | null>(null);
-  const [usedNumbers, setUsedNumbers] = useState<number[]>([]);
 
   useEffect(() => {
     adminApi.students().then((r) => {
@@ -43,10 +43,7 @@ export default function CreateLessonPage() {
       setStudents(active);
       setPresent(new Set(active.map((s) => s.id)));
     }, setError);
-    adminApi.lessons().then((r) => {
-      setNumber(String(r.nextNumber));
-      setUsedNumbers(r.lessons.map((l) => l.number));
-    }, setError);
+    adminApi.lessons().then((r) => setNextNumber(r.nextNumber), setError);
   }, []);
 
   const parsed = useMemo(() => (text.trim() ? parseLessonJson(text) : null), [text]);
@@ -64,16 +61,28 @@ export default function CreateLessonPage() {
   const existingKey = new Set(existing.map((e) => `${e.word}|${e.pos}`));
   const errors = parsed?.issues.filter((i) => i.level === 'error') ?? [];
   const warnings = parsed?.issues.filter((i) => i.level === 'warning') ?? [];
-  const n = Number(number);
-  const numberTaken = usedNumbers.includes(n);
-  const canSubmit = !!parsed?.ok && present.size > 0 && Number.isInteger(n) && n > 0 && !numberTaken && !!taughtOn && !busy;
+  const canSubmit = !!parsed?.ok && present.size > 0 && nextNumber !== null && !!taughtOn && !busy;
 
+  // Số bộ từ tự lấy; trùng (409, ví dụ hai tab cùng thêm) thì tự thử số kế tiếp
   const submit = async () => {
     setBusy(true);
     setError(null);
+    let number = nextNumber ?? 1;
     try {
-      const r = await adminApi.createLesson({ number: n, taught_on: taughtOn, student_ids: [...present], json: text });
-      setDone({ id: r.lesson.id, number: r.lesson.number, reused: r.reused, created: r.created });
+      for (let attempt = 0; ; attempt++) {
+        try {
+          const r = await adminApi.createLesson({ number, taught_on: taughtOn, student_ids: [...present], json: text });
+          setDone({ id: r.lesson.id, number: r.lesson.number, reused: r.reused, created: r.created });
+          setNextNumber(r.lesson.number + 1);
+          return;
+        } catch (e) {
+          if (e instanceof ApiCallError && e.code === 'lesson_number_taken' && attempt < 5) {
+            number++;
+            continue;
+          }
+          throw e;
+        }
+      }
     } catch (e) {
       setError(e);
     } finally {
@@ -84,16 +93,16 @@ export default function CreateLessonPage() {
   if (done) {
     return (
       <Card className="mx-auto max-w-lg text-center">
-        <h1 className="text-xl font-semibold text-slate-900">Đã tạo buổi {done.number}</h1>
+        <h1 className="text-xl font-semibold text-slate-900">Đã thêm bộ từ {done.number}</h1>
         <p className="mt-2 text-sm text-slate-600">
-          {done.created} từ mới vào kho · {done.reused} từ dùng lại (không tạo lại audio, ảnh). Buổi đang ở trạng thái Nháp.
+          {done.created} từ mới vào kho · {done.reused} từ dùng lại (không tạo lại audio, ảnh). Bộ từ đang ở trạng thái Nháp.
         </p>
-        <p className="mt-1 text-xs text-slate-500">Bước tiếp: mở buổi, bấm “Tạo audio & ảnh”, rồi duyệt.</p>
+        <p className="mt-1 text-xs text-slate-500">Bước tiếp: mở bộ từ, bấm “Tạo audio”, tải ảnh lên, duyệt rồi phát hành.</p>
         <div className="mt-5 flex justify-center gap-2">
-          <Button variant="secondary" onClick={() => { setDone(null); setText(''); setNumber(String(done.number + 1)); setUsedNumbers((u) => [...u, done.number]); }}>
-            Tạo buổi khác
+          <Button variant="secondary" onClick={() => { setDone(null); setText(''); }}>
+            Thêm bộ từ khác
           </Button>
-          <Button onClick={() => nav(`/admin/buoi-hoc/${done.id}`)}>Mở buổi {done.number}</Button>
+          <Button onClick={() => nav(`/admin/bo-tu/${done.id}`)}>Mở bộ từ {done.number}</Button>
         </div>
       </Card>
     );
@@ -101,7 +110,10 @@ export default function CreateLessonPage() {
 
   return (
     <>
-      <PageHeader title="Tạo buổi" sub="Dán JSON từ Claude (skill từ vựng). Hệ thống kiểm tra từng từ trước khi tạo." />
+      <PageHeader
+        title="Thêm bộ từ"
+        sub="Mỗi bộ từ là các từ bạn muốn giao. Thêm bao nhiêu bộ cũng được; học sinh vẫn làm 3 bài/tuần (Thứ 3, Thứ 6, Chủ nhật) và từ mới tự vào bài kế tiếp."
+      />
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <div className="space-y-4">
           <Card>
@@ -126,7 +138,7 @@ export default function CreateLessonPage() {
                     {existing.length > 0 && ` · ${existing.length} từ đã có trong kho`}
                   </p>
                 ) : (
-                  <p className="text-sm font-medium text-red-700">Có {errors.length} lỗi cần sửa trước khi tạo buổi</p>
+                  <p className="text-sm font-medium text-red-700">Có {errors.length} lỗi cần sửa trước khi thêm bộ từ</p>
                 )}
               </div>
             )}
@@ -181,22 +193,8 @@ export default function CreateLessonPage() {
 
         <div className="space-y-4">
           <Card>
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-1">
-              <label className="block text-sm font-medium text-slate-700">
-                Số buổi
-                <input type="number" min={1} className={`${inputCls} mt-1`} value={number} onChange={(e) => setNumber(e.target.value)} />
-                {numberTaken && <span className="mt-1 block text-xs font-normal text-red-700">Buổi số {n} đã có. Chọn số khác.</span>}
-              </label>
-              <label className="block text-sm font-medium text-slate-700">
-                Ngày dạy
-                <input type="date" className={`${inputCls} mt-1`} value={taughtOn} onChange={(e) => setTaughtOn(e.target.value)} />
-              </label>
-            </div>
-          </Card>
-
-          <Card>
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-slate-900">Có mặt <span className="font-normal text-slate-500">{present.size}/{students.length}</span></h2>
+              <h2 className="font-semibold text-slate-900">Giao cho học sinh <span className="font-normal text-slate-500">{present.size}/{students.length}</span></h2>
               <Button variant="ghost" className="text-xs" onClick={() => setPresent(present.size === students.length ? new Set() : new Set(students.map((s) => s.id)))}>
                 {present.size === students.length ? 'Bỏ chọn hết' : 'Chọn hết'}
               </Button>
@@ -226,13 +224,22 @@ export default function CreateLessonPage() {
             </ul>
           </Card>
 
+          <details className="rounded-xl bg-white px-4 py-3 ring-1 ring-slate-200">
+            <summary className="cursor-pointer text-sm font-medium text-slate-700">Tuỳ chọn</summary>
+            <label className="mt-3 block text-sm font-medium text-slate-700">
+              Ngày thêm
+              <input type="date" className={`${inputCls} mt-1`} value={taughtOn} onChange={(e) => setTaughtOn(e.target.value)} />
+              <span className="mt-1 block text-xs font-normal text-slate-500">Chỉ để ghi nhớ. Từ vẫn vào bài kế tiếp sau khi phát hành.</span>
+            </label>
+          </details>
+
           <ErrorBox error={error} />
           <Button className="w-full py-2.5" disabled={!canSubmit} onClick={submit}>
-            {busy ? 'Đang tạo…' : 'Tạo buổi (nháp)'}
+            {busy ? 'Đang thêm…' : `Thêm bộ từ${nextNumber ? ` ${nextNumber}` : ''} (nháp)`}
           </Button>
           {!canSubmit && !busy && (
             <p className="text-center text-xs text-slate-500">
-              {!parsed ? 'Dán JSON để bắt đầu' : !parsed.ok ? 'Sửa hết lỗi JSON trước' : !present.size ? 'Tick ít nhất 1 học sinh' : numberTaken ? 'Số buổi bị trùng' : 'Kiểm tra số buổi, ngày dạy'}
+              {!parsed ? 'Dán JSON để bắt đầu' : !parsed.ok ? 'Sửa hết lỗi JSON trước' : !present.size ? 'Tick ít nhất 1 học sinh' : 'Đang tải…'}
             </p>
           )}
         </div>

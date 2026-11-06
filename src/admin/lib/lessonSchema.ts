@@ -90,7 +90,7 @@ export function parseLessonJson(text: string): ParseResult {
   if (!Array.isArray(list)) return fail('Không thấy danh sách "words". JSON phải có dạng { "words": [ ... ] }.');
   if (list.length === 0) return fail('Danh sách "words" đang rỗng.');
   if (list.length > MAX_WORDS) {
-    issues.push({ index: -1, word: null, field: 'words', level: 'error', message: `Một buổi tối đa ${MAX_WORDS} từ (đang có ${list.length}).` });
+    issues.push({ index: -1, word: null, field: 'words', level: 'error', message: `Một bộ từ tối đa ${MAX_WORDS} từ (đang có ${list.length}).` });
   }
 
   const words: LessonWordInput[] = [];

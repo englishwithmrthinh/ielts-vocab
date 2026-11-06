@@ -68,7 +68,7 @@ export function UploadZone({ label, onFile, busy }: { label: string; onFile: (da
   );
 }
 
-/** Mỗi lưới của buổi: prompt + tải ảnh lên */
+/** Mỗi lưới của bộ từ: prompt + tải ảnh lên */
 export function ImagesSection({ lessonId, words, onUploaded }: { lessonId: string; words: Word[]; onUploaded: () => void }) {
   const [grids, setGrids] = useState<GridTask[] | null>(null);
   const [error, setError] = useState<unknown>(null);

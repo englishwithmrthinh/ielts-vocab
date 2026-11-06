@@ -1,4 +1,4 @@
-/** Danh sách buổi học. Bấm vào buổi để chạy pipeline, Duyệt, Phát hành. */
+/** Danh sách bộ từ (DB: lessons). Bấm vào để tạo audio, tải ảnh, Duyệt, Phát hành. */
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { adminApi, type LessonSummary } from '../lib/adminApi';
@@ -26,21 +26,29 @@ export default function LessonsPage() {
 
   return (
     <>
-      <PageHeader title="Buổi học" actions={<Link to="/admin/tao-buoi"><Button>+ Tạo buổi</Button></Link>} />
+      <PageHeader
+        title="Bộ từ"
+        sub="Mỗi bộ từ là một lô từ được giao. Học sinh vẫn làm 3 bài/tuần; từ mới tự vào bài kế tiếp."
+        actions={<Link to="/admin/them-bo-tu"><Button>+ Thêm bộ từ</Button></Link>}
+      />
       <ErrorBox error={error} />
       <Card className="p-0 sm:p-0">
         {!lessons ? (
           <p className="px-4 py-8 text-center text-sm text-slate-500">Đang tải…</p>
         ) : lessons.length === 0 ? (
-          <p className="px-4 py-10 text-center text-sm text-slate-500">Chưa có buổi nào. Bấm “Tạo buổi” để dán từ vựng buổi đầu tiên.</p>
+          <p className="px-4 py-10 text-center text-sm text-slate-500">Chưa có bộ từ nào. Bấm “Thêm bộ từ” để dán bộ từ đầu tiên.</p>
         ) : (
           <ul className="divide-y divide-slate-100">
             {lessons.map((l) => (
               <li key={l.id}>
-                <Link to={`/admin/buoi-hoc/${l.id}`} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 hover:bg-slate-50">
-                <span className="w-20 font-semibold text-slate-900">Buổi {l.number}</span>
-                <span className="w-24 text-sm text-slate-600">{fmtDate(l.taught_on)}</span>
-                <span className="text-sm text-slate-600">{l.word_count} từ · {l.student_count} học sinh</span>
+                <Link to={`/admin/bo-tu/${l.id}`} className="flex flex-wrap items-center gap-x-2 gap-y-1 px-4 py-3 text-sm hover:bg-slate-50">
+                <span className="font-semibold text-slate-900">Bộ từ {l.number}</span>
+                <span className="text-slate-400">·</span>
+                <span className="text-slate-600">{l.word_count} từ</span>
+                <span className="text-slate-400">·</span>
+                <span className="text-slate-600">thêm {fmtDate(l.taught_on)}</span>
+                <span className="text-slate-400">·</span>
+                <span className="text-slate-600">{l.student_count} học sinh</span>
                 <span className="ml-auto"><Badge tone={STATUS[l.status].tone}>{STATUS[l.status].label}</Badge></span>
                 </Link>
               </li>
