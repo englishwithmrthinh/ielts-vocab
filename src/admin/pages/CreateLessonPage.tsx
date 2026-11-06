@@ -1,8 +1,10 @@
 /** Thêm bộ từ: dán JSON từ skill, chọn học sinh được giao. Số bộ từ tự lấy. */
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import type { Class, Student } from '@shared/types';
 import StudentPicker from '../components/StudentPicker';
+import { copyText } from '../lib/imageFile';
+import { rememberForLesson, type PickedSuggestion } from '../lib/suggestionHandoff';
 import { vnDate } from '@shared/time';
 import { ApiCallError } from '../../lib/api';
 import { adminApi, type ExistingWord } from '../lib/adminApi';
@@ -38,12 +40,19 @@ export default function CreateLessonPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [done, setDone] = useState<{ id: string; number: number; reused: number; created: number } | null>(null);
+  // Từ trang "Từ HS đề xuất": danh sách từ + học sinh đề xuất (mặc định chỉ giao cho các em đó)
+  const location = useLocation();
+  const suggestions = ((location.state as { suggestions?: PickedSuggestion[] } | null)?.suggestions ?? []) as PickedSuggestion[];
+  const suggestedWords = [...new Map(suggestions.map((p) => [p.text.trim().toLowerCase(), p.text.trim()])).values()];
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     adminApi.students().then((r) => {
       const active = r.students.filter((s) => s.active);
       setStudents(active);
-      setPresent(new Set(active.map((s) => s.id)));
+      const codes = new Set(suggestions.map((p) => p.code));
+      const fromSuggest = active.filter((s) => codes.has(s.code));
+      setPresent(new Set((fromSuggest.length ? fromSuggest : active).map((s) => s.id)));
     }, setError);
     adminApi.lessons().then((r) => setNextNumber(r.nextNumber), setError);
     adminApi.classes().then((r) => setClasses(r.classes.filter((c) => c.active)), () => undefined);
@@ -76,6 +85,7 @@ export default function CreateLessonPage() {
         try {
           const r = await adminApi.createLesson({ number, taught_on: taughtOn, student_ids: [...present], json: text });
           setDone({ id: r.lesson.id, number: r.lesson.number, reused: r.reused, created: r.created });
+          rememberForLesson(r.lesson.id, suggestions);
           setNextNumber(r.lesson.number + 1);
           return;
         } catch (e) {
@@ -119,6 +129,20 @@ export default function CreateLessonPage() {
       />
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <div className="space-y-4">
+          {suggestedWords.length > 0 && (
+            <Card className="bg-sky-50/60 ring-sky-200">
+              <h2 className="font-semibold text-sky-950">{suggestedWords.length} từ học sinh đề xuất</h2>
+              <p className="mt-1 text-sm text-sky-900/80">
+                Copy danh sách → dán vào Claude (skill từ vựng) để lấy JSON → dán JSON vào ô dưới. Mặc định chỉ giao cho các em đã đề xuất; tick thêm bạn khác nếu muốn.
+                Phát hành xong, các đề xuất này tự chuyển sang “đã thêm”.
+              </p>
+              <p className="mt-2 rounded-lg bg-white px-3 py-2 font-mono text-sm text-slate-800 ring-1 ring-sky-200">{suggestedWords.join(', ')}</p>
+              <div className="mt-2 flex items-center gap-3">
+                <Button variant="secondary" onClick={async () => setCopied(await copyText(suggestedWords.join('\n')))}>Copy danh sách từ</Button>
+                {copied && <span className="text-sm text-teal-700">Đã copy ✓</span>}
+              </div>
+            </Card>
+          )}
           <Card>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <label htmlFor="json" className="font-semibold text-slate-900">JSON từ vựng</label>

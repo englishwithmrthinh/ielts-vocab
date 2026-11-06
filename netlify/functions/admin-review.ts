@@ -4,6 +4,7 @@
  * GET  /api/admin/lessons/detail?id=…  → { lesson, words: Word[] (theo thứ tự ô), studentIds }
  * POST /api/admin/words/update  { id, patch }  → { word }   sửa text tại chỗ
  * POST /api/admin/words/drop-image { id }      → { word }   bỏ ảnh (câu dạng B, I sẽ tự đổi dạng)
+ * GET  /api/admin/words/get?id=…                → { word }   (trang Câu báo lỗi mở thẻ để sửa)
  *
  * Sửa từ = sửa trong KHO TỔNG: buổi khác dùng chung từ này cũng thấy bản mới.
  * Không cho sửa chính "word" (đổi từ thì phải tạo lại audio, ảnh — tạo từ mới thì hơn).
@@ -54,6 +55,13 @@ export default async (req: Request): Promise<Response> => {
       if (!id) throw new HttpError(400, 'bad_input', 'Thiếu id');
       return json(await detail(id));
     }
+    if (url.pathname === '/api/admin/words/get' && req.method === 'GET') {
+      const id = url.searchParams.get('id');
+      if (!id) throw new HttpError(400, 'bad_input', 'Thiếu id');
+      const w = must(await db().from('words').select('*').eq('id', id).maybeSingle()) as Word | null;
+      if (!w) throw new HttpError(404, 'not_found', 'Không tìm thấy từ');
+      return json({ word: w });
+    }
     if (url.pathname === '/api/admin/words/update' && req.method === 'POST') {
       return json({ word: await update(await readJson(req)) });
     }
@@ -69,4 +77,4 @@ export default async (req: Request): Promise<Response> => {
   }
 };
 
-export const config: Config = { path: ['/api/admin/lessons/detail', '/api/admin/words/update', '/api/admin/words/drop-image'] };
+export const config: Config = { path: ['/api/admin/lessons/detail', '/api/admin/words/get', '/api/admin/words/update', '/api/admin/words/drop-image'] };
