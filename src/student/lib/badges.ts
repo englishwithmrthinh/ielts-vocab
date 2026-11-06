@@ -1,20 +1,12 @@
 // Tên + biểu tượng huy hiệu
 import { Award, BookCheck, CalendarCheck, Crown, Flame, Send, Sun, type LucideIcon } from 'lucide-react';
 import type { BadgeCode } from '@shared/types';
+import { badgeName, COPY } from './copy';
 
-export const BADGE_VI: Record<BadgeCode, string> = {
-  first_submit: 'Bài nộp đầu tiên',
-  perfect_week: 'Tuần hoàn hảo',
-  perfect_month: 'Tháng hoàn hảo',
-  all_sundays_month: 'Đủ mọi Chủ nhật trong tháng',
-  pass_10: 'Thuộc 10 từ',
-  pass_50: 'Thuộc 50 từ',
-  pass_100: 'Thuộc 100 từ',
-  pass_300: 'Thuộc 300 từ',
-  streak_6: 'Chuỗi 6 mốc',
-  streak_12: 'Chuỗi 12 mốc',
-  streak_24: 'Chuỗi 24 mốc',
-};
+/** Tên huy hiệu lấy từ copy.json */
+export const BADGE_VI = Object.fromEntries(
+  (Object.keys(COPY.badges) as BadgeCode[]).map((c) => [c, badgeName(c)]),
+) as Record<BadgeCode, string>;
 
 export const BADGE_ICON: Record<BadgeCode, LucideIcon> = {
   first_submit: Send,

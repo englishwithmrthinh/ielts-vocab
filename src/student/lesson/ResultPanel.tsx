@@ -6,6 +6,7 @@ import { HINT_TEXT } from '@shared/grading';
 import { errorText, studentApi } from '../api';
 import { cx } from '../components/ui';
 import { WordCardView } from '../components/WordCardView';
+import { COPY, pick } from '../lib/copy';
 
 const CHOICE_TYPES = ['A', 'B', 'C', 'E', 'J'];
 
@@ -36,14 +37,16 @@ export function ResultPanel({ question, result }: { question: Question; result: 
         <div className="flex items-center justify-between gap-2">
           <p className={cx('flex items-center gap-2 text-lg font-bold', result.correct ? 'text-ok-ink' : 'text-bad-ink')}>
             {result.correct ? <CircleCheck className="size-6" aria-hidden /> : <CircleX className="size-6" aria-hidden />}
-            {result.correct ? 'Chính xác!' : result.perWord ? `Đúng ${result.perWord.filter((p) => p.correct).length}/${result.perWord.length}` : 'Chưa đúng'}
+            {result.perWord && !result.correct
+              ? `Đúng ${result.perWord.filter((p) => p.correct).length}/${result.perWord.length}`
+              : pick(result.correct ? COPY.correct : COPY.wrong, question.qid)}
           </p>
           {result.xp > 0 && <span className="rounded-lg bg-surface/70 px-2 py-0.5 text-sm font-bold text-brand-ink">+{result.xp} XP</span>}
         </div>
 
         {result.passed && (
           <p className="mt-2 flex items-center gap-1.5 font-semibold text-ok-ink animate-[popIn_.4s_ease-out]">
-            <Sparkles className="size-5" aria-hidden /> Bạn đã thuộc hẳn từ này!
+            <Sparkles className="size-5" aria-hidden /> {pick(COPY.word_passed, question.qid)}
           </p>
         )}
 

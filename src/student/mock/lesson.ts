@@ -168,6 +168,31 @@ function withProgress(s: State, item: Item): Question {
 
 const listOf = (s: State) => (s.phase === 'graded' ? s.graded : s.phase === 'fix' ? s.fix : s.extra);
 
+
+const TYPING: QType[] = ['F', 'G', 'H', 'I', 'K', 'M'];
+
+function gradeItem(item: Item, a: AnswerSubmission): AnswerResult {
+  const k = item.key;
+  const cards = item.wordIds.map(wordById);
+  let res: AnswerResult;
+
+  if (k.kind === 'option') {
+    const correct = a.optionId === k.correctId;
+    res = { correct, correctOptionId: k.correctId, expected: item.q.options!.find((o: Option) => o.id === k.correctId)!.text, wordCard: cards[0]!, xp: 0 };
+  } else if (k.kind === 'text') {
+    const g = gradeTyping(a.text ?? '', k.expected);
+    res = { correct: g.correct, hint: g.hint, diff: g.correct ? undefined : g.diff, expected: k.expected, wordCard: cards[0]!, xp: 0 };
+  } else {
+    const perWord = Object.entries(k.key).map(([wid, rid]) => ({ wordId: wid, correct: a.matches?.[wid] === rid }));
+    res = {
+      correct: perWord.every((p) => p.correct), perWord, expected: k.expectedText,
+      wordCard: cards[0]!, wordCards: cards, xp: 0,
+    };
+  }
+
+  return res;
+}
+
 // ---------- API giả ----------
 export const mockLesson = {
   preview(milestoneId: string): PreviewResponse {
@@ -216,25 +241,8 @@ export const mockLesson = {
     const list = listOf(s);
     const item = list[s.idx];
     if (!item || item.q.qid !== a.qid) throw new Error('Câu hỏi không khớp (mock)');
-    const k = item.key;
-    const cards = item.wordIds.map(wordById);
-    let res: AnswerResult;
-    const typingType = ['F', 'G', 'H', 'I', 'K', 'M'].includes(item.q.type);
-
-    if (k.kind === 'option') {
-      const correct = a.optionId === k.correctId;
-      res = { correct, correctOptionId: k.correctId, expected: item.q.options!.find((o: Option) => o.id === k.correctId)!.text, wordCard: cards[0]!, xp: 0 };
-    } else if (k.kind === 'text') {
-      const g = gradeTyping(a.text ?? '', k.expected);
-      res = { correct: g.correct, hint: g.hint, diff: g.correct ? undefined : g.diff, expected: k.expected, wordCard: cards[0]!, xp: 0 };
-    } else {
-      const perWord = Object.entries(k.key).map(([wid, rid]) => ({ wordId: wid, correct: a.matches?.[wid] === rid }));
-      res = {
-        correct: perWord.every((p) => p.correct), perWord, expected: k.expectedText,
-        wordCard: cards[0]!, wordCards: cards, xp: 0,
-      };
-    }
-
+    const res = gradeItem(item, a);
+    const typingType = TYPING.includes(item.q.type);
     const graded = item.q.mode === 'graded';
     if (graded) {
       const n = res.perWord?.filter((p) => p.correct).length ?? (res.correct ? 1 : 0);
@@ -294,5 +302,38 @@ export const mockLesson = {
     } catch {
       /* bỏ qua */
     }
+  },
+};
+
+// ---------- Luyện thêm (không đổi hộp, đúng +2 XP) ----------
+let practice: { items: Item[]; idx: number } | null = null;
+
+export const mockPractice = {
+  next(): NextQuestionResponse {
+    if (!practice) {
+      seed = 55;
+      const w = (i: number) => MOCK_WORDS[i - 1]!;
+      practice = {
+        items: [choice('A', w(3)), typing('H', w(5)), choice('J', w(7)), typing('K', w(9)), choice('E', w(11)), typing('I', w(2))].map((it) => ({
+          ...it,
+          q: { ...it.q, mode: 'practice' as const },
+        })),
+        idx: 0,
+      };
+    }
+    const item = practice.items[practice.idx];
+    if (!item) return { question: null, phase: 'done' };
+    return { question: { ...item.q, progress: { done: practice.idx, required: practice.items.length, extra: 0 } }, phase: 'graded' };
+  },
+  answer(a: AnswerSubmission): AnswerResult {
+    const item = practice?.items[practice.idx];
+    if (!practice || !item || item.q.qid !== a.qid) throw new Error('Câu hỏi không khớp (mock)');
+    const res = gradeItem(item, a);
+    res.xp = res.correct ? 2 : 0;
+    practice.idx++;
+    return res;
+  },
+  reset() {
+    practice = null;
   },
 };

@@ -8,6 +8,7 @@ import { CalendarLegend, MonthCalendar } from '../components/MonthCalendar';
 import { Button, Card, Spinner, cx } from '../components/ui';
 import { BADGE_ICON, BADGE_VI } from '../lib/badges';
 import { todayVN } from '../lib/format';
+import { badgeDesc, COPY } from '../lib/copy';
 
 export function Ring({ value, max, size = 132, label }: { value: number; max: number; size?: number; label?: string }) {
   const pct = max ? Math.round((value / max) * 100) : 0;
@@ -134,6 +135,7 @@ export default function Progress() {
             {earned}/{d.badges.length}
           </span>
         </div>
+        {earned === 0 && <p className="mb-3 text-sm text-ink-2">{COPY.empty.no_badges_yet}</p>}
         <div className="grid grid-cols-3 gap-2">
           {d.badges.map((b) => {
             const Icon = BADGE_ICON[b.code];
@@ -142,7 +144,8 @@ export default function Progress() {
               <div
                 key={b.code}
                 className={cx('flex flex-col items-center rounded-2xl px-1 py-3 text-center', on ? 'bg-mid-bg' : 'bg-surface-2')}
-                aria-label={`${BADGE_VI[b.code]}${on ? ' (đã có)' : ' (chưa có)'}`}
+                title={badgeDesc(b.code)}
+                aria-label={`${BADGE_VI[b.code]}: ${badgeDesc(b.code)}${on ? ' (đã có)' : ' (chưa có)'}`}
               >
                 <span
                   className={cx(

@@ -5,6 +5,8 @@ import type { Box, MyWordsResponse } from '@shared/types';
 import { errorText, studentApi } from '../api';
 import { Button, Card, Spinner, Tag, cx } from '../components/ui';
 import { WordCardView } from '../components/WordCardView';
+import Infographic from '../../shared-ui/Infographic';
+import { COPY } from '../lib/copy';
 
 type Word = MyWordsResponse['words'][number];
 type BoxFilter = 'all' | Box;
@@ -44,6 +46,7 @@ export default function MyWords() {
   const [open, setOpen] = useState<Word | null>(null);
   const [adding, setAdding] = useState(false);
   const [toast, setToast] = useState('');
+  const [hideMeaning, setHideMeaning] = useState(false);
 
   const load = () => studentApi.myWords().then(setD).catch((e: unknown) => setErr(errorText(e)));
   useEffect(() => {
@@ -136,11 +139,34 @@ export default function MyWords() {
       )}
 
       {lesson !== 'all' && (
-        // Chỗ dành cho Infographic buổi (src/shared-ui/Infographic.tsx của Claude 3 — chờ PR #2 gộp)
-        <Card className="mt-3 flex items-center gap-3 bg-brand-wash shadow-none ring-1 ring-line">
-          <ImageIcon className="size-6 text-brand" aria-hidden />
-          <p className="text-sm text-ink-2">Infographic buổi {lesson} sẽ hiện ở đây.</p>
-        </Card>
+        <div className="mt-3">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="flex items-center gap-1.5 text-sm font-semibold text-ink-2">
+              <ImageIcon className="size-4 text-brand" aria-hidden /> Infographic buổi {lesson}
+            </h2>
+            <button
+              type="button"
+              onClick={() => setHideMeaning((v) => !v)}
+              aria-pressed={hideMeaning}
+              className="rounded-lg px-2 py-1 text-xs font-semibold text-brand-ink ring-1 ring-line"
+            >
+              {hideMeaning ? 'Hiện nghĩa' : 'Che nghĩa để tự kiểm tra'}
+            </button>
+          </div>
+          <div className="overflow-hidden rounded-[var(--radius-card)] bg-surface p-2 shadow-[var(--shadow-card)]">
+            <Infographic
+              title={`Buổi ${lesson}`}
+              hideMeaning={hideMeaning}
+              items={d.words
+                .filter((w) => w.lessonNumber === lesson)
+                .map((w) => ({ id: w.wordId, word: w.word, meaningVi: w.meaningVi, imageUrl: w.imageUrl, pos: w.pos }))}
+              onSelect={(it) => {
+                const w = d.words.find((x) => x.wordId === it.id);
+                if (w) setOpen(w);
+              }}
+            />
+          </div>
+        </div>
       )}
 
       {d.pending.length > 0 && box === 'all' && lesson === 'all' && !q && (
@@ -183,7 +209,9 @@ export default function MyWords() {
             </button>
           </li>
         ))}
-        {list.length === 0 && <li className="py-8 text-center text-sm text-ink-3">Không có từ nào khớp.</li>}
+        {list.length === 0 && (
+          <li className="py-8 text-center text-sm text-ink-3">{d.words.length ? COPY.empty.my_words_search_empty : COPY.empty.no_words_yet}</li>
+        )}
       </ul>
 
       {open && (

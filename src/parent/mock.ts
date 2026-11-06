@@ -2,7 +2,7 @@
 import { monthKey } from '@shared/time';
 import { todayVN } from '../student/lib/format';
 import { mockCalendar } from '../student/mock/progress';
-import type { ParentReportResponse } from './api';
+import type { ParentReportResponse } from '@shared/types';
 
 export function mockReport(status: 'draft' | 'final'): ParentReportResponse {
   const month = monthKey(todayVN());
@@ -40,7 +40,7 @@ export function mockReport(status: 'draft' | 'final'): ParentReportResponse {
       ],
       cells: cells.map((c) => ({ milestone_date: c.date, kind: c.kind, status: c.status, score_pct: c.score_pct, days_late: c.days_late })),
     },
-    ai_comment:
+    ai_comment: status === 'draft' ? null : // server không trả nhận xét khi còn Tạm tính
       'Minh Anh duy trì việc ôn bài khá đều trong tháng, phần lớn các bài nộp đúng hạn. Em ghi nhớ tốt các từ về chủ đề môi trường và giao thông. Tháng tới em nên chú ý nộp bài đúng hạn hơn vào các ngày Chủ nhật và luyện thêm phần gõ chính tả.',
     teacher_comment: null,
   };

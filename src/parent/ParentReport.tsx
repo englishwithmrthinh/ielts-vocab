@@ -10,7 +10,8 @@ import { ApiCallError } from '../lib/api';
 import { CalendarLegend, MonthCalendar } from '../student/components/MonthCalendar';
 import { Button, Spinner, cx } from '../student/components/ui';
 import { Ring } from '../student/pages/Progress';
-import { fetchReport, type ParentReportResponse } from './api';
+import type { ParentReportResponse } from '@shared/types';
+import { fetchReport } from './api';
 
 const monthTitle = (m: string) => `Tháng ${Number(m.slice(5))}/${m.slice(0, 4)}`;
 
@@ -67,7 +68,8 @@ export default function ParentReport() {
 
 function Report({ d }: { d: ParentReportResponse }) {
   const s = d.stats;
-  const comment = d.teacher_comment ?? d.ai_comment;
+  // Tạm tính: không hiện nhận xét. Đã chốt: teacher_comment, chưa có thì ai_comment.
+  const comment = d.status === 'final' ? (d.teacher_comment ?? d.ai_comment) : null;
   const maxWeek = Math.max(1, ...s.passed_by_week.map((w) => w.passed_total));
   const attTone = s.attendance_pct >= 90 ? 'ok' : s.attendance_pct >= 50 ? 'mid' : 'bad';
 
@@ -158,7 +160,7 @@ function Report({ d }: { d: ParentReportResponse }) {
         {comment ? (
           <p className="whitespace-pre-line leading-relaxed">{comment}</p>
         ) : (
-          <p className="text-sm text-ink-3">Giáo viên sẽ gửi nhận xét khi chốt báo cáo.</p>
+          <p className="text-sm text-ink-3">Nhận xét của thầy sẽ có khi báo cáo được chốt.</p>
         )}
       </Section>
 

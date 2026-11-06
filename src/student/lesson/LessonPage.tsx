@@ -11,10 +11,11 @@ import { errorText, studentApi } from '../api';
 import { Button, Card, ProgressBar, Spinner, cx } from '../components/ui';
 import { BADGE_VI } from '../lib/badges';
 import { celebrate } from '../lib/celebrate';
+import { COPY, fill, summaryLine } from '../lib/copy';
 import { Preview } from './Preview';
 import { ResultPanel } from './ResultPanel';
 
-type Stage =
+export type Stage =
   | { k: 'loading' }
   | { k: 'error'; msg: string }
   | { k: 'preview'; cards: WordCard[] }
@@ -207,7 +208,7 @@ function TopBar({ stage, onClose }: { stage: Stage; onClose: () => void }) {
   );
 }
 
-function QuestionView({
+export function QuestionView({
   stage,
   onSubmit,
   onNext,
@@ -306,8 +307,9 @@ function Submitted({
       </span>
       <h1 className="mt-4 text-2xl font-bold">{r.perfectWeek ? 'Tuần hoàn hảo!' : 'Đã nộp bài'}</h1>
       <p className="mt-1 text-ink-2">
-        {onTime ? 'Đúng hạn, giỏi lắm!' : `Nộp trễ ${r.daysLate} ngày. Lần sau cố gắng đúng hạn nhé.`}
+        {r.perfectWeek ? COPY.perfect_week : onTime ? COPY.submit.on_time : fill(COPY.submit.late, { days: r.daysLate, pct: r.scorePct })}
       </p>
+      {r.summary.total > 0 && <p className="mt-1 text-sm text-ink-2">{summaryLine(r.summary.correct, r.summary.total, String(r.summary.correct))}</p>}
 
       <div className="mt-6 grid w-full grid-cols-3 gap-2">
         <Metric icon={<Clock className="size-4" aria-hidden />} value={`${r.scorePct}%`} label="chuyên cần" tone={onTime ? 'ok' : 'mid'} />
