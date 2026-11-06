@@ -3,7 +3,6 @@ import '@fontsource/be-vietnam-pro/400.css';
 import '@fontsource/be-vietnam-pro/500.css';
 import '@fontsource/be-vietnam-pro/600.css';
 import '@fontsource/be-vietnam-pro/700.css';
-import './theme.css';
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import { BottomNav } from './components/BottomNav';
 import { Spinner } from './components/ui';

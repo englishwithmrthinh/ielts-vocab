@@ -49,7 +49,7 @@ export function ChoiceList({
       <div className="grid gap-2.5" role="radiogroup">
         {options.map((o, i) => {
           const isSel = sel === o.id;
-          const isRight = done && o.text === result.expected;
+          const isRight = done && (result.correctOptionId ? o.id === result.correctOptionId : o.text === result.expected);
           const isWrong = done && isSel && !result.correct;
           return (
             <button

@@ -3,8 +3,7 @@
    Quy ước màu trạng thái dùng thống nhất cả app (khớp ô mốc Google Sheet):
      ok = đúng hạn / đúng (xanh lá) · mid = trễ 50–90% (vàng) · low = trễ 30–40% (cam)
      bad = đang nợ / bỏ bài / sai (đỏ) · off = nghỉ (xám)
-   Ghi chú: file này tự @import tailwindcss vì không được sửa src/index.css (xem Câu hỏi cho sếp). */
-@import 'tailwindcss';
+   Được nạp từ src/index.css (sau @import "tailwindcss") — sếp đồng ý 06/11. */
 
 
 @theme {

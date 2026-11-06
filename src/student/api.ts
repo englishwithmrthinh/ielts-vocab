@@ -89,13 +89,14 @@ export const studentApi = {
     return api<HomeResponse>('GET', '/api/home');
   },
 
-  // ---- Làm bài (giả định tham số — xem "Câu hỏi cho sếp" GĐ2) ----
+  // ---- Làm bài — theo hợp đồng API sếp chốt 06/11 ----
+  /** Các từ mới chưa xem. milestoneId chỉ dùng cho dữ liệu giả. */
   async preview(milestoneId: string): Promise<PreviewResponse> {
     if (USE_MOCK) {
       await delay(200);
       return mockLesson.preview(milestoneId);
     }
-    return api<PreviewResponse>('GET', `/api/preview?milestoneId=${encodeURIComponent(milestoneId)}`);
+    return api<PreviewResponse>('GET', '/api/preview');
   },
 
   async start(milestoneId: string): Promise<StartAssignmentResponse> {

@@ -1,5 +1,6 @@
 // G · Spelling khuyết (Nhớ lại): điền chữ thiếu (~40% bị ẩn), có nghĩa gợi ý.
 // masked ví dụ "en_ir_nm_nt": mỗi "_" là một ô một chữ. Gõ là tự nhảy ô; Backspace ở ô trống lùi về ô trước.
+// Gửi lên CẢ TỪ (chữ có sẵn + chữ học sinh điền) — server chấm text với cả từ.
 import { useEffect, useRef, useState } from 'react';
 import type { QuestionProps } from './index';
 import { cx } from '../student/components/ui';

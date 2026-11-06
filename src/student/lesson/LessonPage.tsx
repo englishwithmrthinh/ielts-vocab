@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom';
 import type { AnswerResult, AnswerSubmission, BadgeCode, NextQuestionResponse, Question, SubmitResponse, WordCard } from '@shared/types';
 import { QUESTION_COMPONENTS } from '../../questions';
+import { ApiCallError } from '../../lib/api';
 import { errorText, studentApi } from '../api';
 import { Button, Card, ProgressBar, Spinner, cx } from '../components/ui';
 import { celebrate } from '../lib/celebrate';
@@ -88,7 +89,11 @@ export default function LessonPage() {
       }
       if (result.passed) celebrate('small');
     } catch (e) {
-      fail(e);
+      // 410 question_expired: câu đã được trả lời (ví dụ mở 2 tab) → lấy câu tiếp theo
+      if (e instanceof ApiCallError && e.status === 410) {
+        setStage({ k: 'loading' });
+        loadNext(assignmentId).catch(fail);
+      } else fail(e);
     }
   };
 
@@ -147,9 +152,12 @@ export default function LessonPage() {
       {stage.k === 'error' && (
         <Card className="mt-6 text-center">
           <p className="text-bad-ink">{stage.msg}</p>
-          <Button variant="secondary" className="mt-4" onClick={() => location.reload()}>
-            Thử lại
-          </Button>
+          <div className="mt-4 flex justify-center gap-2">
+            <Button variant="secondary" onClick={() => location.reload()}>
+              Thử lại
+            </Button>
+            <Button onClick={() => nav('/hoc')}>Về trang chủ</Button>
+          </div>
         </Card>
       )}
 

@@ -223,7 +223,7 @@ export const mockLesson = {
 
     if (k.kind === 'option') {
       const correct = a.optionId === k.correctId;
-      res = { correct, expected: item.q.options!.find((o: Option) => o.id === k.correctId)!.text, wordCard: cards[0]!, xp: 0 };
+      res = { correct, correctOptionId: k.correctId, expected: item.q.options!.find((o: Option) => o.id === k.correctId)!.text, wordCard: cards[0]!, xp: 0 };
     } else if (k.kind === 'text') {
       const g = gradeTyping(a.text ?? '', k.expected);
       res = { correct: g.correct, hint: g.hint, diff: g.correct ? undefined : g.diff, expected: k.expected, wordCard: cards[0]!, xp: 0 };
