@@ -1,7 +1,8 @@
 /** Thêm bộ từ: dán JSON từ skill, chọn học sinh được giao. Số bộ từ tự lấy. */
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { Student } from '@shared/types';
+import type { Class, Student } from '@shared/types';
+import StudentPicker from '../components/StudentPicker';
 import { vnDate } from '@shared/time';
 import { ApiCallError } from '../../lib/api';
 import { adminApi, type ExistingWord } from '../lib/adminApi';
@@ -29,6 +30,7 @@ export default function CreateLessonPage() {
   const nav = useNavigate();
   const [students, setStudents] = useState<Student[]>([]);
   const [present, setPresent] = useState<Set<string>>(new Set());
+  const [classes, setClasses] = useState<Class[]>([]);
   const [nextNumber, setNextNumber] = useState<number | null>(null);
   const [taughtOn, setTaughtOn] = useState(vnDate(new Date()));
   const [text, setText] = useState('');
@@ -44,6 +46,7 @@ export default function CreateLessonPage() {
       setPresent(new Set(active.map((s) => s.id)));
     }, setError);
     adminApi.lessons().then((r) => setNextNumber(r.nextNumber), setError);
+    adminApi.classes().then((r) => setClasses(r.classes.filter((c) => c.active)), () => undefined);
   }, []);
 
   const parsed = useMemo(() => (text.trim() ? parseLessonJson(text) : null), [text]);
@@ -193,35 +196,11 @@ export default function CreateLessonPage() {
 
         <div className="space-y-4">
           <Card>
-            <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-slate-900">Giao cho học sinh <span className="font-normal text-slate-500">{present.size}/{students.length}</span></h2>
-              <Button variant="ghost" className="text-xs" onClick={() => setPresent(present.size === students.length ? new Set() : new Set(students.map((s) => s.id)))}>
-                {present.size === students.length ? 'Bỏ chọn hết' : 'Chọn hết'}
-              </Button>
-            </div>
-            <ul className="mt-2 max-h-72 space-y-0.5 overflow-y-auto">
-              {students.map((s) => (
-                <li key={s.id}>
-                  <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-sm hover:bg-slate-50">
-                    <input
-                      type="checkbox"
-                      checked={present.has(s.id)}
-                      onChange={() =>
-                        setPresent((p) => {
-                          const next = new Set(p);
-                          if (next.has(s.id)) next.delete(s.id);
-                          else next.add(s.id);
-                          return next;
-                        })
-                      }
-                    />
-                    <span className="w-10 font-mono text-xs text-slate-500">{s.code}</span>
-                    <span>{s.name}</span>
-                  </label>
-                </li>
-              ))}
-              {!students.length && <li className="text-sm text-slate-500">Chưa có học sinh.</li>}
-            </ul>
+            <h2 className="font-semibold text-slate-900">
+              Giao cho học sinh <span className="font-normal text-slate-500">{present.size}/{students.length}</span>
+            </h2>
+            <p className="mb-2 text-xs text-slate-500">Bấm lớp để chọn cả lớp, rồi bỏ tick bạn không giao.</p>
+            <StudentPicker students={students} classes={classes} selected={present} onChange={setPresent} />
           </Card>
 
           <details className="rounded-xl bg-white px-4 py-3 ring-1 ring-slate-200">

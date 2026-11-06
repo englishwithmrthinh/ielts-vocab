@@ -3,7 +3,7 @@
  * Chế độ demo (?demo=1 trên URL): dùng dữ liệu giả trong trình duyệt, không cần
  * máy chủ — để xem giao diện và chụp màn hình khi chưa có Supabase/Netlify.
  */
-import type { Lesson, Milestone, Student, Word } from '@shared/types';
+import type { Class, ClassesResponse, Lesson, Milestone, Student, Word } from '@shared/types';
 import { api } from '../../lib/api';
 import { mockApi } from './mock';
 
@@ -18,6 +18,8 @@ export interface LessonSummary {
   created_at: string;
   word_count: number;
   student_count: number;
+  class_names?: string[];
+  unassigned_count?: number;
 }
 
 export interface ExistingWord { word: string; pos: string; id: string; has_audio: boolean; has_image: boolean }
@@ -47,7 +49,12 @@ export const adminApi = {
   logout: () => call<{ ok: true }>('POST', '/api/admin/logout'),
 
   students: () => call<{ students: Student[] }>('GET', '/api/admin/students'),
-  addStudents: (names: string[]) => call<{ created: StudentCard[] }>('POST', '/api/admin/students', { names }),
+  addStudents: (names: string[], classId: string | null = null) => call<{ created: StudentCard[] }>('POST', '/api/admin/students', { names, classId }),
+
+  classes: () => call<ClassesResponse>('GET', '/api/admin/classes'),
+  addClass: (name: string) => call<{ class: Class }>('POST', '/api/admin/classes', { name }),
+  updateClass: (id: string, patch: { name?: string; active?: boolean }) => call<{ class: Class }>('POST', '/api/admin/classes/update', { id, ...patch }),
+  moveStudents: (studentIds: string[], classId: string | null) => call<{ moved: number }>('POST', '/api/admin/classes/move', { studentIds, classId }),
   updateStudent: (id: string, patch: { name?: string; active?: boolean }) =>
     call<{ student: Student }>('POST', '/api/admin/students/update', { id, ...patch }),
   resetPins: (ids: string[]) => call<{ cards: StudentCard[] }>('POST', '/api/admin/students/reset-pins', { ids }),

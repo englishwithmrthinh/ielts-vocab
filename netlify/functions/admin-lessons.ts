@@ -1,7 +1,7 @@
 /**
  * Buổi học (cần cookie quản trị) — Claude 3, giai đoạn 1.
  *
- * GET  /api/admin/lessons              → { lessons: LessonSummary[], nextNumber }
+ * GET  /api/admin/lessons              → { lessons: LessonSummary[] (kèm class_names, unassigned_count), nextNumber }
  * POST /api/admin/lessons/check  { words: {word,pos}[] }
  *      → { existing: { word, pos, id, has_audio, has_image }[] }   (từ đã có trong kho tổng)
  * POST /api/admin/lessons        { number, taught_on, student_ids, json }
@@ -34,11 +34,28 @@ async function listLessons() {
   ) as Pick<Lesson, 'id' | 'number' | 'taught_on' | 'status' | 'published_at' | 'created_at'>[];
   const ids = lessons.map((l) => l.id);
   const words = ids.length ? (must(await db().from('lesson_words').select('lesson_id').in('lesson_id', ids)) as { lesson_id: string }[]) : [];
-  const att = ids.length ? (must(await db().from('attendance').select('lesson_id').in('lesson_id', ids)) as { lesson_id: string }[]) : [];
+  const att = ids.length ? (must(await db().from('attendance').select('lesson_id,student_id').in('lesson_id', ids)) as { lesson_id: string; student_id: string }[]) : [];
   const count = (rows: { lesson_id: string }[], id: string) => rows.filter((r) => r.lesson_id === id).length;
   const nextNumber = lessons.reduce((m, l) => Math.max(m, l.number), 0) + 1;
+
+  // "Giao cho: Lớp A, Lớp B" — lớp hiện tại của các học sinh được giao
+  const [stuR, clsR] = await Promise.all([db().from('students').select('id,class_id'), db().from('classes').select('id,name')]);
+  const classOf = new Map((must(stuR) as { id: string; class_id: string | null }[]).map((s) => [s.id, s.class_id]));
+  const className = new Map((must(clsR) as { id: string; name: string }[]).map((c) => [c.id, c.name]));
+  const classesFor = (lessonId: string) => {
+    const names = new Set<string>();
+    let unassigned = 0;
+    for (const a of att) {
+      if (a.lesson_id !== lessonId) continue;
+      const cid = classOf.get(a.student_id);
+      const name = cid ? className.get(cid) : undefined;
+      if (name) names.add(name);
+      else unassigned++;
+    }
+    return { class_names: [...names].sort((a, b) => a.localeCompare(b, 'vi')), unassigned_count: unassigned };
+  };
   return {
-    lessons: lessons.map((l) => ({ ...l, word_count: count(words, l.id), student_count: count(att, l.id) })),
+    lessons: lessons.map((l) => ({ ...l, word_count: count(words, l.id), student_count: count(att, l.id), ...classesFor(l.id) })),
     nextNumber,
   };
 }

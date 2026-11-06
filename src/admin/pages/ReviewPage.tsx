@@ -1,7 +1,8 @@
 /** Chi tiết buổi: chạy pipeline, thanh tiến trình, Duyệt từng thẻ, xem infographic, Phát hành. */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import type { PipelineLogEntry, Student, Word } from '@shared/types';
+import type { Class, PipelineLogEntry, Student, Word } from '@shared/types';
+import StudentPicker from '../components/StudentPicker';
 import Infographic from '../../shared-ui/Infographic';
 import { ImagesSection, SingleImageDialog } from '../components/ImageTools';
 import { adminApi, type LessonDetail, type PublishResult } from '../lib/adminApi';
@@ -356,11 +357,13 @@ function Field({ label, value, onChange, mono, multiline }: { label: string; val
 function PublishDialog({ detail, onClose, onDone }: { detail: LessonDetail; onClose: () => void; onDone: (r: PublishResult) => void }) {
   const [students, setStudents] = useState<Student[]>([]);
   const [sel, setSel] = useState<Set<string>>(new Set(detail.studentIds));
+  const [classes, setClasses] = useState<Class[]>([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<unknown>(null);
 
   useEffect(() => {
     adminApi.students().then((r) => setStudents(r.students.filter((s) => s.active)), setErr);
+    adminApi.classes().then((r) => setClasses(r.classes.filter((c) => c.active)), () => undefined);
   }, []);
 
   const missingAudio = detail.words.filter((w) => !w.audio_url).length;
@@ -390,24 +393,18 @@ function PublishDialog({ detail, onClose, onDone }: { detail: LessonDetail; onCl
         {missingImage > 0 && <p className="mt-2 rounded bg-amber-50 px-2 py-1 text-sm text-amber-900">Còn {missingImage} từ chưa có ảnh — dạng câu ảnh sẽ bỏ qua các từ này.</p>}
         <div className="mt-3 flex items-center justify-between text-sm">
           <span className="font-medium text-slate-800">Học sinh nhận ({sel.size})</span>
-          <span className="text-xs text-slate-500">Mặc định: các bạn đã chọn khi thêm bộ từ</span>
+          <span className="text-xs text-slate-500">Bấm lớp để chọn cả lớp</span>
         </div>
-        <ul className="mt-2 max-h-64 space-y-0.5 overflow-y-auto rounded-lg ring-1 ring-slate-200">
-          {students.map((s) => (
-            <li key={s.id}>
-              <label className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-slate-50">
-                <input
-                  type="checkbox"
-                  checked={sel.has(s.id)}
-                  onChange={() => setSel((p) => { const n = new Set(p); if (n.has(s.id)) n.delete(s.id); else n.add(s.id); return n; })}
-                />
-                <span className="w-10 font-mono text-xs text-slate-500">{s.code}</span>
-                {s.name}
-                {!detail.studentIds.includes(s.id) && <span className="ml-auto text-xs text-slate-400">chưa chọn</span>}
-              </label>
-            </li>
-          ))}
-        </ul>
+        <div className="mt-2 rounded-lg p-3 ring-1 ring-slate-200">
+          <StudentPicker
+            students={students}
+            classes={classes}
+            selected={sel}
+            onChange={setSel}
+            maxHeight="max-h-56"
+            note={(s) => (already && detail.studentIds.includes(s.id) ? 'đã giao' : !already && !detail.studentIds.includes(s.id) ? 'chưa chọn' : undefined)}
+          />
+        </div>
         <div className="mt-3"><ErrorBox error={err} /></div>
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose} disabled={busy}>Huỷ</Button>

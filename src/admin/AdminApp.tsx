@@ -4,6 +4,7 @@ import { NavLink, Navigate, Route, Routes, useParams } from 'react-router-dom';
 import { adminApi, DEMO } from './lib/adminApi';
 import { Button, ErrorBox, inputCls } from './ui';
 import StudentsPage from './pages/StudentsPage';
+import ClassesPage from './pages/ClassesPage';
 import PrintCardsPage from './pages/PrintCardsPage';
 import CalendarPage from './pages/CalendarPage';
 import CreateLessonPage from './pages/CreateLessonPage';
@@ -13,6 +14,7 @@ import ReviewPage from './pages/ReviewPage';
 const NAV = [
   { to: 'bo-tu', label: 'Bộ từ' },
   { to: 'them-bo-tu', label: 'Thêm bộ từ' },
+  { to: 'lop', label: 'Lớp' },
   { to: 'hoc-sinh', label: 'Học sinh' },
   { to: 'lich-moc', label: 'Lịch mốc' },
 ];
@@ -78,6 +80,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
           <Route path="buoi-hoc" element={<Navigate to="/admin/bo-tu" replace />} />
           <Route path="buoi-hoc/:id" element={<LegacyLesson />} />
           <Route path="tao-buoi" element={<Navigate to="/admin/them-bo-tu" replace />} />
+          <Route path="lop" element={<ClassesPage />} />
           <Route path="hoc-sinh" element={<StudentsPage />} />
           <Route path="lich-moc" element={<CalendarPage />} />
           <Route path="*" element={<Navigate to="bo-tu" replace />} />

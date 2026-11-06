@@ -48,7 +48,11 @@ export default function LessonsPage() {
                 <span className="text-slate-400">·</span>
                 <span className="text-slate-600">thêm {fmtDate(l.taught_on)}</span>
                 <span className="text-slate-400">·</span>
-                <span className="text-slate-600">{l.student_count} học sinh</span>
+                <span className="text-slate-600">
+                  Giao cho: {l.class_names?.length ? l.class_names.join(', ') : l.student_count ? '' : 'chưa ai'}
+                  {l.unassigned_count ? `${l.class_names?.length ? ' + ' : ''}${l.unassigned_count} bạn chưa xếp lớp` : ''}
+                  <span className="text-slate-400"> ({l.student_count} học sinh)</span>
+                </span>
                 <span className="ml-auto"><Badge tone={STATUS[l.status].tone}>{STATUS[l.status].label}</Badge></span>
                 </Link>
               </li>
