@@ -2,7 +2,7 @@
  * Quản lý học sinh (cần cookie quản trị) — Claude 3.
  *
  * GET  /api/admin/students[?classId=…|none] → { students: Student[] }   (none = chưa xếp lớp)
- * POST /api/admin/students        { names: string[], classId? }   mỗi dòng "Tên, ngày sinh" (vd 15032008) → mã = mã lớp + ngày sinh
+ * POST /api/admin/students        { names: string[], classId? }   mỗi dòng "Tên, ngày sinh" (vd 2402 = 24/02) → mã = mã lớp + ngày sinh
  *      → { created: StudentCard[] }  (tự sinh mã HSxx + PIN; PIN chỉ trả về một lần)
  * POST /api/admin/students/update { id, name?, active?, pin?, birth? } → { student }  (đổi ngày sinh → đổi mã)
  * POST /api/admin/students/reset-pins { ids: string[] }
@@ -56,7 +56,7 @@ async function listStudents(classId?: string | null): Promise<Student[]> {
 }
 
 async function createStudents(names: string[], classId: string | null = null): Promise<StudentCard[]> {
-  // Mỗi dòng có thể kèm ngày sinh: "Nguyễn Minh Anh, 15032008" (4–8 số, có thể gõ 15/03/2008)
+  // Mỗi dòng có thể kèm ngày sinh: "Nguyễn Minh Anh, 2402" (ngày+tháng; gõ 24/02 cũng được)
   const parsed = names.map((n) => {
     const m = /^(.*?)[,;\t]+\s*([\d/.\- ]{4,12})\s*$/.exec(String(n ?? ''));
     const birth = m ? cleanBirth(m[2]) : null;
@@ -98,7 +98,7 @@ async function updateStudent(body: { id?: string; name?: unknown; active?: unkno
   let birthChanged = false;
   if (body.birth !== undefined) {
     const b = cleanBirth(body.birth);
-    if (!b) throw new HttpError(400, 'bad_birth', 'Ngày sinh 4–8 chữ số, ví dụ 15032008');
+    if (!b) throw new HttpError(400, 'bad_birth', 'Ngày tháng sinh dạng 2402 (sinh 24/02)');
     patch.birth = b;
     birthChanged = true;
   }

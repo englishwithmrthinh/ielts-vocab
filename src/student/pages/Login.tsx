@@ -12,7 +12,7 @@ export default function Login() {
   const { me, setMe } = useSession();
   const [step, setStep] = useState<'code' | 'pin'>('code');
   const [code, setCode] = useState(''); // mã lớp, vd GB07 (hoặc mã cũ HS01)
-  const [birth, setBirth] = useState(''); // ngày sinh, vd 15032008
+  const [birth, setBirth] = useState(''); // ngày + tháng sinh, vd 24/02 → 2402
   const [pin, setPin] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -101,16 +101,16 @@ export default function Login() {
             className="h-14 rounded-xl border border-line bg-surface-2 px-4 text-center text-xl font-semibold tracking-[0.2em] text-ink outline-none transition placeholder:text-ink-3/60 focus:border-brand focus:ring-2 focus:ring-brand/25"
           />
           <label htmlFor="birth" className="label-caps mb-2 mt-5 text-ink-2">
-            Ngày tháng năm sinh
+            Ngày tháng sinh
           </label>
           <input
             id="birth"
             value={birth}
             onChange={(e) => {
-              setBirth(e.target.value.replace(/[^\d]/g, '').slice(0, 9));
+              setBirth(e.target.value.replace(/[^\d]/g, '').slice(0, 5));
               setError('');
             }}
-            placeholder="VD: 15032008"
+            placeholder="VD: 2402"
             inputMode="numeric"
             autoComplete="off"
             enterKeyHint="go"
@@ -122,7 +122,7 @@ export default function Login() {
             </p>
           )}
           <div className="mt-auto pt-8">
-            <p className="mb-3 text-center text-xs text-ink-3">Ngày sinh viết liền: ngày, tháng, năm (15/03/2008 → 15032008)</p>
+            <p className="mb-3 text-center text-xs text-ink-3">Ngày + tháng sinh viết liền: sinh 24/02 thì gõ 2402</p>
             <Button type="submit" block size="lg" disabled={busy}>
               {busy ? 'Đang vào…' : 'Vào học'}
             </Button>
