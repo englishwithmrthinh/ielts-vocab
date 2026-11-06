@@ -43,7 +43,6 @@ export default function LessonPage() {
   const [stage, setStage] = useState<Stage>({ k: 'loading' });
   const [assignmentId, setAssignmentId] = useState<string | null>(null);
   const [canExtra, setCanExtra] = useState(false);
-  const [tally, setTally] = useState({ correct: 0, total: 0 });
   /** đã nộp trong lần vào này → hết "Làm tiếp" thì không hiện nút Nộp nữa */
   const submitted = useRef(false);
 
@@ -113,11 +112,6 @@ export default function LessonPage() {
       setStage((cur) => (sameQ(cur) && cur.k === 'question' ? { ...cur, sending: false, result } : cur));
       // Tải trước câu sau trong lúc học sinh đọc thẻ đáp án
       pre.current = prefetch(() => studentApi.next(assignmentId, phase === 'extra'));
-      if (stage.q.mode === 'graded') {
-        const n = result.perWord?.length ?? 1;
-        const ok = result.perWord ? result.perWord.filter((p) => p.correct).length : result.correct ? 1 : 0;
-        setTally((t) => ({ correct: t.correct + ok, total: t.total + n }));
-      }
     } catch (e) {
       // 410 question_expired: câu đã được trả lời (ví dụ mở 2 tab) → lấy câu tiếp theo
       if (e instanceof ApiCallError && e.status === 410) {
@@ -212,7 +206,7 @@ export default function LessonPage() {
         (submitted.current ? (
           <ExtraDone onHome={() => nav('/hoc')} />
         ) : (
-          <Summary tally={tally} onSubmit={doSubmit} />
+          <Summary onSubmit={doSubmit} />
         ))}
 
       {stage.k === 'submitted' && (
@@ -327,20 +321,14 @@ export function QuestionView({
   );
 }
 
-function Summary({ tally, onSubmit }: { tally: { correct: number; total: number }; onSubmit: () => void }) {
+/** Trước khi nộp: không hiện số câu đúng (chỉ đếm được các câu làm trong lần vào này → dễ gây hiểu nhầm).
+ *  Số câu đúng của cả bài hiện ở màn "Đã nộp bài" (SubmitResponse.summary). */
+function Summary({ onSubmit }: { onSubmit: () => void }) {
   return (
     <div className="paper mx-auto mt-2 max-w-md rounded-[var(--radius-card)] px-6 pb-8 pt-8 text-center shadow-[var(--shadow-card)] ring-1 ring-line animate-[fadeIn_.25s_ease-out]">
       <Spot src={ART.bookPen} className="mx-auto w-28" />
       <h1 className="font-display mt-3 text-[24px]">Xong phần bắt buộc</h1>
       <p className="mt-1 text-ink-2">Bấm Nộp bài để được tính điểm chuyên cần.</p>
-      {tally.total > 0 && (
-        <div className="mx-auto mt-5 w-fit rounded-xl bg-blush px-6 py-3">
-          <p className="label-caps text-blush-ink">Lần này đúng</p>
-          <p className="mt-1 text-[30px] font-bold leading-none tabular-nums">
-            {tally.correct}/{tally.total}
-          </p>
-        </div>
-      )}
       <Button block size="lg" className="mt-6" onClick={onSubmit}>
         Nộp bài
       </Button>
