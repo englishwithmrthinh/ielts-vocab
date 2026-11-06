@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { Class, PipelineLogEntry, Student, Word } from '@shared/types';
 import StudentPicker from '../components/StudentPicker';
+import { resolveAfterPublish } from '../lib/suggestionHandoff';
 import Infographic from '../../shared-ui/Infographic';
 import { ImagesSection, SingleImageDialog } from '../components/ImageTools';
 import { adminApi, type LessonDetail, type PublishResult } from '../lib/adminApi';
@@ -207,9 +208,12 @@ export default function ReviewPage() {
           onDone={(nw) => { replaceWord(nw); setRedraw(null); }}
         />
       )}
-      {publishing && <PublishDialog detail={data} onClose={() => setPublishing(false)} onDone={(r) => {
+      {publishing && <PublishDialog detail={data} onClose={() => setPublishing(false)} onDone={async (r) => {
             setPublishing(false);
-            setSuccess(`Đã gán ${r.assigned} từ cho ${r.students} học sinh${r.skipped ? ` (bỏ qua ${r.skipped} từ đã có)` : ''}. Từ mới đến hạn ở mốc ${r.dueIdx}.`);
+            const msg = `Đã gán ${r.assigned} từ cho ${r.students} học sinh${r.skipped ? ` (bỏ qua ${r.skipped} từ đã có)` : ''}. Từ mới đến hạn ở mốc ${r.dueIdx}.`;
+            setSuccess(msg);
+            const marked = await resolveAfterPublish(lesson.id, words).catch(() => 0);
+            if (marked) setSuccess(`${msg} ${marked} từ học sinh đề xuất đã chuyển sang “đã thêm”.`);
             load();
           }} />}
     </>

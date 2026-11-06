@@ -2,7 +2,7 @@
  * Máy chủ giả cho chế độ demo (?demo=1). Dữ liệu chỉ sống trong bộ nhớ tab,
  * tải lại trang là về ban đầu. Không dùng ở bản thật.
  */
-import type { Class, Lesson, Milestone, Student, Word } from '@shared/types';
+import type { AdminFlagsResponse, AdminReportsResponse, AdminSuggestionsResponse, Class, Lesson, Milestone, MonthlyStats, Student, Word } from '@shared/types';
 import { assignIdx, milestonesOfMonth } from '@shared/milestones';
 import { vnDate } from '@shared/time';
 import { ApiCallError } from '../../lib/api';
@@ -76,6 +76,50 @@ const demoDetail: LessonDetail = {
   })) as Word[],
   studentIds: ['s1', 's2', 's3', 's4', 's5', 's6'],
 };
+
+function demoStats(i: number, month: string): MonthlyStats {
+  const total = 13;
+  const late = i % 4 === 1 ? 2 : i % 5 === 3 ? 1 : 0;
+  const abandoned = i % 7 === 6 ? 1 : 0;
+  const owing = i % 6 === 5 ? 1 : 0;
+  const on_time = total - late - abandoned - owing - (i % 3 === 2 ? 1 : 0);
+  const submitted = on_time + late;
+  return {
+    month, total, submitted, on_time, late, abandoned, owing,
+    total_days_late: late * 2, avg_days_late: late ? 2 : 0,
+    attendance_pct: Math.round(((on_time * 100 + late * 80) / total) * 10) / 10,
+    words_assigned: 60, words_passed: 18 + ((i * 7) % 25), words_learning: 30 - ((i * 3) % 10), accuracy_pct: 68 + ((i * 5) % 28),
+    passed_by_week: [], cells: [],
+  };
+}
+
+const demoReports = new Map<string, AdminReportsResponse['reports']>();
+function reportsFor(month: string): AdminReportsResponse['reports'] {
+  if (month > '2026-11') return [];
+  if (!demoReports.has(month)) {
+    demoReports.set(month, state.students.filter((x) => x.active).map((st, i) => ({
+      id: `r-${month}-${st.id}`, studentId: st.id, code: st.code, name: st.name, classId: st.class_id ?? null,
+      status: month < '2026-10' ? 'final' : 'draft', finalizedAt: null,
+      link: `${window.location.origin}/bao-cao/demo-${st.code.toLowerCase()}`,
+      aiComment: `${st.name.split(' ').pop()} làm bài khá đều trong tháng, nộp đúng hạn ${demoStats(i, month).on_time}/13 bài. Con nhớ tốt các từ về môi trường; cần ôn thêm các từ dài như "deforestation". Tháng tới cố gắng không để bài trễ nhé.`,
+      teacherComment: null, stats: demoStats(i, month),
+    })));
+  }
+  return demoReports.get(month)!;
+}
+
+const demoSuggestions: AdminSuggestionsResponse['suggestions'] = [
+  { id: 'sg1', text: 'biodiversity', note: 'gặp trong bài đọc', status: 'pending', createdAt: '2026-11-05T13:00:00Z', code: 'HS03', name: 'Lê Khánh Chi' },
+  { id: 'sg2', text: 'biodiversity', note: null, status: 'pending', createdAt: '2026-11-05T15:20:00Z', code: 'HS07', name: 'Đặng Ngọc Lan' },
+  { id: 'sg3', text: 'take part in', note: 'cụm hay gặp trong Speaking', status: 'pending', createdAt: '2026-11-04T09:10:00Z', code: 'HS01', name: 'Nguyễn Minh Anh' },
+  { id: 'sg4', text: 'commute', note: null, status: 'pending', createdAt: '2026-11-03T20:45:00Z', code: 'HS09', name: 'Đỗ Phương Nhi' },
+];
+
+const demoFlags: AdminFlagsResponse['flags'] = [
+  { id: 'f1', createdAt: '2026-11-05T14:00:00Z', qtype: 'J', given: 'pollution', code: 'HS02', name: 'Trần Gia Bảo', wordId: 'w0', word: 'environment', meaningVi: 'môi trường' },
+  { id: 'f2', createdAt: '2026-11-05T19:30:00Z', qtype: 'J', given: 'pollution', code: 'HS05', name: 'Hoàng Thu Hà', wordId: 'w0', word: 'environment', meaningVi: 'môi trường' },
+  { id: 'f3', createdAt: '2026-11-04T08:15:00Z', qtype: 'A', given: 'bảo vệ', code: 'HS08', name: 'Bùi Tuấn Minh', wordId: 'w9', word: 'conserve', meaningVi: 'bảo tồn' },
+];
 
 function ensureMonth(month: string) {
   if (state.milestones.some((m) => m.month === month)) return;
@@ -240,6 +284,61 @@ export async function mockApi<T>(method: string, path: string, body?: unknown): 
   if (route === 'POST /api/admin/images/single') {
     const w = demoDetail.words.find((x) => x.id === b.word_id)!;
     w.image_url = String(b.image);
+    return ok({ word: { ...w } });
+  }
+  if (route === 'GET /api/admin/overview') {
+    const act = state.students.filter((x) => x.active);
+    return ok({
+      now: new Date().toISOString(),
+      milestone: { id: 'm', date: '2026-11-06', kind: 'fri', deadlineAt: '2026-11-06T16:59:59Z', open: true },
+      today: { submitted: 6, doing: 2, notStarted: act.length - 8, total: act.length },
+      owing: [
+        { studentId: 's9', code: 'HS09', name: 'Đỗ Phương Nhi', classId: 'c2', count: 2, oldestDate: '2026-11-01', daysLate: 5, pctNow: 50, pctTomorrow: 40 },
+        { studentId: 's4', code: 'HS04', name: 'Phạm Đức Duy', classId: 'c1', count: 1, oldestDate: '2026-11-03', daysLate: 3, pctNow: 70, pctTomorrow: 60 },
+        { studentId: 's12', code: 'HS12', name: 'Lý Thanh Tâm', classId: null, count: 1, oldestDate: '2026-11-03', daysLate: 3, pctNow: 70, pctTomorrow: 60 },
+      ],
+      lessons: { draft: state.lessons.filter((l) => l.status === 'draft').length, processing: state.lessons.filter((l) => l.status === 'processing').length, review: state.lessons.filter((l) => l.status === 'review').length },
+      suggestionsPending: demoSuggestions.filter((x) => x.status === 'pending').length,
+      flagsTotal: demoFlags.length,
+    });
+  }
+  if (route === 'GET /api/admin/reports') {
+    const month = url.searchParams.get('month')!;
+    return ok({ month, reports: reportsFor(month).map((r) => ({ ...r, classId: state.students.find((x) => x.id === r.studentId)?.class_id ?? null })) });
+  }
+  if (route === 'POST /api/admin/reports/update') {
+    for (const list of demoReports.values()) {
+      const r = list.find((x) => x.id === b.id);
+      if (r) {
+        if (b.teacher_comment !== undefined) r.teacherComment = (b.teacher_comment as string) || null;
+        if (b.ai_comment !== undefined) r.aiComment = (b.ai_comment as string) || null;
+      }
+    }
+    return ok({ ok: true });
+  }
+  if (route === 'POST /api/admin/reports/finalize') {
+    for (const list of demoReports.values()) {
+      const r = list.find((x) => x.id === b.id);
+      if (r) { r.status = 'final'; r.finalizedAt = new Date().toISOString(); }
+    }
+    return ok({ ok: true });
+  }
+  if (route === 'POST /api/jobs/monthly') {
+    const month = String(b.month);
+    reportsFor(month);
+    if (b.final) demoReports.get(month)?.forEach((r) => { r.status = 'final'; r.finalizedAt = new Date().toISOString(); });
+    return ok(null);
+  }
+  if (route === 'GET /api/admin/suggestions') return ok({ suggestions: demoSuggestions.filter((x) => x.status === (url.searchParams.get('status') ?? 'pending')) });
+  if (route === 'POST /api/admin/suggestions/update') {
+    const sg = demoSuggestions.find((x) => x.id === b.id);
+    if (sg) sg.status = b.status as never;
+    return ok({ ok: true });
+  }
+  if (route === 'GET /api/admin/flags') return ok({ flags: demoFlags });
+  if (route === 'GET /api/admin/words/get') {
+    const w = demoDetail.words.find((x) => x.id === url.searchParams.get('id'));
+    if (!w) throw new ApiCallError(404, 'not_found', 'Không tìm thấy từ');
     return ok({ word: { ...w } });
   }
   if (route === 'POST /api/admin/lessons/publish') {

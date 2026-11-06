@@ -201,3 +201,15 @@
   .print-avoid-break { break-inside: avoid; }
   .student-root * { -webkit-print-color-adjust: exact; print-color-adjust: exact; box-shadow: none !important; }
 }
+
+/* Huy hiệu "Powered by Netlify" (khung #nl-badge-frame do Netlify tự chèn, gói miễn phí) mặc định nằm
+   góc dưới phải → che mục "Kho từ" của thanh điều hướng và nút "Tiếp tục". Không ẩn, chỉ dời lên trên.
+   Máy tính (≥1024px) không có thanh dưới nên giữ nguyên chỗ cũ. */
+@media (max-width: 1023.98px) {
+  body:has(.student-root) #nl-badge-frame {
+    bottom: calc(84px + env(safe-area-inset-bottom)) !important;
+  }
+}
+@media print {
+  #nl-badge-frame { display: none !important; }
+}

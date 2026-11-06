@@ -1,6 +1,6 @@
 /** KHU QUẢN TRỊ — Claude 3. Router con dưới /admin/*. */
 import { useEffect, useState, type FormEvent } from 'react';
-import { NavLink, Navigate, Route, Routes, useParams } from 'react-router-dom';
+import { NavLink, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import { adminApi, DEMO } from './lib/adminApi';
 import { Button, ErrorBox, inputCls } from './ui';
 import StudentsPage from './pages/StudentsPage';
@@ -10,10 +10,18 @@ import CalendarPage from './pages/CalendarPage';
 import CreateLessonPage from './pages/CreateLessonPage';
 import LessonsPage from './pages/LessonsPage';
 import ReviewPage from './pages/ReviewPage';
+import ReportsPage from './pages/ReportsPage';
+import OverviewPage from './pages/OverviewPage';
+import SuggestionsPage from './pages/SuggestionsPage';
+import FlagsPage from './pages/FlagsPage';
 
-const NAV = [
+const NAV: { to: string; label: string; badge?: 'suggestions' | 'flags' }[] = [
+  { to: 'tong-quan', label: 'Tổng quan' },
   { to: 'bo-tu', label: 'Bộ từ' },
   { to: 'them-bo-tu', label: 'Thêm bộ từ' },
+  { to: 'de-xuat', label: 'Từ HS đề xuất', badge: 'suggestions' },
+  { to: 'bao-loi', label: 'Câu báo lỗi', badge: 'flags' },
+  { to: 'bao-cao', label: 'Báo cáo tháng' },
   { to: 'lop', label: 'Lớp' },
   { to: 'hoc-sinh', label: 'Học sinh' },
   { to: 'lich-moc', label: 'Lịch mốc' },
@@ -38,6 +46,22 @@ export default function AdminApp() {
 }
 
 function Shell({ onLogout }: { onLogout: () => void }) {
+  const [badges, setBadges] = useState<{ suggestions: number; flags: number }>({ suggestions: 0, flags: 0 });
+  const location = useLocation();
+  useEffect(() => {
+    // chấm báo trên menu: đề xuất đang chờ + câu báo lỗi chưa xử lý (theo máy này)
+    adminApi.suggestions('pending').then((r) => setBadges((b) => ({ ...b, suggestions: r.suggestions.length })), () => undefined);
+    adminApi.flags().then((r) => {
+      let handled = new Set<string>();
+      try {
+        handled = new Set(JSON.parse(localStorage.getItem('admin-flags-handled') ?? '[]') as string[]);
+      } catch {
+        /* bỏ qua */
+      }
+      setBadges((b) => ({ ...b, flags: r.flags.filter((f) => !handled.has(f.id)).length }));
+    }, () => undefined);
+  }, [location.pathname]);
+
   const logout = async () => {
     await adminApi.logout().catch(() => undefined);
     onLogout();
@@ -61,7 +85,12 @@ function Shell({ onLogout }: { onLogout: () => void }) {
                 `whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium ${isActive ? 'bg-teal-50 text-teal-800' : 'text-slate-600 hover:bg-slate-100'}`
               }
             >
-              {n.label}
+              <span className="inline-flex items-center gap-1.5">
+                {n.label}
+                {n.badge && badges[n.badge] > 0 && (
+                  <span className="min-w-5 rounded-full bg-red-600 px-1.5 text-center text-[11px] font-semibold leading-5 text-white">{badges[n.badge]}</span>
+                )}
+              </span>
             </NavLink>
           ))}
         </nav>
@@ -70,9 +99,10 @@ function Shell({ onLogout }: { onLogout: () => void }) {
           <Button variant="ghost" onClick={logout}>Đăng xuất</Button>
         </div>
       </aside>
-      <main className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 md:py-8">
+      <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 md:py-8">
         <Routes>
-          <Route index element={<Navigate to="bo-tu" replace />} />
+          <Route index element={<Navigate to="tong-quan" replace />} />
+          <Route path="tong-quan" element={<OverviewPage />} />
           <Route path="bo-tu" element={<LessonsPage />} />
           <Route path="bo-tu/:id" element={<ReviewPage />} />
           <Route path="them-bo-tu" element={<CreateLessonPage />} />
@@ -80,6 +110,9 @@ function Shell({ onLogout }: { onLogout: () => void }) {
           <Route path="buoi-hoc" element={<Navigate to="/admin/bo-tu" replace />} />
           <Route path="buoi-hoc/:id" element={<LegacyLesson />} />
           <Route path="tao-buoi" element={<Navigate to="/admin/them-bo-tu" replace />} />
+          <Route path="de-xuat" element={<SuggestionsPage onCount={(n) => setBadges((b) => ({ ...b, suggestions: n }))} />} />
+          <Route path="bao-loi" element={<FlagsPage />} />
+          <Route path="bao-cao" element={<ReportsPage />} />
           <Route path="lop" element={<ClassesPage />} />
           <Route path="hoc-sinh" element={<StudentsPage />} />
           <Route path="lich-moc" element={<CalendarPage />} />
