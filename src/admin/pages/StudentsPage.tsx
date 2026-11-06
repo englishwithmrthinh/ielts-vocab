@@ -83,6 +83,20 @@ export default function StudentsPage() {
       await load();
     });
 
+  const setPin = (s: Student) => {
+    const pin = prompt(`PIN mới cho ${s.name} (${s.code}) — đúng 4 chữ số:`)?.trim();
+    if (!pin) return;
+    if (!/^\d{4}$/.test(pin)) { alert('PIN phải đúng 4 chữ số'); return; }
+    run(async () => { await adminApi.updateStudent(s.id, { pin }); alert(`Đã đặt PIN ${pin} cho ${s.name}.`); });
+  };
+
+  const remove = (ids: string[], label: string) => {
+    if (!ids.length) return;
+    const typed = prompt(`XOÁ HẲN ${label} cùng toàn bộ bài làm, điểm, XP, báo cáo. KHÔNG khôi phục được.\n\nGõ chữ XOA để xác nhận:`);
+    if (typed?.trim().toUpperCase() !== 'XOA') return;
+    run(async () => { await adminApi.deleteStudents(ids); setSelected(new Set()); await load(); });
+  };
+
   const printCards = (ids: string[]) => {
     if (!ids.length) return;
     const msg =
@@ -176,7 +190,7 @@ export default function StudentsPage() {
         {adding && (
           <Card>
             <h2 className="font-semibold text-slate-900">Thêm học sinh</h2>
-            <p className="mt-1 text-sm text-slate-500">Mỗi dòng một tên. Mã (HS..) và PIN 4 số được tạo tự động.</p>
+            <p className="mt-1 text-sm text-slate-500">Mỗi dòng một tên. Mã (HS..) tạo tự động. Muốn tự đặt PIN thì thêm dấu phẩy và 4 số, ví dụ <span className="font-mono">Nguyễn Minh Anh, 1234</span>; không ghi thì PIN tạo ngẫu nhiên.</p>
             <label className="mt-3 flex flex-wrap items-center gap-2 text-sm text-slate-700">
               Vào lớp
               <select className={selectCls} value={addClassId} onChange={(e) => setAddClassId(e.target.value)}>
@@ -222,6 +236,9 @@ export default function StudentsPage() {
                   <Button variant="secondary" disabled={busy || !moveTo} onClick={move}>Chuyển ({selected.size})</Button>
                 </span>
               )}
+              <Button variant="ghost" disabled={busy || !selected.size} onClick={() => remove([...selected], `${selected.size} học sinh đã chọn`)}>
+                <span className="text-red-700">Xoá ({selected.size})</span>
+              </Button>
               <Button variant="secondary" disabled={busy || !selected.size} onClick={() => printCards([...selected])}>
                 In thẻ ({selected.size})
               </Button>
@@ -253,6 +270,10 @@ export default function StudentsPage() {
                   {editId !== s.id && (
                     <div className="ml-auto flex gap-1">
                       <Button variant="ghost" onClick={() => { setEditId(s.id); setEditName(s.name); }}>Sửa tên</Button>
+                      <Button variant="ghost" disabled={busy} onClick={() => setPin(s)}>Đặt PIN</Button>
+                      <Button variant="ghost" disabled={busy} onClick={() => remove([s.id], `${s.name} (${s.code})`)}>
+                        <span className="text-red-700">Xoá</span>
+                      </Button>
                       <Button variant={s.active ? 'ghost' : 'secondary'} disabled={busy} onClick={() => toggleActive(s)}>
                         {s.active ? 'Khoá' : 'Mở khoá'}
                       </Button>

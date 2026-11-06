@@ -130,6 +130,16 @@ export default function ClassesPage() {
                         >
                           {c.active ? 'Ẩn' : 'Hiện lại'}
                         </Button>
+                        <Button
+                          variant="ghost"
+                          disabled={busy}
+                          onClick={() => {
+                            if (!confirm(`Xoá lớp "${c.name}"? ${c.studentCount} học sinh trong lớp sẽ chuyển thành "Chưa xếp lớp" (không mất dữ liệu học).`)) return;
+                            run(() => adminApi.deleteClass(c.id));
+                          }}
+                        >
+                          <span className="text-red-700">Xoá</span>
+                        </Button>
                       </div>
                     </>
                   )}
