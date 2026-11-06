@@ -26,7 +26,7 @@ export interface WordSelection {
 const byPriority = (a: StudentWordLite, b: StudentWordLite) =>
   a.due_idx - b.due_idx || a.box - b.box || (a.word_id < b.word_id ? -1 : 1);
 
-export function dueWords(words: StudentWordLite[], idx: number): StudentWordLite[] {
+export function dueWords<T extends StudentWordLite>(words: T[], idx: number): T[] {
   return words.filter((w) => w.due_idx <= idx).sort(byPriority);
 }
 
