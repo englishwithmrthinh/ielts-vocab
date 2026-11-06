@@ -84,7 +84,7 @@ export default function StudentsPage() {
     });
 
   const setBirth = (s: Student) => {
-    const v = prompt(`Ngày sinh của ${s.name} (ví dụ 15032008 hoặc 15/03/2008).\nMã đăng nhập sẽ thành: mã lớp + ngày sinh.`, s.birth ?? '')?.replace(/\D/g, '');
+    const v = prompt(`Ngày + tháng sinh của ${s.name} (sinh 24/02 thì gõ 2402).\nMã đăng nhập sẽ thành: mã lớp + ngày tháng sinh.`, s.birth ?? '')?.replace(/\D/g, '');
     if (!v) return;
     if (v.length < 4 || v.length > 8) { alert('Ngày sinh 4–8 chữ số'); return; }
     run(async () => { const { student } = await adminApi.updateStudent(s.id, { birth: v }); alert(`Mã mới của ${s.name}: ${student.code}`); await load(); });
@@ -190,7 +190,7 @@ export default function StudentsPage() {
         {adding && (
           <Card>
             <h2 className="font-semibold text-slate-900">Thêm học sinh</h2>
-            <p className="mt-1 text-sm text-slate-500">Mỗi dòng: tên, dấu phẩy, ngày sinh. Ví dụ <span className="font-mono">Nguyễn Minh Anh, 15032008</span>. Mã đăng nhập = mã lớp + ngày sinh (vd <span className="font-mono">GB0715032008</span>); trùng thì tự thêm số 2, 3. Học sinh chỉ cần gõ mã là vào.</p>
+            <p className="mt-1 text-sm text-slate-500">Mỗi dòng: tên, dấu phẩy, ngày + tháng sinh. Ví dụ <span className="font-mono">Nguyễn Minh Anh, 2402</span> (sinh 24/02). Mã đăng nhập = mã lớp + ngày tháng sinh (vd <span className="font-mono">GB072402</span>); 2 em trùng ngày sinh trong lớp thì em sau tự thêm số 2 (2402 → 24022).</p>
             <label className="mt-3 flex flex-wrap items-center gap-2 text-sm text-slate-700">
               Vào lớp
               <select className={selectCls} value={addClassId} onChange={(e) => setAddClassId(e.target.value)}>
@@ -202,7 +202,7 @@ export default function StudentsPage() {
               autoFocus
               rows={5}
               className={`${inputCls} mt-3 font-normal`}
-              placeholder={'Nguyễn Minh Anh, 15032008\nTrần Gia Bảo, 02112009'}
+              placeholder={'Nguyễn Minh Anh, 2402\nTrần Gia Bảo, 0211'}
               value={namesText}
               onChange={(e) => setNamesText(e.target.value)}
             />
