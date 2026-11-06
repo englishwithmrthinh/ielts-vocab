@@ -12,7 +12,7 @@
  */
 import type { Config } from '@netlify/functions';
 import type { Student } from '../../shared/types';
-import { hashPin, randomPin, requireAdmin } from '../lib/auth';
+import { isValidPin, hashPin, randomPin, requireAdmin } from '../lib/auth';
 import { errorResponse, HttpError, json, readJson } from '../lib/http';
 import { db, must } from '../lib/supabase';
 
@@ -51,14 +51,19 @@ async function listStudents(classId?: string | null): Promise<Student[]> {
 }
 
 async function createStudents(names: string[], classId: string | null = null): Promise<StudentCard[]> {
-  const clean = names.map(cleanName);
+  // Mỗi dòng có thể kèm PIN tự chọn: "Nguyễn Minh Anh, 1234"
+  const parsed = names.map((n) => {
+    const m = /^(.*?)[,;\t ]+(\d{4})\s*$/.exec(String(n ?? ''));
+    return m ? { name: m[1]!, pin: m[2]! } : { name: String(n ?? ''), pin: null as string | null };
+  });
+  const clean = parsed.map((x) => cleanName(x.name));
   if (!clean.length) throw new HttpError(400, 'bad_input', 'Chưa nhập tên học sinh');
   if (clean.length > 60) throw new HttpError(400, 'bad_input', 'Mỗi lần thêm tối đa 60 học sinh');
 
   // Thử lại khi hai lần thêm chạy cùng lúc làm trùng mã
   for (let attempt = 0; attempt < 3; attempt++) {
     const codes = nextCodes((await listStudents()).map((s) => s.code), clean.length);
-    const pins = clean.map(() => randomPin());
+    const pins = clean.map((_, i) => parsed[i]!.pin ?? randomPin());
     const rows = await Promise.all(
       clean.map(async (name, i) => ({ name, code: codes[i]!, pin_hash: await hashPin(pins[i]!), class_id: classId })),
     );
@@ -70,7 +75,7 @@ async function createStudents(names: string[], classId: string | null = null): P
   throw new HttpError(409, 'code_conflict', 'Trùng mã học sinh, thử lại');
 }
 
-async function updateStudent(body: { id?: string; name?: unknown; active?: unknown }): Promise<Student> {
+async function updateStudent(body: { id?: string; name?: unknown; active?: unknown; pin?: unknown }): Promise<Student> {
   if (!body.id) throw new HttpError(400, 'bad_input', 'Thiếu id');
   const patch: Record<string, unknown> = {};
   if (body.name !== undefined) patch.name = cleanName(body.name);
@@ -78,10 +83,21 @@ async function updateStudent(body: { id?: string; name?: unknown; active?: unkno
     if (typeof body.active !== 'boolean') throw new HttpError(400, 'bad_input', 'active phải là true/false');
     patch.active = body.active;
   }
+  if (body.pin !== undefined) {
+    if (!isValidPin(body.pin)) throw new HttpError(400, 'bad_pin', 'PIN phải đúng 4 chữ số');
+    patch.pin_hash = await hashPin(body.pin);
+  }
   if (!Object.keys(patch).length) throw new HttpError(400, 'bad_input', 'Không có gì để sửa');
   const rows = must(await db().from('students').update(patch).eq('id', body.id).select(COLS)) as Student[];
   if (!rows[0]) throw new HttpError(404, 'not_found', 'Không tìm thấy học sinh');
   return rows[0];
+}
+
+/** Xoá hẳn học sinh và TOÀN BỘ dữ liệu (bài, câu trả lời, XP, báo cáo). Không hoàn tác được. */
+async function deleteStudents(ids: unknown): Promise<number> {
+  if (!Array.isArray(ids) || !ids.length || !ids.every((x) => typeof x === 'string')) throw new HttpError(400, 'bad_input', 'Cần danh sách ids');
+  const rows = must(await db().from('students').delete().in('id', ids).select('id')) as unknown[];
+  return rows.length;
 }
 
 async function resetPins(ids: unknown): Promise<StudentCard[]> {
@@ -115,10 +131,14 @@ export default async (req: Request): Promise<Response> => {
       }
       return json({ created: await createStudents(names, (classId as string | null | undefined) ?? null) });
     }
+    if (path === '/api/admin/students/delete' && req.method === 'POST') {
+      const { ids } = await readJson<{ ids?: unknown }>(req);
+      return json({ deleted: await deleteStudents(ids) });
+    }
     if (path === '/api/admin/students/update' && req.method === 'POST') {
       return json({ student: await updateStudent(await readJson(req)) });
     }
-    if (path === '/api/admin/students/reset-pins' && req.method === 'POST') {
+    if (path === '/api/admin/students/reset-pins', '/api/admin/students/delete' && req.method === 'POST') {
       const { ids } = await readJson<{ ids?: unknown }>(req);
       return json({ cards: await resetPins(ids) });
     }

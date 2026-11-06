@@ -4,6 +4,7 @@
  * GET  /api/admin/classes                         → ClassesResponse (kèm sĩ số học sinh đang hoạt động)
  * POST /api/admin/classes          { name }        → { class }
  * POST /api/admin/classes/update   { id, name?, active? } → { class }   (ẩn lớp = active:false; học sinh vẫn giữ class_id)
+ * POST /api/admin/classes/delete   { id } → { ok }  (xoá lớp; học sinh thành chưa xếp lớp)
  * POST /api/admin/classes/move     { studentIds: string[], classId: string | null } → { moved }
  *      Chuyển lớp hàng loạt (null = bỏ khỏi lớp). Tiến độ từ vựng giữ nguyên.
  */
@@ -58,6 +59,12 @@ export default async (req: Request): Promise<Response> => {
       if (!c) throw new HttpError(404, 'not_found', 'Không tìm thấy lớp');
       return json({ class: c });
     }
+    if (p === '/api/admin/classes/delete' && req.method === 'POST') {
+      const { id } = await readJson<{ id?: string }>(req);
+      if (!id) throw new HttpError(400, 'bad_input', 'Thiếu id');
+      must(await db().from('classes').delete().eq('id', id)); // học sinh trong lớp → chưa xếp lớp (on delete set null)
+      return json({ ok: true });
+    }
     if (p === '/api/admin/classes/move' && req.method === 'POST') {
       const b = await readJson<{ studentIds?: string[]; classId?: string | null }>(req);
       const ids = (b.studentIds ?? []).filter((x) => typeof x === 'string');
@@ -72,5 +79,5 @@ export default async (req: Request): Promise<Response> => {
 };
 
 export const config: Config = {
-  path: ['/api/admin/classes', '/api/admin/classes/update', '/api/admin/classes/move'],
+  path: ['/api/admin/classes', '/api/admin/classes/update', '/api/admin/classes/move', '/api/admin/classes/delete'],
 };

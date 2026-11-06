@@ -192,6 +192,17 @@ export async function mockApi<T>(method: string, path: string, body?: unknown): 
     if (typeof b.active === 'boolean') c.active = b.active;
     return ok({ class: { ...c } });
   }
+  if (route === 'POST /api/admin/classes/delete') {
+    state.classes = state.classes.filter((c) => c.id !== b.id);
+    state.students.forEach((s) => { if (s.class_id === b.id) s.class_id = null; });
+    return ok({ ok: true });
+  }
+  if (route === 'POST /api/admin/students/delete') {
+    const ids = b.ids as string[];
+    const before = state.students.length;
+    state.students = state.students.filter((s) => !ids.includes(s.id));
+    return ok({ deleted: before - state.students.length });
+  }
   if (route === 'POST /api/admin/classes/move') {
     const ids = b.studentIds as string[];
     state.students.forEach((s) => { if (ids.includes(s.id)) s.class_id = (b.classId as string | null) ?? null; });
