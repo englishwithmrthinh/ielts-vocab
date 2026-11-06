@@ -58,7 +58,7 @@ async function listStudents(classId?: string | null): Promise<Student[]> {
 async function createStudents(names: string[], classId: string | null = null): Promise<StudentCard[]> {
   // Mỗi dòng có thể kèm ngày sinh: "Nguyễn Minh Anh, 2402" (ngày+tháng; gõ 24/02 cũng được)
   const parsed = names.map((n) => {
-    const m = /^(.*?)[,;\t]+\s*([\d/.\- ]{4,12})\s*$/.exec(String(n ?? ''));
+    const m = /^(.*),\s*([^,]{2,12})\s*$/.exec(String(n ?? '')); // phần sau dấu phẩy cuối = mã học sinh
     const birth = m ? cleanBirth(m[2]) : null;
     return birth ? { name: m![1]!, birth } : { name: String(n ?? ''), birth: null as string | null };
   });
@@ -98,7 +98,7 @@ async function updateStudent(body: { id?: string; name?: unknown; active?: unkno
   let birthChanged = false;
   if (body.birth !== undefined) {
     const b = cleanBirth(body.birth);
-    if (!b) throw new HttpError(400, 'bad_birth', 'Ngày tháng sinh dạng 2402 (sinh 24/02)');
+    if (!b) throw new HttpError(400, 'bad_birth', 'Mã học sinh 2–8 chữ hoặc số, ví dụ 2402');
     patch.birth = b;
     birthChanged = true;
   }

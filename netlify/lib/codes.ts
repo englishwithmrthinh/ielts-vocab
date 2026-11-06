@@ -5,10 +5,11 @@
  */
 import { db, must } from './supabase';
 
-/** Ngày + tháng sinh (DDMM, vd 2402). Vẫn nhận 4–8 số để mã cũ dạng đủ năm không lỗi. */
+/** Phần mã riêng của học sinh: thường là ngày + tháng sinh (2402), có thể có chữ (AN2402). 2–8 ký tự chữ/số. */
 export function cleanBirth(v: unknown): string | null {
-  const s = String(v ?? '').replace(/\D/g, '');
-  return s.length >= 4 && s.length <= 8 ? s : null;
+  const raw = String(v ?? '').trim();
+  const s = /^[\d/.\- ]+$/.test(raw) ? raw.replace(/\D/g, '') : raw.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  return s.length >= 2 && s.length <= 8 ? s : null;
 }
 
 export function cleanClassCode(v: unknown): string {
