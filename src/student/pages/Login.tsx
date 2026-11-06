@@ -11,7 +11,8 @@ export default function Login() {
   const nav = useNavigate();
   const { me, setMe } = useSession();
   const [step, setStep] = useState<'code' | 'pin'>('code');
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState(''); // mã lớp, vd GB07 (hoặc mã cũ HS01)
+  const [birth, setBirth] = useState(''); // ngày sinh, vd 15032008
   const [pin, setPin] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -50,14 +51,14 @@ export default function Login() {
   const goPin = (e: FormEvent) => {
     e.preventDefault();
     if (!code.trim()) {
-      setError('Nhập mã học sinh của bạn trước nhé.');
+      setError('Nhập mã lớp trước nhé.');
       return;
     }
     if (busy) return;
     setError('');
     setBusy(true);
     studentApi
-      .login(code, '')
+      .login(code.trim() + birth.replace(/\D/g, ''), '')
       .then((student) => {
         setMe(student);
         nav('/hoc', { replace: true });
@@ -81,7 +82,7 @@ export default function Login() {
       {step === 'code' ? (
         <form onSubmit={goPin} className="mt-10 flex flex-1 flex-col">
           <label htmlFor="code" className="label-caps mb-2 text-ink-2">
-            Mã học sinh
+            Mã lớp
           </label>
           <input
             id="code"
@@ -91,11 +92,27 @@ export default function Login() {
               setCode(e.target.value.toUpperCase());
               setError('');
             }}
-            placeholder="VD: FD15032008"
+            placeholder="VD: GB07"
             autoComplete="username"
             autoCapitalize="characters"
             autoCorrect="off"
             spellCheck={false}
+            enterKeyHint="next"
+            className="h-14 rounded-xl border border-line bg-surface-2 px-4 text-center text-xl font-semibold tracking-[0.2em] text-ink outline-none transition placeholder:text-ink-3/60 focus:border-brand focus:ring-2 focus:ring-brand/25"
+          />
+          <label htmlFor="birth" className="label-caps mb-2 mt-5 text-ink-2">
+            Ngày tháng năm sinh
+          </label>
+          <input
+            id="birth"
+            value={birth}
+            onChange={(e) => {
+              setBirth(e.target.value.replace(/[^\d]/g, '').slice(0, 9));
+              setError('');
+            }}
+            placeholder="VD: 15032008"
+            inputMode="numeric"
+            autoComplete="off"
             enterKeyHint="go"
             className="h-14 rounded-xl border border-line bg-surface-2 px-4 text-center text-xl font-semibold tracking-[0.2em] text-ink outline-none transition placeholder:text-ink-3/60 focus:border-brand focus:ring-2 focus:ring-brand/25"
           />
@@ -105,11 +122,11 @@ export default function Login() {
             </p>
           )}
           <div className="mt-auto pt-8">
-            <p className="mb-3 text-center text-xs text-ink-3">Mã = mã lớp + ngày sinh (thầy đã gửi em)</p>
+            <p className="mb-3 text-center text-xs text-ink-3">Ngày sinh viết liền: ngày, tháng, năm (15/03/2008 → 15032008)</p>
             <Button type="submit" block size="lg" disabled={busy}>
               {busy ? 'Đang vào…' : 'Vào học'}
             </Button>
-            {USE_MOCK && <p className="mt-3 text-center text-xs text-ink-3">Dữ liệu thử: mã HS01</p>}
+            {USE_MOCK && <p className="mt-3 text-center text-xs text-ink-3">Dữ liệu thử: mã lớp HS01, bỏ trống ngày sinh</p>}
           </div>
         </form>
       ) : (

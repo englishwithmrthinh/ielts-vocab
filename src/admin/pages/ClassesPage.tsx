@@ -125,9 +125,9 @@ export default function ClassesPage() {
                           variant="ghost"
                           disabled={busy}
                           onClick={() => {
-                            const v = prompt(`Mã lớp "${c.name}" (2–4 chữ cái in hoa). Mã của mọi học sinh có ngày sinh trong lớp sẽ đổi theo.`, c.code ?? '')?.trim().toUpperCase();
+                            const v = prompt(`Mã lớp "${c.name}" (2–6 chữ hoặc số, ví dụ GB07). Mã của mọi học sinh có ngày sinh trong lớp sẽ đổi theo.`, c.code ?? '')?.trim().toUpperCase();
                             if (!v) return;
-                            if (!/^[A-Z]{2,4}$/.test(v)) { alert('Mã lớp 2–4 chữ cái, không dấu'); return; }
+                            if (!/^[A-Z0-9]{2,6}$/.test(v)) { alert('Mã lớp 2–6 chữ hoặc số, không dấu, ví dụ GB07'); return; }
                             run(() => adminApi.updateClass(c.id, { code: v }));
                           }}
                         >
