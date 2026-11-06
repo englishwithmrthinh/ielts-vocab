@@ -2,10 +2,13 @@
 import { Link } from 'react-router-dom';
 import { takePrintCards } from '../lib/printStore';
 import { Button } from '../ui';
+import QrCode from '../components/QrCode';
 
 export default function PrintCardsPage() {
   const cards = takePrintCards();
-  const site = typeof window !== 'undefined' ? window.location.host : '';
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const loginUrl = `${origin}/hoc/dang-nhap`;
+  const site = loginUrl.replace(/^https?:\/\//, '');
 
   return (
     <div className="min-h-dvh bg-slate-100 print:bg-white">
@@ -27,9 +30,10 @@ export default function PrintCardsPage() {
       ) : (
         <div className="mx-auto grid max-w-[190mm] grid-cols-2 gap-0 bg-white p-0 shadow print:shadow-none">
           {cards.map((c) => (
-            <div key={c.id} className="break-inside-avoid border border-dashed border-slate-400 p-[6mm]" style={{ height: '54mm' }}>
-              <p className="text-[9pt] font-medium uppercase tracking-wider text-teal-700">IELTS Vocab · Thẻ đăng nhập</p>
-              <p className="mt-1 truncate text-[13pt] font-semibold text-slate-900">{c.name}</p>
+            <div key={c.id} className="relative break-inside-avoid border border-dashed border-slate-400 p-[6mm]" style={{ height: '54mm' }}>
+              <QrCode text={loginUrl} size={78} className="absolute right-[5mm] top-[5mm]" />
+              <p className="pr-[24mm] text-[9pt] font-medium uppercase tracking-wider text-teal-700">IELTS Vocab · Thẻ đăng nhập</p>
+              <p className="mt-1 truncate pr-[24mm] text-[13pt] font-semibold text-slate-900">{c.name}</p>
               <div className="mt-3 flex gap-6">
                 <div>
                   <p className="text-[8pt] uppercase text-slate-500">Mã</p>
@@ -40,7 +44,7 @@ export default function PrintCardsPage() {
                   <p className="font-mono text-[20pt] font-bold leading-none tracking-[0.2em]">{c.pin}</p>
                 </div>
               </div>
-              <p className="mt-3 text-[8pt] text-slate-500">Vào {site}/hoc · Giữ kín PIN, không cho bạn khác mượn.</p>
+              <p className="mt-3 text-[8pt] leading-snug text-slate-500">Quét mã QR hoặc vào <b className="text-slate-700">{site}</b><br />Giữ kín PIN, không cho bạn khác mượn.</p>
             </div>
           ))}
         </div>
