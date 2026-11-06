@@ -199,7 +199,8 @@ export async function mockApi<T>(method: string, path: string, body?: unknown): 
       l.status = 'published';
       l.published_at = new Date().toISOString();
     }
-    return ok({ ok: true, assigned: (b.student_ids as string[]).length });
+    const n = (b.student_ids as string[]).length;
+    return ok({ assigned: n * 18 - 20, skipped: 20, dueIdx: 4, students: n });
   }
   throw new ApiCallError(404, 'not_found', `Demo chưa có ${route}`);
 }

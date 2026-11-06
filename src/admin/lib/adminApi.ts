@@ -67,7 +67,9 @@ export const adminApi = {
   updateWord: (id: string, patch: Partial<Word>) => call<{ word: Word }>('POST', '/api/admin/words/update', { id, patch }),
   dropImage: (id: string) => call<{ word: Word }>('POST', '/api/admin/words/drop-image', { id }),
   publish: (lessonId: string, studentIds: string[]) =>
-    call<{ ok: true; assigned: number }>('POST', '/api/admin/lessons/publish', { lesson_id: lessonId, student_ids: studentIds }),
+    call<PublishResult>('POST', '/api/admin/lessons/publish', { lesson_id: lessonId, student_ids: studentIds }),
 };
 
 export interface LessonDetail { lesson: Lesson; words: Word[]; studentIds: string[] }
+
+export interface PublishResult { assigned: number; skipped: number; dueIdx: number; students: number }

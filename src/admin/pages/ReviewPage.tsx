@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { PipelineLogEntry, Student, Word } from '@shared/types';
 import Infographic from '../../shared-ui/Infographic';
-import { adminApi, type LessonDetail } from '../lib/adminApi';
+import { adminApi, type LessonDetail, type PublishResult } from '../lib/adminApi';
 import { Badge, Button, Card, ErrorBox, inputCls } from '../ui';
 
 const STATUS = {
@@ -26,6 +26,7 @@ export default function ReviewPage() {
   const [pending, setPending] = useState<Pending>({});
   const [publishing, setPublishing] = useState(false);
   const [notice, setNotice] = useState('');
+  const [success, setSuccess] = useState('');
 
   const load = useCallback(() => adminApi.lessonDetail(id).then(setData, setError), [id]);
   useEffect(() => {
@@ -108,6 +109,7 @@ export default function ReviewPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           {lesson.status === 'draft' && <Button onClick={run}>Tạo audio & ảnh</Button>}
+          {lesson.status === 'published' && <Button variant="secondary" onClick={() => setPublishing(true)}>Thêm học sinh…</Button>}
           {lesson.status === 'review' && (
             <>
               {(missingAudio > 0 || missingImage > 0) && <Button variant="secondary" onClick={run}>Chạy lại phần còn thiếu</Button>}
@@ -119,6 +121,7 @@ export default function ReviewPage() {
 
       <div className="space-y-4">
         <ErrorBox error={error} />
+        {success && <p className="rounded-lg bg-teal-50 px-3 py-2 text-sm text-teal-900 ring-1 ring-teal-200">{success}</p>}
         {notice && <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200">{notice}</p>}
 
         {(lesson.status === 'processing' || lesson.pipeline_log.length > 0) && (
@@ -191,7 +194,11 @@ export default function ReviewPage() {
         )}
       </div>
 
-      {publishing && <PublishDialog detail={data} onClose={() => setPublishing(false)} onDone={() => { setPublishing(false); load(); }} />}
+      {publishing && <PublishDialog detail={data} onClose={() => setPublishing(false)} onDone={(r) => {
+            setPublishing(false);
+            setSuccess(`Đã gán ${r.assigned} từ cho ${r.students} học sinh${r.skipped ? ` (bỏ qua ${r.skipped} từ đã có)` : ''}. Từ mới đến hạn ở mốc ${r.dueIdx}.`);
+            load();
+          }} />}
     </>
   );
 }
@@ -334,7 +341,7 @@ function Field({ label, value, onChange, mono, multiline }: { label: string; val
   );
 }
 
-function PublishDialog({ detail, onClose, onDone }: { detail: LessonDetail; onClose: () => void; onDone: () => void }) {
+function PublishDialog({ detail, onClose, onDone }: { detail: LessonDetail; onClose: () => void; onDone: (r: PublishResult) => void }) {
   const [students, setStudents] = useState<Student[]>([]);
   const [sel, setSel] = useState<Set<string>>(new Set(detail.studentIds));
   const [busy, setBusy] = useState(false);
@@ -345,13 +352,13 @@ function PublishDialog({ detail, onClose, onDone }: { detail: LessonDetail; onCl
   }, []);
 
   const missingAudio = detail.words.filter((w) => !w.audio_url).length;
+  const already = detail.lesson.status === 'published';
 
   const go = async () => {
     setBusy(true);
     setErr(null);
     try {
-      await adminApi.publish(detail.lesson.id, [...sel]);
-      onDone();
+      onDone(await adminApi.publish(detail.lesson.id, [...sel]));
     } catch (e) {
       setErr(e);
       setBusy(false);
@@ -361,9 +368,10 @@ function PublishDialog({ detail, onClose, onDone }: { detail: LessonDetail; onCl
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-slate-900/40 p-4" role="dialog" aria-modal="true">
       <div className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
-        <h2 className="text-lg font-semibold text-slate-900">Phát hành buổi {detail.lesson.number}</h2>
+        <h2 className="text-lg font-semibold text-slate-900">{already ? 'Thêm học sinh vào' : 'Phát hành'} buổi {detail.lesson.number}</h2>
         <p className="mt-1 text-sm text-slate-600">
-          {detail.words.length} từ sẽ vào hộp 1 của các bạn được chọn và xuất hiện ở bài kế tiếp. Sau khi phát hành không sửa danh sách được.
+          {detail.words.length} từ sẽ vào hộp 1 của các bạn được chọn và xuất hiện ở bài kế tiếp.
+          {already ? ' Bạn đã có từ thì giữ nguyên tiến độ.' : ' Có thể thêm học sinh sau, nhưng không gỡ được.'}
         </p>
         {missingAudio > 0 && <p className="mt-2 rounded bg-amber-50 px-2 py-1 text-sm text-amber-900">{missingAudio} từ chưa có audio — dạng câu nghe sẽ bỏ qua các từ này.</p>}
         <div className="mt-3 flex items-center justify-between text-sm">
@@ -389,7 +397,7 @@ function PublishDialog({ detail, onClose, onDone }: { detail: LessonDetail; onCl
         <div className="mt-3"><ErrorBox error={err} /></div>
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose} disabled={busy}>Huỷ</Button>
-          <Button onClick={go} disabled={busy || !sel.size}>{busy ? 'Đang phát hành…' : `Phát hành cho ${sel.size} học sinh`}</Button>
+          <Button onClick={go} disabled={busy || !sel.size}>{busy ? 'Đang gán từ…' : `${already ? 'Gán' : 'Phát hành'} cho ${sel.size} học sinh`}</Button>
         </div>
       </div>
     </div>
