@@ -64,6 +64,18 @@ describe('cutWords', () => {
     for (let i = 1; i < cuts.length; i++) expect(cuts[i]!.startSample).toBeGreaterThanOrEqual(cuts[i - 1]!.endSample);
   });
 
+  it('âm gió cuối dài hơn mốc ký tự (như "fumes" đọc chậm) vẫn được giữ trọn, không cụt đuôi', () => {
+    const { text, spans } = buildScript(['fumes', 'drought']);
+    const tts = fakeTts(text);
+    // thêm tiếng "sss" (nhiễu nhỏ ~12% đỉnh) kéo dài 250ms sau mốc kết thúc của "fumes"
+    const endS = Math.round(tts.alignment.character_end_times_seconds[4]! * SAMPLE_RATE);
+    for (let i = 0; i < Math.round(0.25 * SAMPLE_RATE); i++) tts.pcm[endS + i] = Math.round((Math.random() - 0.5) * 2200);
+    const [fumes, drought] = cutWords(tts.pcm, tts.alignment, spans);
+    expect(fumes!.endSample).toBeGreaterThanOrEqual(endS + Math.round(0.25 * SAMPLE_RATE));
+    expect(drought!.startSample).toBeGreaterThanOrEqual(fumes!.endSample);
+    expect(fumes!.edgeLoud).toBe(false);
+  });
+
   it('gắn cờ khi hai từ dính liền (không có khoảng lặng)', () => {
     const { text, spans } = buildScript(['alpha', 'beta']);
     const tts = fakeTts(text);
