@@ -33,7 +33,7 @@ export interface Student {
   name: string;
   active: boolean;
   /** null = chưa xếp lớp. Mỗi học sinh thuộc tối đa 1 lớp; chuyển lớp giữ nguyên tiến độ */
-  class_id: UUID | null;
+  class_id?: UUID | null;
   created_at: ISODateTime;
 }
 
