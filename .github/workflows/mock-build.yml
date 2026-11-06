@@ -3,8 +3,11 @@ name: mock-build
 on:
   push:
     branches: [video-build]
+permissions:
+  contents: write
 jobs:
   build:
+    if: "!contains(github.event.head_commit.message, '[dist]')"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,7 +18,10 @@ jobs:
       - run: npx vite build
         env:
           VITE_USE_MOCK: 'true'
-      - uses: actions/upload-artifact@v4
-        with:
-          name: dist-mock
-          path: dist
+      - name: Đẩy dist lên nhánh video-dist
+        run: |
+          cd dist
+          git init -q -b video-dist
+          git add -A
+          git -c user.name=ci -c user.email=ci@example.com commit -qm "dist mock [dist]"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" video-dist
