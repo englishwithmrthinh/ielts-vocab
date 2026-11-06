@@ -1,0 +1,226 @@
+{
+  "words": [
+    {
+      "word": "assignment",
+      "pos": "n",
+      "meaning_vi": "bài tập về nhà",
+      "ipa": "/əˈsaɪnmənt/",
+      "syllables": "as·SIGN·ment",
+      "example": "University students must submit their written assignment before the strict Friday deadline.",
+      "word_family": [
+        {
+          "form": "assign",
+          "pos": "v",
+          "sentence": "The teacher will ___ a new essay topic at the end of class."
+        }
+      ],
+      "image_hint": "a thick notebook and a pencil lying on a wooden desk"
+    },
+    {
+      "word": "campus",
+      "pos": "n",
+      "meaning_vi": "khuôn viên trường",
+      "ipa": "/ˈkæmpəs/",
+      "syllables": "CAM·pus",
+      "example": "The university campus has a massive library and three modern sports halls.",
+      "word_family": [],
+      "image_hint": "a large stone university building with a clock tower and trees"
+    },
+    {
+      "word": "faculty",
+      "pos": "n",
+      "meaning_vi": "khoa đại học",
+      "ipa": "/ˈfæklti/",
+      "syllables": "FAC·ul·ty",
+      "example": "The engineering faculty recently bought new printers for all their undergraduate students.",
+      "word_family": [],
+      "image_hint": "a group of smiling teachers standing in front of a whiteboard"
+    },
+    {
+      "word": "peer",
+      "pos": "n",
+      "meaning_vi": "bạn đồng trang lứa",
+      "ipa": "/pɪə/",
+      "syllables": "PEER",
+      "example": "Teenagers often copy their peer group to fit in at high school.",
+      "word_family": [],
+      "image_hint": "three students sitting together on a bench holding open books"
+    },
+    {
+      "word": "graduate",
+      "pos": "v",
+      "meaning_vi": "tốt nghiệp",
+      "ipa": "/ˈɡrædʒueɪt/",
+      "syllables": "GRAD·u·ate",
+      "example": "Many students graduate from university with high hopes for a successful career.",
+      "word_family": [
+        {
+          "form": "graduation",
+          "pos": "n",
+          "sentence": "Her parents threw a large party to celebrate her university ___."
+        }
+      ],
+      "image_hint": "a happy student throwing a black square cap into the air"
+    },
+    {
+      "word": "academic",
+      "pos": "adj",
+      "meaning_vi": "mang tính học thuật",
+      "ipa": "/ˌækəˈdemɪk/",
+      "syllables": "ac·a·DEM·ic",
+      "example": "The journal publishes strict academic research about modern history and ancient cultures.",
+      "word_family": [
+        {
+          "form": "academically",
+          "pos": "adv",
+          "sentence": "The school supports students who struggle ___ with their maths and science."
+        }
+      ],
+      "image_hint": "a heavy textbook and a glowing microscope on a table"
+    },
+    {
+      "word": "semester",
+      "pos": "n",
+      "meaning_vi": "học kỳ",
+      "ipa": "/sɪˈmestə/",
+      "syllables": "se·MES·ter",
+      "example": "Students take five different modules during the autumn semester of their degree.",
+      "word_family": [],
+      "image_hint": "a calendar page with a big red circle around autumn months"
+    },
+    {
+      "word": "syllabus",
+      "pos": "n",
+      "meaning_vi": "đề cương khóa học",
+      "ipa": "/ˈsɪləbəs/",
+      "syllables": "SYL·la·bus",
+      "example": "The physics syllabus covers quantum mechanics and basic thermodynamics in great detail.",
+      "word_family": [],
+      "image_hint": "a clipboard holding a document with neat bullet points and charts"
+    },
+    {
+      "word": "tertiary",
+      "pos": "adj",
+      "meaning_vi": "thuộc giáo dục đại học",
+      "ipa": "/ˈtɜːʃəri/",
+      "syllables": "TER·tiar·y",
+      "example": "More school leavers are choosing tertiary education to improve their job prospects.",
+      "word_family": [],
+      "image_hint": "a classic university gate with tall pillars and large iron doors"
+    },
+    {
+      "word": "theoretical",
+      "pos": "adj",
+      "meaning_vi": "mang tính lý thuyết",
+      "ipa": "/ˌθɪəˈretɪkl/",
+      "syllables": "the·o·RET·i·cal",
+      "example": "The course relies too much on theoretical concepts rather than practical skills.",
+      "word_family": [
+        {
+          "form": "theory",
+          "pos": "n",
+          "sentence": "Einstein developed the famous ___ of relativity during the early twentieth century."
+        }
+      ],
+      "image_hint": "a glowing floating brain surrounded by spinning planets and geometric shapes"
+    },
+    {
+      "word": "tutorial",
+      "pos": "n",
+      "meaning_vi": "lớp học phụ đạo",
+      "ipa": "/tjuːˈtɔːriəl/",
+      "syllables": "tu·TO·ri·al",
+      "example": "The professor holds a small tutorial every Tuesday to discuss the lecture.",
+      "word_family": [
+        {
+          "form": "tutor",
+          "pos": "n",
+          "sentence": "The private ___ helped him improve his writing skills before the exam."
+        }
+      ],
+      "image_hint": "a teacher helping two students sitting at a round wooden table"
+    },
+    {
+      "word": "absent",
+      "pos": "adj",
+      "meaning_vi": "vắng mặt",
+      "ipa": "/ˈæbsənt/",
+      "syllables": "AB·sent",
+      "example": "Pupils who are frequently absent often miss crucial explanations and fall behind.",
+      "word_family": [
+        {
+          "form": "absence",
+          "pos": "n",
+          "sentence": "A long ___ from school can severely damage a student's final grades."
+        }
+      ],
+      "image_hint": "an empty wooden chair sitting alone in a bright modern classroom"
+    },
+    {
+      "word": "dropout",
+      "pos": "n",
+      "meaning_vi": "người bỏ học",
+      "ipa": "/ˈdrɒpaʊt/",
+      "syllables": "DROP·out",
+      "example": "The famous billionaire was a university dropout who started his own company.",
+      "word_family": [],
+      "image_hint": "a student walking away from a school building carrying a backpack"
+    },
+    {
+      "word": "cram",
+      "pos": "v",
+      "meaning_vi": "nhồi nhét kiến thức",
+      "ipa": "/kræm/",
+      "syllables": "CRAM",
+      "example": "Many stressed teenagers cram for their final exams late into the night.",
+      "word_family": [],
+      "image_hint": "a tired student reading a large book surrounded by empty coffee cups"
+    },
+    {
+      "word": "fall behind",
+      "pos": "phr",
+      "meaning_vi": "tụt lại phía sau",
+      "ipa": "/fɔːl bɪˈhaɪnd/",
+      "syllables": "FALL be·hind",
+      "example": "If you skip classes, you will quickly fall behind your hardworking classmates.",
+      "word_family": [],
+      "image_hint": "a runner looking tired while other runners sprint far ahead"
+    },
+    {
+      "word": "catch up",
+      "pos": "phr",
+      "meaning_vi": "đuổi kịp",
+      "ipa": "/kætʃ ʌp/",
+      "syllables": "CATCH up",
+      "example": "She studied hard all weekend to catch up with the missed lessons.",
+      "word_family": [],
+      "image_hint": "a runner running fast to reach the group ahead of him"
+    },
+    {
+      "word": "drop out",
+      "pos": "phr",
+      "meaning_vi": "bỏ học giữa chừng",
+      "ipa": "/drɒp aʊt/",
+      "syllables": "DROP out",
+      "example": "Financial problems force many bright students to drop out of their degree.",
+      "word_family": [],
+      "image_hint": "a person leaving a classroom holding a cardboard box of books"
+    },
+    {
+      "word": "intensive",
+      "pos": "adj",
+      "meaning_vi": "chuyên sâu",
+      "ipa": "/ɪnˈtensɪv/",
+      "syllables": "in·TEN·sive",
+      "example": "The school offers an intensive summer course for teenagers learning foreign languages.",
+      "word_family": [
+        {
+          "form": "intensively",
+          "pos": "adv",
+          "sentence": "The athletes trained ___ for six months before the national sports competition."
+        }
+      ],
+      "image_hint": "a bright glowing book surrounded by lightning bolts and sparkling stars"
+    }
+  ]
+}
