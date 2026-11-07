@@ -49,8 +49,8 @@ async function home(studentId: string): Promise<HomeResponse> {
     const a = plan.assignments.get(m.id);
     return {
       assignmentId: a?.id ?? null, milestoneId: m.id, date: m.date, kind: m.kind, status: plan.status.get(m.id)!,
-      deadlineAt: m.deadline_at, currentPct: scoreIfSubmittedAt(m.date, t), tomorrowPct: scoreIfSubmittedAt(m.date, tomorrow),
-      daysLateNow: daysLate(m.date, t), blocked: i > 0 && owing.length > 0,
+      deadlineAt: m.deadline_at, currentPct: scoreIfSubmittedAt(vnDate(m.deadline_at), t), tomorrowPct: scoreIfSubmittedAt(vnDate(m.deadline_at), tomorrow),
+      daysLateNow: daysLate(vnDate(m.deadline_at), t), blocked: i > 0 && owing.length > 0,
       progress: { done: Math.min(a?.answered_count ?? 0, a?.required_count ?? 0), required: a?.required_count ?? null },
     };
   });
@@ -295,7 +295,7 @@ async function submit(studentId: string, assignmentId: string): Promise<SubmitRe
     throw new HttpError(409, 'not_ready', 'Còn từ làm sai chưa làm đúng lại');
   }
   const t = now();
-  const late = daysLate(m.date, t);
+  const late = daysLate(vnDate(m.deadline_at), t);
   const score = scoreForDaysLate(late);
   if (score === null) throw new HttpError(409, 'abandoned', 'Bài này đã quá 7 ngày, không nộp được nữa');
   const ws = weekStart(m.date);

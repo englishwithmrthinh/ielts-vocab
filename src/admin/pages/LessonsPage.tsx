@@ -20,6 +20,17 @@ export default function LessonsPage() {
   const [lessons, setLessons] = useState<LessonSummary[] | null>(null);
   const [error, setError] = useState<unknown>(null);
 
+  const [busy, setBusy] = useState(false);
+  const reload = () => adminApi.lessons().then((r) => setLessons(r.lessons), setError);
+  const remove = async (l: LessonSummary) => {
+    const typed = prompt(
+      `XOÁ "Bộ từ ${l.number}" (${l.word_count} từ, đã giao ${l.student_count} học sinh)?\n\n` +
+      'Các từ chỉ có trong bộ này sẽ bị gỡ khỏi kho từ và khỏi các bài CHƯA nộp của học sinh. Bài đã nộp, điểm, XP giữ nguyên. Không khôi phục được.\n\nGõ chữ XOA để xác nhận:',
+    );
+    if (typed?.trim().toUpperCase() !== 'XOA') return;
+    setBusy(true); setError(null);
+    try { await adminApi.deleteLesson(l.id); await reload(); } catch (e) { setError(e); } finally { setBusy(false); }
+  };
   useEffect(() => {
     adminApi.lessons().then((r) => setLessons(r.lessons), setError);
   }, []);
@@ -40,8 +51,8 @@ export default function LessonsPage() {
         ) : (
           <ul className="divide-y divide-slate-100">
             {lessons.map((l) => (
-              <li key={l.id}>
-                <Link to={`/admin/bo-tu/${l.id}`} className="flex flex-wrap items-center gap-x-2 gap-y-1 px-4 py-3 text-sm hover:bg-slate-50">
+              <li key={l.id} className="flex items-center">
+                <Link to={`/admin/bo-tu/${l.id}`} className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 px-4 py-3 text-sm hover:bg-slate-50">
                 <span className="font-semibold text-slate-900">Bộ từ {l.number}</span>
                 <span className="text-slate-400">·</span>
                 <span className="text-slate-600">{l.word_count} từ</span>
@@ -55,6 +66,9 @@ export default function LessonsPage() {
                 </span>
                 <span className="ml-auto"><Badge tone={STATUS[l.status].tone}>{STATUS[l.status].label}</Badge></span>
                 </Link>
+                <Button variant="ghost" disabled={busy} onClick={() => remove(l)} aria-label={`Xoá bộ từ ${l.number}`}>
+                  <span className="text-red-700">Xoá</span>
+                </Button>
               </li>
             ))}
           </ul>
