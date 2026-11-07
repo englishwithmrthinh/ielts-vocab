@@ -7,7 +7,7 @@ import type { AssignmentStatus, ISODate, ISODateTime } from './types';
 import { LATENESS } from './question-config';
 import { daysBetween, vnDate } from './time';
 
-/** Số ngày trễ khi nộp vào `at` cho mốc có ngày `milestoneDate` */
+/** Số ngày trễ khi nộp vào `at`. Truyền NGÀY HẠN (vnDate(m.deadline_at)) để hạn đã gia hạn được tính đúng. */
 export function daysLate(milestoneDate: ISODate, at: ISODateTime): number {
   return Math.max(0, daysBetween(milestoneDate, vnDate(at)));
 }
@@ -35,5 +35,5 @@ export function unsubmittedStatus(
   const t = Date.parse(now);
   if (t < Date.parse(m.opens_at)) return 'locked';
   if (t <= Date.parse(m.deadline_at)) return 'open';
-  return daysLate(m.date, now) > LATENESS.maxLateDays ? 'abandoned' : 'owing';
+  return daysLate(vnDate(m.deadline_at), now) > LATENESS.maxLateDays ? 'abandoned' : 'owing';
 }

@@ -4,6 +4,7 @@
  */
 import type { Assignment, Milestone } from '../../../shared/types';
 import { daysLate, scoreIfSubmittedAt, unsubmittedStatus } from '../../../shared/lateness';
+import { vnDate } from '../../../shared/time';
 
 export interface AdminOverview {
   now: string;
@@ -48,8 +49,8 @@ export function buildOverview(
       const oldest = mine[0]!;
       owing.push({
         studentId: s.id, code: s.code, name: s.name, classId: s.class_id,
-        count: mine.length, oldestDate: oldest.date, daysLate: daysLate(oldest.date, now),
-        pctNow: scoreIfSubmittedAt(oldest.date, now), pctTomorrow: scoreIfSubmittedAt(oldest.date, tomorrow),
+        count: mine.length, oldestDate: oldest.date, daysLate: daysLate(vnDate(oldest.deadline_at), now),
+        pctNow: scoreIfSubmittedAt(vnDate(oldest.deadline_at), now), pctTomorrow: scoreIfSubmittedAt(vnDate(oldest.deadline_at), tomorrow),
       });
     }
   }
