@@ -1,6 +1,7 @@
 /**
  * API mốc cho trang quản trị (cần cookie quản trị):
  * GET  /api/admin/milestones?month=2026-11   → { milestones: Milestone[] }  (tự tạo tháng nếu chưa có)
+ * GET  /api/admin/milestones/upcoming        → { milestones: Milestone[] } (8 mốc không nghỉ sắp tới, để chọn hạn khi phát hành)
  * POST /api/admin/milestones/off  { id, off } → bật/tắt Nghỉ (chỉ mốc từ hôm nay trở đi)
  * POST /api/admin/milestones/deadline { id, deadline: 'YYYY-MM-DDTHH:mm' (giờ VN) } → đổi hạn nộp (gia hạn / rút ngắn)
  *      Điểm trễ tính theo NGÀY của hạn mới. Bài đã nộp trước đó giữ nguyên điểm.
@@ -21,6 +22,11 @@ export default async (req: Request): Promise<Response> => {
       if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new HttpError(400, 'bad_month', 'Tháng dạng YYYY-MM');
       await ensureMonth(month);
       const rows = must(await db().from('milestones').select('*').eq('month', month).order('date')) as Milestone[];
+      return json({ milestones: rows });
+    }
+    if (url.pathname === '/api/admin/milestones/upcoming' && req.method === 'GET') {
+      const now = new Date().toISOString();
+      const rows = must(await db().from('milestones').select('*').eq('is_off', false).gte('deadline_at', now).order('deadline_at').limit(8)) as Milestone[];
       return json({ milestones: rows });
     }
     if (url.pathname === '/api/admin/milestones/off' && req.method === 'POST') {
@@ -47,4 +53,4 @@ export default async (req: Request): Promise<Response> => {
   }
 };
 
-export const config: Config = { path: ['/api/admin/milestones', '/api/admin/milestones/off', '/api/admin/milestones/deadline'] };
+export const config: Config = { path: ['/api/admin/milestones', '/api/admin/milestones/upcoming', '/api/admin/milestones/off', '/api/admin/milestones/deadline'] };

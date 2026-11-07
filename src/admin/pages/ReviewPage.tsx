@@ -8,6 +8,7 @@ import Infographic from '../../shared-ui/Infographic';
 import { ImagesSection, SingleImageDialog } from '../components/ImageTools';
 import { adminApi, type LessonDetail, type PublishResult } from '../lib/adminApi';
 import { Badge, Button, Card, ErrorBox, inputCls } from '../ui';
+import { MilestonePicker } from '../components/MilestonePicker';
 
 const STATUS = {
   draft: { label: 'Nháp', tone: 'slate' },
@@ -378,12 +379,13 @@ function PublishDialog({ detail, onClose, onDone }: { detail: LessonDetail; onCl
   const missingAudio = detail.words.filter((w) => !w.audio_url).length;
   const missingImage = detail.words.filter((w) => !w.image_url).length;
   const already = detail.lesson.status === 'published';
+  const [mid, setMid] = useState<string | null>(null);
 
   const go = async () => {
     setBusy(true);
     setErr(null);
     try {
-      onDone(await adminApi.publish(detail.lesson.id, [...sel]));
+      onDone(await adminApi.publish(detail.lesson.id, [...sel], already ? null : mid));
     } catch (e) {
       setErr(e);
       setBusy(false);
@@ -395,9 +397,16 @@ function PublishDialog({ detail, onClose, onDone }: { detail: LessonDetail; onCl
       <div className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
         <h2 className="text-lg font-semibold text-slate-900">{already ? 'Thêm học sinh vào' : 'Phát hành'} bộ từ {detail.lesson.number}</h2>
         <p className="mt-1 text-sm text-slate-600">
-          {detail.words.length} từ sẽ vào hộp 1 của các bạn được chọn và xuất hiện ở bài kế tiếp.
+          {detail.words.length} từ sẽ vào hộp 1 của các bạn được chọn{already ? ' và xuất hiện ở bài kế tiếp' : ''}.
           {already ? ' Bạn đã có từ thì giữ nguyên tiến độ.' : ' Có thể thêm học sinh sau, nhưng không gỡ được.'}
         </p>
+        {!already && (
+          <div className="mt-3">
+            <p className="mb-2 text-sm font-medium text-slate-800">Hạn làm lần đầu: bài nào?</p>
+            <MilestonePicker value={mid} onChange={setMid} />
+            <p className="mt-1 text-xs text-slate-500">Từ mới sẽ vào bài của mốc này. Sau đó hệ thống tự xếp các lần ôn.</p>
+          </div>
+        )}
         {missingAudio > 0 && <p className="mt-2 rounded bg-amber-50 px-2 py-1 text-sm text-amber-900">Còn {missingAudio} từ chưa có audio — dạng câu nghe sẽ bỏ qua các từ này.</p>}
         {missingImage > 0 && <p className="mt-2 rounded bg-amber-50 px-2 py-1 text-sm text-amber-900">Còn {missingImage} từ chưa có ảnh — dạng câu ảnh sẽ bỏ qua các từ này.</p>}
         <div className="mt-3 flex items-center justify-between text-sm">

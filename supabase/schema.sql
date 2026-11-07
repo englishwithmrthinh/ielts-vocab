@@ -234,3 +234,7 @@ create index if not exists students_class_idx on students (class_id);
 -- ---------- Mã theo ngày sinh (migration 003) ----------
 alter table classes  add column if not exists code  text;
 alter table students add column if not exists birth text;
+
+-- ---------- Tên bộ từ + mốc hạn (migration 004) ----------
+alter table lessons add column if not exists title text;
+alter table lessons add column if not exists due_milestone_id uuid references milestones(id) on delete set null;

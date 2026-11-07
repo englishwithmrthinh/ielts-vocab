@@ -195,6 +195,12 @@ export async function mockApi<T>(method: string, path: string, body?: unknown): 
   if (route === 'POST /api/admin/milestones/deadline') {
     return ok({ ok: true, deadline_at: new Date(Date.parse(`${b.deadline}:59+07:00`)).toISOString() });
   }
+  if (route === 'GET /api/admin/milestones/upcoming') {
+    return ok({ milestones: [] });
+  }
+  if (route === 'POST /api/admin/lessons/update') {
+    return ok({ ok: true, moved: 0 });
+  }
   if (route === 'POST /api/admin/lessons/delete') {
     return ok({ ok: true, removedWords: 0, affectedStudents: 0 });
   }

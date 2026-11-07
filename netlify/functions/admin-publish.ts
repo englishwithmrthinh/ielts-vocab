@@ -11,13 +11,13 @@ import { publishLesson } from '../lib/publish';
 
 export default handler(['POST'], async (req) => {
   requireAdmin(req);
-  const { lesson_id, student_ids } = await readJson<{ lesson_id?: string; student_ids?: unknown }>(req);
+  const { lesson_id, student_ids, milestone_id } = await readJson<{ lesson_id?: string; student_ids?: unknown; milestone_id?: string | null }>(req);
   if (!lesson_id) throw new HttpError(400, 'bad_input', 'Thiếu lesson_id');
   if (!Array.isArray(student_ids) || !student_ids.every((s) => typeof s === 'string')) {
     throw new HttpError(400, 'bad_input', 'Danh sách học sinh không hợp lệ');
   }
   const ids = [...new Set(student_ids as string[])];
-  const r = await publishLesson(lesson_id, ids);
+  const r = await publishLesson(lesson_id, ids, milestone_id ?? null);
   return json({ ...r, students: ids.length });
 });
 
