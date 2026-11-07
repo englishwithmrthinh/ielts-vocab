@@ -1,5 +1,8 @@
 /**
- * Xoá một bộ từ. Chủ sở hữu: Sếp. Cần cookie admin.
+ * Sửa / xoá bộ từ. Chủ sở hữu: Sếp. Cần cookie admin.
+ * POST /api/admin/lessons/update { id, title?, milestone_id? } → { ok, moved }
+ *      title: tên bộ từ (rỗng = "Bộ từ N").
+ *      milestone_id: đổi mốc hạn của bộ từ đã phát hành → từ CHƯA làm lần nào (hộp 1) của bộ này dời sang mốc mới.
  * POST /api/admin/lessons/delete { id } → { ok, removedWords, affectedStudents }
  *
  * - Từ CHỈ thuộc bộ này: gỡ khỏi kho từ của các học sinh được giao bộ này, gỡ khỏi các bài chưa nộp
@@ -11,6 +14,7 @@ import type { Config } from '@netlify/functions';
 import { requireAdmin } from '../lib/auth';
 import { errorResponse, HttpError, json, readJson } from '../lib/http';
 import { db, must } from '../lib/supabase';
+import { milestoneIdx } from '../lib/publish';
 
 async function removeLesson(id: string) {
   const [lwR, attR] = await Promise.all([
@@ -58,10 +62,42 @@ async function removeLesson(id: string) {
   return { ok: true, removedWords, affectedStudents: studentIds.length };
 }
 
+async function updateLesson(b: { id?: string; title?: string | null; milestone_id?: string | null }) {
+  if (!b.id) throw new HttpError(400, 'bad_input', 'Thiếu id');
+  const patch: Record<string, unknown> = {};
+  if (b.title !== undefined) {
+    const t = String(b.title ?? '').trim().replace(/\s+/g, ' ');
+    if (t.length > 80) throw new HttpError(400, 'bad_title', 'Tên bộ từ tối đa 80 ký tự');
+    patch.title = t || null;
+  }
+  let moved = 0;
+  if (b.milestone_id) {
+    const idx = await milestoneIdx(b.milestone_id);
+    patch.due_milestone_id = b.milestone_id;
+    const [lwR, attR] = await Promise.all([
+      db().from('lesson_words').select('word_id').eq('lesson_id', b.id),
+      db().from('attendance').select('student_id').eq('lesson_id', b.id),
+    ]);
+    const words = (must(lwR) as { word_id: string }[]).map((r) => r.word_id);
+    const studs = (must(attR) as { student_id: string }[]).map((r) => r.student_id);
+    if (words.length && studs.length) {
+      const r = must(await db().from('student_words').update({ due_idx: idx })
+        .in('student_id', studs).in('word_id', words).eq('box', 1).is('last_answered_at', null).select('word_id')) as unknown[];
+      moved = r.length;
+    }
+  }
+  if (Object.keys(patch).length) {
+    const r = must(await db().from('lessons').update(patch).eq('id', b.id).select('id')) as unknown[];
+    if (!r.length) throw new HttpError(404, 'not_found', 'Không tìm thấy bộ từ');
+  }
+  return { ok: true, moved };
+}
+
 export default async (req: Request): Promise<Response> => {
   try {
     requireAdmin(req);
     if (req.method !== 'POST') throw new HttpError(405, 'method_not_allowed', 'Phương thức không hỗ trợ');
+    if (new URL(req.url).pathname === '/api/admin/lessons/update') return json(await updateLesson(await readJson(req)));
     const { id } = await readJson<{ id?: string }>(req);
     if (!id) throw new HttpError(400, 'bad_input', 'Thiếu id');
     return json(await removeLesson(id));
@@ -70,4 +106,4 @@ export default async (req: Request): Promise<Response> => {
   }
 };
 
-export const config: Config = { path: '/api/admin/lessons/delete' };
+export const config: Config = { path: ['/api/admin/lessons/delete', '/api/admin/lessons/update'] };
