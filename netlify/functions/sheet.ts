@@ -12,7 +12,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import type { Assignment, AssignmentStatus, Milestone } from '../../shared/types';
 import { PASS_BOX } from '../../shared/types';
 import { daysLate, scoreIfSubmittedAt, unsubmittedStatus } from '../../shared/lateness';
-import { monthKey, vnDate, vnStartOfDay, nextMonth } from '../../shared/time';
+import { addDays, isoWeekday, monthKey, nextMonth, vnDate, vnStartOfDay, weekStart } from '../../shared/time';
 import { requireAdmin } from '../lib/auth';
 import { env } from '../lib/env';
 import { errorResponse, HttpError, json } from '../lib/http';
@@ -54,7 +54,15 @@ function html(month: string, tabs: [string, (string | number | null | undefined)
       ${head.map((x) => `<p class="note">${x.map(e).join(' · ')}</p>`).join('')}
       <p><button onclick="dl(${i})">⬇ Tải file mở bằng Excel / Google Sheets</button> <span class="cnt">${r.length} dòng</span></p>
       <div class="wrap"><table><thead><tr>${(h ?? []).map((x) => `<th>${e(x)}</th>`).join('')}</tr></thead>
-      <tbody>${r.length ? r.map((x) => `<tr>${x.map((v) => `<td class="${color(String(v ?? ''))}">${e(v)}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${(h ?? []).length || 1}">Chưa có dữ liệu</td></tr>`}</tbody></table></div>
+      <tbody>${r.length ? r.map((x) => {
+        const ci = (h ?? []).indexOf('Mã');
+        const code = ci >= 0 ? String(x[ci] ?? '') : '';
+        return `<tr>${x.map((v, j) => {
+          const txt = e(v);
+          const link = code && (j === ci || (h ?? [])[j] === 'Tên') ? `<a class="hs" href="?hs=${encodeURIComponent(code)}&m=${month}">${txt}</a>` : txt;
+          return `<td class="${color(String(v ?? ''))}">${link}</td>`;
+        }).join('')}</tr>`;
+      }).join('') : `<tr><td colspan="${(h ?? []).length || 1}">Chưa có dữ liệu</td></tr>`}</tbody></table></div>
       <textarea hidden id="csv${i}">${e(csvRows)}</textarea></section>`;
   }).join('');
   const nav = tabs.map(([n], i) => `<a href="#" data-i="${i}" class="${i ? '' : 'on'}">${e(n)}</a>`).join('');
@@ -69,14 +77,82 @@ nav a.on{background:var(--teal);color:#fff;border-color:var(--teal)}
 .wrap{overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:12px;max-height:75vh}
 table{border-collapse:collapse;width:100%;white-space:nowrap}th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left}
 th{position:sticky;top:0;background:#efe9de;font-weight:600}td.ok{background:var(--ok)}td.mid{background:var(--mid)}td.bad{background:var(--bad)}
+a.hs{color:var(--teal);font-weight:600;text-decoration:underline;text-underline-offset:2px}
 button{background:var(--teal);color:#fff;border:0;border-radius:8px;padding:8px 12px;font:inherit;cursor:pointer}.cnt{color:#7a7067;margin-left:8px}
 form{display:inline;margin-left:8px}input{font:inherit;padding:4px 6px;border-radius:6px;border:1px solid var(--line)}
 </style></head><body><header><h1>BÁO CÁO LỚP</h1><div>Mở lại trang để cập nhật · <form><label>Tháng <input type="month" name="m" value="${e(month)}" onchange="this.form.submit()"></label></form></div></header>
-<nav>${nav}</nav>${body}
+<p style="padding:0 16px;margin:10px 0 0;color:#5c534b">Bấm vào <b>mã</b> hoặc <b>tên</b> một học sinh để xem lịch cả tháng của em đó.</p><nav>${nav}</nav>${body}
 <script>
 document.querySelectorAll('nav a').forEach(a=>a.onclick=ev=>{ev.preventDefault();document.querySelectorAll('nav a,.tab').forEach(x=>x.classList.remove('on'));a.classList.add('on');document.getElementById('t'+a.dataset.i).classList.add('on')});
 function dl(i){const t=document.getElementById("csv"+i).value;const b=new Blob(['\ufeff'+t],{type:'text/csv;charset=utf-8'});const u=URL.createObjectURL(b);const l=document.createElement('a');l.href=u;l.download=document.querySelectorAll('nav a')[i].textContent+'.csv';l.click();URL.revokeObjectURL(u)}
 </script></body></html>`;
+  return new Response(page, { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } });
+}
+
+/** Lịch tháng của MỘT học sinh: mỗi mốc ghi Đúng hạn / Trễ N ngày / Đang làm x/y / Nợ / Bỏ / Nghỉ (không ghi điểm) */
+async function studentCalendar(code: string, month: string, now: string): Promise<Response> {
+  const e = (v: unknown) => String(v ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
+  const st = must(await db().from('students').select('id,code,name,created_at,class_id').eq('code', code).maybeSingle()) as
+    { id: string; code: string; name: string; created_at: string; class_id: string | null } | null;
+  if (!st) return new Response('Không tìm thấy học sinh', { status: 404, headers: { 'content-type': 'text/plain; charset=utf-8' } });
+  const [msR, asR, clR] = await Promise.all([
+    db().from('milestones').select('*').eq('month', month).order('date'),
+    db().from('assignments').select('*').eq('student_id', st.id),
+    st.class_id ? db().from('classes').select('name').eq('id', st.class_id).maybeSingle() : Promise.resolve({ data: null, error: null }),
+  ]);
+  const ms = must(msR) as Milestone[];
+  const byM = new Map((must(asR) as Assignment[]).map((a) => [a.milestone_id, a]));
+  const cls = (clR.data as { name: string } | null)?.name ?? 'Chưa xếp lớp';
+  const vnDM = (iso: string) => { const d = new Date(Date.parse(iso) + 7 * 3600_000).toISOString(); return `${d.slice(8, 10)}/${d.slice(5, 7)}`; };
+  const vnHM = (iso: string) => new Date(Date.parse(iso) + 7 * 3600_000).toISOString().slice(11, 16);
+  const cnt = { ok: 0, late: 0, owing: 0, ab: 0, open: 0 };
+  const cell = new Map<string, { cls: string; title: string; sub: string }>();
+  for (const m of ms) {
+    if (m.is_off) { cell.set(m.date, { cls: 'off', title: 'Nghỉ', sub: '' }); continue; }
+    if (Date.parse(m.deadline_at) < Date.parse(st.created_at)) { cell.set(m.date, { cls: 'off', title: '—', sub: 'chưa vào lớp' }); continue; }
+    const a = byM.get(m.id);
+    const prog = a ? `làm ${Math.min(a.answered_count, a.required_count ?? a.answered_count)}/${a.required_count ?? '?'} câu` : 'chưa làm câu nào';
+    if (a?.status === 'submitted') {
+      if (a.days_late) { cnt.late++; cell.set(m.date, { cls: 'mid', title: `Trễ ${a.days_late} ngày`, sub: `nộp ${a.submitted_at ? vnDM(a.submitted_at) : ''} · xong` }); }
+      else { cnt.ok++; cell.set(m.date, { cls: 'ok', title: '✓ Đúng hạn', sub: `nộp ${a.submitted_at ? vnDM(a.submitted_at) + ' ' + vnHM(a.submitted_at) : ''}` }); }
+      continue;
+    }
+    const s = unsubmittedStatus(m, now);
+    if (s === 'locked') cell.set(m.date, { cls: '', title: 'Chưa mở', sub: `hạn ${vnDM(m.deadline_at)} ${vnHM(m.deadline_at)}` });
+    else if (s === 'open') { cnt.open++; cell.set(m.date, { cls: 'open', title: a ? 'Đang làm' : 'Chưa làm', sub: `${prog} · hạn ${vnHM(m.deadline_at)}` }); }
+    else if (s === 'owing') { cnt.owing++; cell.set(m.date, { cls: 'bad', title: `Nợ · trễ ${daysLate(vnDate(m.deadline_at), now)} ngày`, sub: prog }); }
+    else if (s === 'abandoned') { cnt.ab++; cell.set(m.date, { cls: 'bad', title: 'Bỏ bài', sub: 'quá 7 ngày không nộp' }); }
+  }
+  // Lưới lịch Thứ 2 → CN
+  const first = `${month}-01`;
+  const days: string[] = [];
+  for (let d = weekStart(first); d < `${nextMonth(month)}-01` || isoWeekday(d) !== 1; d = addDays(d, 1)) days.push(d);
+  const weeks: string[][] = [];
+  for (let i = 0; i < days.length; i += 7) weeks.push(days.slice(i, i + 7));
+  const td = (d: string) => {
+    const c = cell.get(d);
+    const inM = d.startsWith(month);
+    return `<td class="${inM ? '' : 'out'}"><div class="dn">${Number(d.slice(8))}</div>${c ? `<div class="st ${c.cls}"><b>${e(c.title)}</b><span>${e(c.sub)}</span></div>` : ''}</td>`;
+  };
+  const prev = (() => { const [y, mm] = month.split('-').map(Number) as [number, number]; return mm === 1 ? `${y - 1}-12` : `${y}-${String(mm - 1).padStart(2, '0')}`; })();
+  const page = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${e(st.name)} · ${month}</title><style>
+:root{--bg:#f6f2ea;--card:#fbf9f4;--ink:#2b2622;--line:#e2d9cb;--teal:#1f4e52}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.4 system-ui,sans-serif}
+header{background:var(--teal);color:#f3e9d2;padding:14px 16px}h1{margin:0;font:600 22px Georgia,serif}
+header a{color:#f3e9d2}.wrap{padding:12px 16px 28px;max-width:1100px}
+.sum{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 14px}.sum span{background:var(--card);border:1px solid var(--line);border-radius:99px;padding:5px 12px}
+table{width:100%;border-collapse:separate;border-spacing:6px;table-layout:fixed}th{font-weight:600;color:#5c534b;text-align:left;padding:0 4px}
+td{background:var(--card);border:1px solid var(--line);border-radius:10px;vertical-align:top;height:92px;padding:6px}td.out{opacity:.45}
+.dn{font-size:12px;color:#7a7067}.st{margin-top:4px;border-radius:8px;padding:5px 6px}.st b{display:block;font-size:13px}.st span{display:block;font-size:11.5px;color:#5c534b;margin-top:2px}
+.ok{background:#e2ecdf}.mid{background:#f5e9cc}.bad{background:#f2dcdc}.open{background:#e3ece9}.off{background:#ece7df;color:#7a7067}
+@media(max-width:640px){td{height:auto;min-height:70px;padding:4px}.st b{font-size:11.5px}.st span{font-size:10.5px}}
+.nav a{color:var(--teal);font-weight:600}
+</style></head><body><header><div><a href="/bao-cao-lop?m=${month}">← Bảng báo cáo lớp</a></div><h1>${e(st.name)}</h1><div>${e(st.code)} · ${e(cls)}</div></header>
+<div class="wrap"><p class="nav"><a href="?hs=${encodeURIComponent(st.code)}&m=${prev}">‹ Tháng trước</a> &nbsp; <b>Tháng ${month.slice(5)}/${month.slice(0, 4)}</b> &nbsp; <a href="?hs=${encodeURIComponent(st.code)}&m=${nextMonth(month)}">Tháng sau ›</a></p>
+<div class="sum"><span>✓ Đúng hạn: <b>${cnt.ok}</b></span><span>Trễ: <b>${cnt.late}</b></span><span>Đang mở: <b>${cnt.open}</b></span><span>Đang nợ: <b>${cnt.owing}</b></span><span>Bỏ bài: <b>${cnt.ab}</b></span></div>
+<table><thead><tr><th>T2</th><th>T3</th><th>T4</th><th>T5</th><th>T6</th><th>T7</th><th>CN</th></tr></thead>
+<tbody>${weeks.map((w) => `<tr>${w.map(td).join('')}</tr>`).join('')}</tbody></table></div></body></html>`;
   return new Response(page, { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } });
 }
 
@@ -245,6 +321,8 @@ export default async (req: Request): Promise<Response> => {
       try { requireAdmin(req); } catch { return Response.redirect(`${url.protocol}//${url.host}/admin`, 302); }
       const qm = url.searchParams.get('m');
       const month = qm && /^\d{4}-\d{2}$/.test(qm) ? qm : monthKey(vnDate(now));
+      const hs = url.searchParams.get('hs');
+      if (hs) return studentCalendar(hs.trim().toUpperCase(), month, now);
       const [a, b, c, d, e] = await Promise.all([homNay(now), chuaLam(now), thang(now, month), deXuat(), baoLoi()]);
       return html(month, [['Hôm nay', a], ['Chưa làm', b], [`Tháng ${month}`, c], ['Từ HS đề xuất', d], ['Câu báo lỗi', e]]);
     }

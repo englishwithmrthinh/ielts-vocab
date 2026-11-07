@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { adminApi, type LessonSummary } from '../lib/adminApi';
 import { Badge, Button, Card, ErrorBox, PageHeader } from '../ui';
+import { MilestonePicker, vnDeadline } from '../components/MilestonePicker';
 
 const STATUS: Record<LessonSummary['status'], { label: string; tone: 'slate' | 'amber' | 'blue' | 'teal' }> = {
   draft: { label: 'Nháp', tone: 'slate' },
@@ -21,6 +22,18 @@ export default function LessonsPage() {
   const [error, setError] = useState<unknown>(null);
 
   const [busy, setBusy] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [title, setTitle] = useState('');
+  const [mid, setMid] = useState<string | null>(null);
+  const startEdit = (l: LessonSummary) => { setEditId(l.id); setTitle(l.title ?? ''); setMid(null); };
+  const save = async (l: LessonSummary) => {
+    setBusy(true); setError(null);
+    try {
+      const r = await adminApi.updateLesson(l.id, { title, ...(mid && mid !== l.due_milestone_id ? { milestone_id: mid } : {}) });
+      if (mid && mid !== l.due_milestone_id && l.status === 'published') alert(`Đã dời ${r.moved} lượt từ chưa làm sang mốc mới.`);
+      setEditId(null); await reload();
+    } catch (e) { setError(e); } finally { setBusy(false); }
+  };
   const reload = () => adminApi.lessons().then((r) => setLessons(r.lessons), setError);
   const remove = async (l: LessonSummary) => {
     const typed = prompt(
@@ -51,9 +64,11 @@ export default function LessonsPage() {
         ) : (
           <ul className="divide-y divide-slate-100">
             {lessons.map((l) => (
-              <li key={l.id} className="flex items-center">
+              <li key={l.id} className="flex flex-wrap items-center">
                 <Link to={`/admin/bo-tu/${l.id}`} className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 px-4 py-3 text-sm hover:bg-slate-50">
-                <span className="font-semibold text-slate-900">Bộ từ {l.number}</span>
+                <span className="font-semibold text-slate-900">{l.title || `Bộ từ ${l.number}`}</span>
+                {l.title && <span className="text-xs text-slate-400">(số {l.number})</span>}
+                {l.due && <><span className="text-slate-400">·</span><span className="font-medium text-teal-800">Hạn {vnDeadline(l.due.deadline_at)}</span></>}
                 <span className="text-slate-400">·</span>
                 <span className="text-slate-600">{l.word_count} từ</span>
                 <span className="text-slate-400">·</span>
@@ -66,9 +81,28 @@ export default function LessonsPage() {
                 </span>
                 <span className="ml-auto"><Badge tone={STATUS[l.status].tone}>{STATUS[l.status].label}</Badge></span>
                 </Link>
+                <Button variant="ghost" disabled={busy} onClick={() => (editId === l.id ? setEditId(null) : startEdit(l))}>Sửa</Button>
                 <Button variant="ghost" disabled={busy} onClick={() => remove(l)} aria-label={`Xoá bộ từ ${l.number}`}>
                   <span className="text-red-700">Xoá</span>
                 </Button>
+                {editId === l.id && (
+                  <div className="w-full space-y-3 border-t border-slate-100 bg-slate-50 px-4 py-3">
+                    <label className="block text-sm">
+                      <span className="font-medium text-slate-800">Tên bộ từ</span>
+                      <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={`Bộ từ ${l.number}`} maxLength={80}
+                        className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                    </label>
+                    <div>
+                      <p className="mb-2 text-sm font-medium text-slate-800">Hạn làm lần đầu {l.due ? `(đang: ${vnDeadline(l.due.deadline_at)})` : ''}</p>
+                      <MilestonePicker value={mid ?? l.due_milestone_id ?? null} onChange={setMid} autoSelect={false} />
+                      {l.status === 'published' && <p className="mt-1 text-xs text-slate-500">Đổi hạn: chỉ những từ học sinh CHƯA làm lần nào được dời sang mốc mới; từ đã làm giữ lịch ôn.</p>}
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button variant="ghost" onClick={() => setEditId(null)} disabled={busy}>Huỷ</Button>
+                      <Button onClick={() => save(l)} disabled={busy}>{busy ? 'Đang lưu…' : 'Lưu'}</Button>
+                    </div>
+                  </div>
+                )}
               </li>
             ))}
           </ul>

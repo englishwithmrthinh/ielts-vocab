@@ -21,6 +21,11 @@ export interface LessonSummary {
   student_count: number;
   class_names?: string[];
   unassigned_count?: number;
+  /** Tên bộ từ; null = "Bộ từ N" */
+  title?: string | null;
+  due_milestone_id?: string | null;
+  /** Mốc đầu tiên từ mới phải làm */
+  due?: { date: string; kind: string; deadline_at: string } | null;
 }
 
 export interface ExistingWord { word: string; pos: string; id: string; has_audio: boolean; has_image: boolean }
@@ -97,8 +102,11 @@ export const adminApi = {
     call<{ ok: true }>('POST', '/api/admin/suggestions/update', { id, status, ...(wordId ? { word_id: wordId } : {}) }),
   flags: () => call<AdminFlagsResponse>('GET', '/api/admin/flags'),
 
-  publish: (lessonId: string, studentIds: string[]) =>
-    call<PublishResult>('POST', '/api/admin/lessons/publish', { lesson_id: lessonId, student_ids: studentIds }),
+  publish: (lessonId: string, studentIds: string[], milestoneId?: string | null) =>
+    call<PublishResult>('POST', '/api/admin/lessons/publish', { lesson_id: lessonId, student_ids: studentIds, ...(milestoneId ? { milestone_id: milestoneId } : {}) }),
+  upcomingMilestones: () => call<{ milestones: Milestone[] }>('GET', '/api/admin/milestones/upcoming'),
+  updateLesson: (id: string, patch: { title?: string | null; milestone_id?: string }) =>
+    call<{ ok: true; moved: number }>('POST', '/api/admin/lessons/update', { id, ...patch }),
 };
 
 export interface LessonDetail { lesson: Lesson; words: Word[]; studentIds: string[] }

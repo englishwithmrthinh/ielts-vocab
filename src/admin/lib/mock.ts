@@ -195,6 +195,18 @@ export async function mockApi<T>(method: string, path: string, body?: unknown): 
   if (route === 'POST /api/admin/milestones/deadline') {
     return ok({ ok: true, deadline_at: new Date(Date.parse(`${b.deadline}:59+07:00`)).toISOString() });
   }
+  if (route === 'GET /api/admin/milestones/upcoming') {
+    const now = new Date();
+    const m0 = now.toISOString().slice(0, 7);
+    const m1 = new Date(now.getFullYear(), now.getMonth() + 1, 15).toISOString().slice(0, 7);
+    ensureMonth(m0);
+    ensureMonth(m1);
+    const t = now.toISOString();
+    return ok({ milestones: state.milestones.filter((m) => !m.is_off && m.deadline_at >= t).sort((a, b) => a.deadline_at.localeCompare(b.deadline_at)).slice(0, 8) });
+  }
+  if (route === 'POST /api/admin/lessons/update') {
+    return ok({ ok: true, moved: 0 });
+  }
   if (route === 'POST /api/admin/lessons/delete') {
     return ok({ ok: true, removedWords: 0, affectedStudents: 0 });
   }

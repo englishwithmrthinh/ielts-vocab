@@ -30,8 +30,8 @@ async function findExisting(items: { word: string; pos: string }[]): Promise<Map
 
 async function listLessons() {
   const lessons = must(
-    await db().from('lessons').select('id,number,taught_on,status,published_at,created_at').order('taught_on', { ascending: false }).limit(200),
-  ) as Pick<Lesson, 'id' | 'number' | 'taught_on' | 'status' | 'published_at' | 'created_at'>[];
+    await db().from('lessons').select('id,number,taught_on,status,published_at,created_at,title,due_milestone_id,dm:milestones(date,kind,deadline_at)').order('taught_on', { ascending: false }).limit(200),
+  ) as unknown as (Pick<Lesson, 'id' | 'number' | 'taught_on' | 'status' | 'published_at' | 'created_at'> & { title: string | null; due_milestone_id: string | null; dm: { date: string; kind: string; deadline_at: string } | null })[];
   const ids = lessons.map((l) => l.id);
   const words = ids.length ? (must(await db().from('lesson_words').select('lesson_id').in('lesson_id', ids)) as { lesson_id: string }[]) : [];
   const att = ids.length ? (must(await db().from('attendance').select('lesson_id,student_id').in('lesson_id', ids)) as { lesson_id: string; student_id: string }[]) : [];
@@ -55,7 +55,7 @@ async function listLessons() {
     return { class_names: [...names].sort((a, b) => a.localeCompare(b, 'vi')), unassigned_count: unassigned };
   };
   return {
-    lessons: lessons.map((l) => ({ ...l, word_count: count(words, l.id), student_count: count(att, l.id), ...classesFor(l.id) })),
+    lessons: lessons.map(({ dm, ...l }) => ({ ...l, due: dm, word_count: count(words, l.id), student_count: count(att, l.id), ...classesFor(l.id) })),
     nextNumber,
   };
 }
