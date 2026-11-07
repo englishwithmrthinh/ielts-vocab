@@ -64,6 +64,8 @@ export const adminApi = {
 
   milestones: (month: string) => call<{ milestones: Milestone[] }>('GET', `/api/admin/milestones?month=${month}`),
   setOff: (id: string, off: boolean) => call<{ ok: true }>('POST', '/api/admin/milestones/off', { id, off }),
+  setDeadline: (id: string, deadline: string) => call<{ ok: true; deadline_at: string }>('POST', '/api/admin/milestones/deadline', { id, deadline }),
+  deleteLesson: (id: string) => call<{ ok: true; removedWords: number; affectedStudents: number }>('POST', '/api/admin/lessons/delete', { id }),
 
   lessons: () => call<{ lessons: LessonSummary[]; nextNumber: number }>('GET', '/api/admin/lessons'),
   checkWords: (words: { word: string; pos: string }[]) =>

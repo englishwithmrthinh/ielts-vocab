@@ -157,7 +157,7 @@ async function homNay(now: string) {
     rows.push([
       s.cls, s.code, s.name, st ? STATUS_VI[st] : '',
       a ? `${a.answered_count}/${a.required_count ?? '?'}` : '',
-      a?.score_pct ?? (st === 'owing' && m ? `nếu nộp giờ: ${scoreIfSubmittedAt(m.date, now)}%` : ''),
+      a?.score_pct ?? (st === 'owing' && m ? `nếu nộp giờ: ${scoreIfSubmittedAt(vnDate(m.deadline_at), now)}%` : ''),
       mine.length, mine.length ? Math.round((100 * mine.filter((x) => x.correct).length) / mine.length) : '',
       owing, pass.filter((x) => x.student_id === s.id).length,
     ]);
@@ -177,7 +177,7 @@ async function chuaLam(now: string) {
         s.cls, s.code, s.name, `${KIND[m.kind]} ${m.date}`,
         new Date(m.deadline_at).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
         STATUS_VI[st], a ? `${a.answered_count}/${a.required_count ?? '?'}` : '0',
-        daysLate(m.date, now), scoreIfSubmittedAt(m.date, now),
+        daysLate(vnDate(m.deadline_at), now), scoreIfSubmittedAt(vnDate(m.deadline_at), now),
       ]);
     }
   }

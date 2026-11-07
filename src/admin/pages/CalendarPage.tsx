@@ -47,6 +47,25 @@ export default function CalendarPage() {
   const byDate = new Map((items ?? []).map((m) => [m.date, m]));
   const editable = (m: Milestone) => m.date >= today;
 
+  // Giờ hạn theo giờ VN, dạng "Thứ 6 08/11 23:59"
+  const vnTime = (iso: string) => {
+    const d = new Date(Date.parse(iso) + 7 * 3600_000);
+    return { date: d.toISOString().slice(0, 10), hm: d.toISOString().slice(11, 16) };
+  };
+  const editDeadline = async (m: Milestone) => {
+    const cur = vnTime(m.deadline_at);
+    const v = prompt(
+      `Hạn nộp mốc ${m.date} (giờ Việt Nam).\nGõ theo dạng NGÀY GIỜ, ví dụ: ${cur.date} ${cur.hm}\nĐiểm trễ sẽ tính từ ngày hạn mới. Bài đã nộp giữ nguyên điểm.`,
+      `${cur.date} ${cur.hm}`,
+    )?.trim();
+    if (!v) return;
+    const mt = /^(\d{4}-\d{2}-\d{2})[ T](\d{1,2}):(\d{2})$/.exec(v);
+    if (!mt) { alert('Sai định dạng. Ví dụ: 2026-11-10 23:59'); return; }
+    setBusy(true); setError(null);
+    try { await adminApi.setDeadline(m.id, `${mt[1]}T${mt[2]!.padStart(2, '0')}:${mt[3]}`); await load(); }
+    catch (e) { setError(e); } finally { setBusy(false); }
+  };
+
   const setOff = async (list: Milestone[], off: boolean) => {
     setBusy(true);
     setError(null);
@@ -125,6 +144,21 @@ export default function CalendarPage() {
                             <span className="mt-auto text-xs font-medium">{m.is_off ? 'Nghỉ' : `Mốc ${m.idx}`}</span>
                             <span className="text-[11px] opacity-70">{KIND_LABEL[m.kind]}</span>
                           </button>
+                          {!m.is_off && (() => {
+                            const dl = vnTime(m.deadline_at);
+                            const moved = dl.date !== m.date || dl.hm !== '23:59';
+                            return (
+                              <button
+                                type="button"
+                                disabled={busy}
+                                onClick={() => editDeadline(m)}
+                                title="Đổi hạn nộp"
+                                className={`mt-1 w-full rounded px-1 text-left text-[11px] hover:bg-slate-100 ${moved ? 'font-semibold text-amber-700' : 'text-slate-500'}`}
+                              >
+                                Hạn {moved ? `${dl.date.slice(8)}/${dl.date.slice(5, 7)} ` : ''}{dl.hm} ✎
+                              </button>
+                            );
+                          })()}
                         </td>
                       );
                     })}
@@ -141,7 +175,7 @@ export default function CalendarPage() {
             </tbody>
           </table>
         </div>
-        <p className="mt-3 text-xs text-slate-500">Mốc đã qua bị khoá để không làm lệch lịch ôn đã xếp. Bật/tắt Nghỉ sẽ đánh lại số mốc phía sau.</p>
+        <p className="mt-3 text-xs text-slate-500">Mốc đã qua bị khoá để không làm lệch lịch ôn đã xếp. Bật/tắt Nghỉ sẽ đánh lại số mốc phía sau. Bấm dòng <b>Hạn ✎</b> dưới mỗi mốc để gia hạn hoặc đổi giờ nộp (đổi được cả mốc đã qua, hạn đã đổi hiện màu cam).</p>
       </Card>
     </>
   );

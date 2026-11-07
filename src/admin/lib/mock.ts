@@ -192,6 +192,12 @@ export async function mockApi<T>(method: string, path: string, body?: unknown): 
     if (typeof b.active === 'boolean') c.active = b.active;
     return ok({ class: { ...c } });
   }
+  if (route === 'POST /api/admin/milestones/deadline') {
+    return ok({ ok: true, deadline_at: new Date(Date.parse(`${b.deadline}:59+07:00`)).toISOString() });
+  }
+  if (route === 'POST /api/admin/lessons/delete') {
+    return ok({ ok: true, removedWords: 0, affectedStudents: 0 });
+  }
   if (route === 'POST /api/admin/classes/delete') {
     state.classes = state.classes.filter((c) => c.id !== b.id);
     state.students.forEach((s) => { if (s.class_id === b.id) s.class_id = null; });
