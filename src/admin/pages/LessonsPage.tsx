@@ -94,7 +94,7 @@ export default function LessonsPage() {
                     </label>
                     <div>
                       <p className="mb-2 text-sm font-medium text-slate-800">Hạn làm lần đầu {l.due ? `(đang: ${vnDeadline(l.due.deadline_at)})` : ''}</p>
-                      <MilestonePicker value={mid ?? l.due_milestone_id ?? null} onChange={setMid} />
+                      <MilestonePicker value={mid ?? l.due_milestone_id ?? null} onChange={setMid} autoSelect={false} />
                       {l.status === 'published' && <p className="mt-1 text-xs text-slate-500">Đổi hạn: chỉ những từ học sinh CHƯA làm lần nào được dời sang mốc mới; từ đã làm giữ lịch ôn.</p>}
                     </div>
                     <div className="flex justify-end gap-2">

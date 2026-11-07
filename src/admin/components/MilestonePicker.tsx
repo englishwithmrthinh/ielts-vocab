@@ -10,13 +10,18 @@ export function vnDeadline(iso: string): string {
   return `${d.slice(8, 10)}/${d.slice(5, 7)} ${d.slice(11, 16)}`;
 }
 
-export function MilestonePicker({ value, onChange }: { value: string | null; onChange: (id: string) => void }) {
+/**
+ * autoSelect (mặc định true): chưa có giá trị thì tự chọn mốc gần nhất — dùng ở hộp Phát hành.
+ * Ở form Sửa bộ từ phải tắt (autoSelect={false}): nếu không, chỉ đổi tên một bộ từ chưa có hạn
+ * cũng âm thầm dời các từ chưa làm sang mốc gần nhất.
+ */
+export function MilestonePicker({ value, onChange, autoSelect = true }: { value: string | null; onChange: (id: string) => void; autoSelect?: boolean }) {
   const [items, setItems] = useState<Milestone[] | null>(null);
   const [err, setErr] = useState(false);
   useEffect(() => {
     adminApi.upcomingMilestones().then((r) => {
       setItems(r.milestones);
-      if (!value && r.milestones[0]) onChange(r.milestones[0].id);
+      if (autoSelect && !value && r.milestones[0]) onChange(r.milestones[0].id);
     }, () => setErr(true));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
