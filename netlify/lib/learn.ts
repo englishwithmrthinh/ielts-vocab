@@ -5,6 +5,8 @@ import type { StudentWordLite } from '../../shared/assignment';
 import { unsubmittedStatus } from '../../shared/lateness';
 import { extKey, withExtension } from '../../shared/deadlines';
 import { loadExtensions } from './extensions';
+import { beforeFirst } from '../../shared/first-due';
+import { loadFirstIdx } from './first-due';
 import { HttpError } from './http';
 import { db, must } from './supabase';
 
@@ -82,16 +84,18 @@ export interface StudentPlan {
 }
 
 export async function loadPlan(studentId: string, now: string): Promise<StudentPlan> {
-  const [stR, msR, asR, ext] = await Promise.all([
+  const [stR, msR, asR, ext, first] = await Promise.all([
     db().from('students').select('created_at').eq('id', studentId).single(),
     db().from('milestones').select('*').eq('is_off', false).order('date'),
     db().from('assignments').select('*').eq('student_id', studentId),
     loadExtensions({ studentIds: [studentId] }),
+    loadFirstIdx([studentId]),
   ]);
   const st = must(stR) as { created_at: string };
   // Hạn riêng (gia hạn cho em này) thay hạn chung nếu muộn hơn
   const ms = (must(msR) as Milestone[]).map((m) => withExtension(m, ext.get(extKey(studentId, m.id))))
-    .filter((m) => Date.parse(m.deadline_at) >= Date.parse(st.created_at));
+    .filter((m) => Date.parse(m.deadline_at) >= Date.parse(st.created_at))
+    .filter((m) => !beforeFirst(m, first.get(studentId))); // chưa có từ thì chưa có bài
   const as = must(asR) as Assignment[];
   const assignments = new Map(as.map((a) => [a.milestone_id, a]));
   const status = new Map<string, AssignmentStatus>();

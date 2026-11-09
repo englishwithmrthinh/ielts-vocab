@@ -10,6 +10,8 @@ import { PASS_BOX } from '../../shared/types';
 import { unsubmittedStatus } from '../../shared/lateness';
 import { extKey, withExtension } from '../../shared/deadlines';
 import { loadExtensions } from './extensions';
+import { beforeFirst } from '../../shared/first-due';
+import { loadFirstIdx } from './first-due';
 import { addDays, nextMonth, vnStartOfDay, weekStart } from '../../shared/time';
 import { env, envOptional } from './env';
 import { db, must } from './supabase';
@@ -34,7 +36,7 @@ interface Asg { student_id: string; milestone_id: string; status: string; days_l
 export async function computeMonth(month: string, now: string, isDraft: boolean): Promise<Map<string, { student: Stu; stats: MonthlyStats; badges: BadgeCode[] }>> {
   const from = vnStartOfDay(`${month}-01`);
   const to = vnStartOfDay(`${nextMonth(month)}-01`);
-  const [stR, msR, as, sws, ans, passEv, ext] = await Promise.all([
+  const [stR, msR, as, sws, ans, passEv, ext, first] = await Promise.all([
     db().from('students').select('id,name,created_at').eq('active', true),
     db().from('milestones').select('*').eq('month', month).order('date'),
     all<Asg>((f, t) => db().from('assignments').select('student_id,milestone_id,status,days_late,score_pct').range(f, t)),
@@ -47,6 +49,7 @@ export async function computeMonth(month: string, now: string, isDraft: boolean)
       db().from('answers').select('student_id,word_id,created_at').eq('box_after', PASS_BOX).lt('box_before', PASS_BOX)
         .lt('created_at', to).order('created_at').range(f, t)),
     loadExtensions(),
+    loadFirstIdx(),
   ]);
   const students = must(stR) as Stu[];
   const ms = must(msR) as Milestone[];
@@ -64,6 +67,7 @@ export async function computeMonth(month: string, now: string, isDraft: boolean)
     for (const m0 of ms) {
       const m = withExtension(m0, ext.get(extKey(s.id, m0.id))); // gia hạn riêng
       if (!m.is_off && Date.parse(m.deadline_at) < Date.parse(s.created_at)) continue; // trước khi vào lớp
+      if (beforeFirst(m, first.get(s.id))) continue; // chưa có từ thì chưa có bài
       const a = asBy.get(`${s.id}|${m.id}`);
       const st: AssignmentStatus = m.is_off ? 'off' : a?.status === 'submitted' ? 'submitted' : unsubmittedStatus(m, now);
       cells.push({ milestone_date: m.date, kind: m.kind, status: st, score_pct: a?.score_pct ?? null, days_late: a?.days_late ?? null });

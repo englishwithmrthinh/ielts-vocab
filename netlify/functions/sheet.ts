@@ -14,6 +14,8 @@ import { PASS_BOX } from '../../shared/types';
 import { daysLate, scoreIfSubmittedAt, unsubmittedStatus } from '../../shared/lateness';
 import { extKey, withExtension } from '../../shared/deadlines';
 import { loadExtensions } from '../lib/extensions';
+import { beforeFirst } from '../../shared/first-due';
+import { loadFirstIdx } from '../lib/first-due';
 import { addDays, isoWeekday, monthKey, nextMonth, vnDate, vnStartOfDay, weekStart } from '../../shared/time';
 import { requireAdmin } from '../lib/auth';
 import { env } from '../lib/env';
@@ -97,11 +99,12 @@ async function studentCalendar(code: string, month: string, now: string): Promis
   const st = must(await db().from('students').select('id,code,name,created_at,class_id').eq('code', code).maybeSingle()) as
     { id: string; code: string; name: string; created_at: string; class_id: string | null } | null;
   if (!st) return new Response('Không tìm thấy học sinh', { status: 404, headers: { 'content-type': 'text/plain; charset=utf-8' } });
-  const [msR, asR, clR, ext] = await Promise.all([
+  const [msR, asR, clR, ext, firstIdx] = await Promise.all([
     db().from('milestones').select('*').eq('month', month).order('date'),
     db().from('assignments').select('*').eq('student_id', st.id),
     st.class_id ? db().from('classes').select('name').eq('id', st.class_id).maybeSingle() : Promise.resolve({ data: null, error: null }),
     loadExtensions({ studentIds: [st.id] }),
+    loadFirstIdx([st.id]),
   ]);
   const ms = (must(msR) as Milestone[]).map((m) => withExtension(m, ext.get(extKey(st.id, m.id))));
   const byM = new Map((must(asR) as Assignment[]).map((a) => [a.milestone_id, a]));
@@ -113,6 +116,7 @@ async function studentCalendar(code: string, month: string, now: string): Promis
   for (const m of ms) {
     if (m.is_off) { cell.set(m.date, { cls: 'off', title: 'Nghỉ', sub: '' }); continue; }
     if (Date.parse(m.deadline_at) < Date.parse(st.created_at)) { cell.set(m.date, { cls: 'off', title: '—', sub: 'chưa vào lớp' }); continue; }
+    if (beforeFirst(m, firstIdx.get(st.id))) { cell.set(m.date, { cls: 'off', title: '—', sub: 'chưa có từ' }); continue; }
     const a = byM.get(m.id);
     const prog = a ? `làm ${Math.min(a.answered_count, a.required_count ?? a.answered_count)}/${a.required_count ?? '?'} câu` : 'chưa làm câu nào';
     if (a?.status === 'submitted') {
@@ -173,12 +177,13 @@ async function all<T>(q: (from: number, to: number) => PromiseLike<{ data: T[] |
 interface Stu { id: string; code: string; name: string; created_at: string; class_id: string | null; cls: string }
 
 async function base() {
-  const [stR, msR, as, clR, ext] = await Promise.all([
+  const [stR, msR, as, clR, ext, first] = await Promise.all([
     db().from('students').select('id,code,name,created_at,class_id').eq('active', true).order('code'),
     db().from('milestones').select('*').order('date'),
     all<Assignment>((f, t) => db().from('assignments').select('*').range(f, t)),
     db().from('classes').select('id,name'),
     loadExtensions(),
+    loadFirstIdx(),
   ]);
   const clsName = new Map((must(clR) as { id: string; name: string }[]).map((c) => [c.id, c.name]));
   // Một tab cho tất cả, có cột Lớp, sắp theo lớp rồi theo mã (chưa xếp lớp ở cuối)
@@ -193,6 +198,7 @@ async function base() {
     const m = eff(s, m0);
     if (m.is_off) return 'off';
     if (Date.parse(m.deadline_at) < Date.parse(s.created_at)) return null; // trước khi học sinh vào lớp
+    if (beforeFirst(m, first.get(s.id))) return null; // chưa có từ thì chưa có bài
     const a = byKey.get(`${s.id}|${m.id}`);
     return a?.status === 'submitted' ? 'submitted' : unsubmittedStatus(m, now);
   };

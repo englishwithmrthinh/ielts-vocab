@@ -50,3 +50,20 @@ describe('buildOverview · gia hạn riêng', () => {
     expect(r.owing).toEqual([]);
   });
 });
+
+describe('buildOverview · chưa có từ thì chưa có bài', () => {
+  const now = '2026-11-05T03:00:00Z'; // m3 đang mở; m1, m2 đã qua
+  const idx = milestones.map((m, i) => ({ ...m, idx: i + 1 }));
+  it('em có từ đầu tiên ở m3 (idx 3) không nợ m1, m2', () => {
+    const base = buildOverview(now, students.slice(0, 1), idx, []);
+    const r = buildOverview(now, students.slice(0, 1), idx, [], new Map(), new Map([['a', 3]]));
+    expect(base.owing.map((o) => o.count)).toEqual([2]);
+    expect(r.owing).toEqual([]);
+    expect(r.today.total).toBe(1);
+  });
+  it('em chưa được giao từ nào: không nợ, không tính vào mốc hôm nay', () => {
+    const r = buildOverview(now, students.slice(0, 1), idx, [], new Map(), new Map());
+    expect(r.owing).toEqual([]);
+    expect(r.today.total).toBe(0);
+  });
+});
