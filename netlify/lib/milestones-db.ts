@@ -53,6 +53,12 @@ export async function setOff(milestoneId: string, isOff: boolean): Promise<void>
  * Đổi hạn nộp chung của một mốc. deadline: 'YYYY-MM-DDTHH:mm' giờ VN (giây :59).
  * Trạng thái bài (đang mở / nợ / bỏ) tính lại theo hạn mới ngay lập tức; bài đã nộp giữ nguyên điểm.
  */
+/** idx của mốc đang mở lúc `now`: mốc không nghỉ đầu tiên có hạn chung chưa qua. null nếu chưa có lịch. */
+export async function currentIdx(now: string): Promise<number | null> {
+  const r = must(await db().from('milestones').select('idx').eq('is_off', false).gte('deadline_at', now).order('date').limit(1)) as { idx: number | null }[];
+  return r[0]?.idx ?? null;
+}
+
 export async function setMilestoneDeadline(id: string, deadline: string | undefined): Promise<string> {
   const at = parseVnDeadline(deadline);
   const m = must(await db().from('milestones').select('*').eq('id', id).maybeSingle()) as Milestone | null;

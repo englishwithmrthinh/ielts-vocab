@@ -17,7 +17,7 @@ import type {
 } from '../../shared/types';
 import { PASS_BOX } from '../../shared/types';
 import { BOX_INTERVAL, XP } from '../../shared/question-config';
-import { applyAnswer } from '../../shared/srs';
+import { applyAnswer, scheduleBase } from '../../shared/srs';
 import { dueWords, fillerWords, selectWords } from '../../shared/assignment';
 import { buildQuestion, chooseFixType, chooseType, grade, isTypingType, planNext, type AnswerKey, type QuestionPayload } from '../../shared/questions';
 import { daysLate, scoreForDaysLate, scoreIfSubmittedAt } from '../../shared/lateness';
@@ -26,6 +26,7 @@ import { makeCheck } from '../../shared/check';
 import { requireStudent } from '../lib/auth';
 import { errorResponse, HttpError, json, readJson } from '../lib/http';
 import { db, must } from '../lib/supabase';
+import { currentIdx } from '../lib/milestones-db';
 import {
   addXp, answersOf, cardsOf, getAssignment, getWords, loadPlan, loadStudentWords, poolWords, streakOf, toCard, toQuiz, withPool,
 } from '../lib/learn';
@@ -226,10 +227,12 @@ async function answer(studentId: string, sub: AnswerSubmission): Promise<AnswerR
   if (!p) throw new HttpError(410, 'question_expired', 'Câu này đã được trả lời. Tải câu tiếp theo nhé.');
 
   // Luyện thêm: không gắn bài, không đổi hộp
-  const [ctx, words, swsR] = await Promise.all([
+  const t = now();
+  const [ctx, words, swsR, curIdx] = await Promise.all([
     p.assignment_id ? getAssignment(studentId, p.assignment_id) : Promise.resolve(null),
     getWords(p.payload.wordIds),
     db().from('student_words').select('word_id,box,typed_ok,wrong_count').eq('student_id', studentId).in('word_id', p.payload.wordIds),
+    p.assignment_id ? currentIdx(t) : Promise.resolve(null),
   ]);
   const a = ctx?.a ?? null;
   const m = ctx?.m ?? null;
@@ -238,7 +241,8 @@ async function answer(studentId: string, sub: AnswerSubmission): Promise<AnswerR
   const mode = a ? p.payload.mode : 'practice';
   const sws = must(swsR) as { word_id: string; box: Box; typed_ok: boolean; wrong_count: number }[];
   const swBy = new Map(sws.map((s) => [s.word_id, s]));
-  const t = now();
+  // Làm bù bài cũ: hẹn ôn từ mốc đang mở, không dồn vào bài đã qua
+  const base = scheduleBase(m?.idx ?? 0, curIdx);
 
   let xp = 0;
   let passed = false;
@@ -248,7 +252,7 @@ async function answer(studentId: string, sub: AnswerSubmission): Promise<AnswerR
     const s = swBy.get(pw.wordId);
     let boxAfter: Box | null = s?.box ?? null;
     if (mode === 'graded' && s) {
-      const r = applyAnswer(s, pw.correct, isTypingType(type), m?.idx ?? 0);
+      const r = applyAnswer(s, pw.correct, isTypingType(type), base);
       boxAfter = r.box;
       passed ||= r.passed;
       writes.push(db().from('student_words').update({
@@ -359,11 +363,11 @@ async function flag(studentId: string, qid: string): Promise<void> {
   if (r.flagged) return;
   must(await db().from('answers').update({ flagged: true }).eq('id', r.id));
   if (r.mode === 'graded' && !r.correct && r.box_before && r.assignment_id) {
-    const { m } = await getAssignment(studentId, r.assignment_id);
+    const [{ m }, cur] = await Promise.all([getAssignment(studentId, r.assignment_id), currentIdx(new Date().toISOString())]);
     const sw = must(await db().from('student_words').select('wrong_count').eq('student_id', studentId).eq('word_id', r.word_id).single()) as { wrong_count: number };
     const box = r.box_before as Box;
     must(await db().from('student_words').update({
-      box, due_idx: (m.idx ?? 0) + BOX_INTERVAL[box], wrong_count: Math.max(0, sw.wrong_count - 1),
+      box, due_idx: scheduleBase(m.idx ?? 0, cur) + BOX_INTERVAL[box], wrong_count: Math.max(0, sw.wrong_count - 1),
     }).eq('student_id', studentId).eq('word_id', r.word_id));
   }
 }

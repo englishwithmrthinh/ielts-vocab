@@ -13,6 +13,11 @@ export function firstIdxOf(assignmentIdxs: (number | null | undefined)[], unansw
 }
 
 /** true: mốc này chưa phải bài của em (đến trước từ đầu tiên). Mốc nghỉ (idx null) không xét ở đây. */
+/** Bài này có tính là "đã có bài" không: bài rỗng (0 câu bắt buộc) chưa nộp thì không. */
+export function countsAsStarted(a: { required_count: number | null; status: string }): boolean {
+  return a.status === 'submitted' || (a.required_count ?? 0) > 0;
+}
+
 export function beforeFirst(m: { idx: number | null }, firstIdx: number | null | undefined): boolean {
   if (m.idx === null) return false;
   return firstIdx === null || firstIdx === undefined || m.idx < firstIdx;
