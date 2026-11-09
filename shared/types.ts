@@ -180,6 +180,8 @@ export interface MonthlyStats {
   /** passed_total là số CỘNG DỒN đến hết tuần đó */
   passed_by_week: { week_start: ISODate; passed_total: number }[];
   cells: { milestone_date: ISODate; kind: MilestoneKind; status: AssignmentStatus; score_pct: number | null; days_late: number | null }[];
+  /** Lúc tính số liệu này (ISO). Báo cáo cũ có thể không có */
+  computed_at?: ISODateTime;
 }
 
 export interface MonthlyReport {
@@ -371,6 +373,8 @@ export interface AdminReportsResponse {
     /** Link gửi phụ huynh */
     link: string;
     aiComment: string | null; teacherComment: string | null; stats: MonthlyStats;
+    /** = stats.computed_at: "Số liệu tính lúc HH:mm dd/mm" */
+    computedAt: ISODateTime | null;
   }[];
 }
 

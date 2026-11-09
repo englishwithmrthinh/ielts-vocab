@@ -169,6 +169,11 @@ export const adminApi = {
   publish: (lessonId: string, studentIds: string[], milestoneId?: string | null) =>
     call<PublishResult>('POST', '/api/admin/lessons/publish', { lesson_id: lessonId, student_ids: studentIds, ...(milestoneId ? { milestone_id: milestoneId } : {}) }),
   upcomingMilestones: () => call<{ milestones: Milestone[] }>('GET', '/api/admin/milestones/upcoming'),
+  /** Tính lại số liệu 1 báo cáo (bản tạm tính), tuỳ chọn viết lại nhận xét AI. Chờ ~5–15 giây. */
+  recomputeReport: (id: string, rewriteAi = false) => call<{ report: { id: string; stats: unknown; aiComment: string | null; teacherComment: string | null; status: string; finalizedAt: string | null; computedAt: string | null } }>(
+    'POST', '/api/admin/reports/recompute', { id, rewrite_ai: rewriteAi }),
+  /** Tính lại cả tháng (chạy nền, trả ngay). Tải lại danh sách sau ~1–3 phút; computedAt đổi là xong. */
+  recomputeMonth: (month: string, rewriteAi = false) => call<unknown>('POST', '/api/jobs/monthly', { month, final: false, rewrite_ai: rewriteAi }),
   studentOwing: () => call<{ owing: Record<string, number>; abandoned: Record<string, number> }>('GET', '/api/admin/students/owing'),
   studentDetail: (id: string) => call<StudentDetail>('GET', `/api/admin/students/detail?id=${id}`),
   lessonDeadline: (id: string) => call<LessonDeadline>('GET', `/api/admin/lessons/deadline?id=${id}`),

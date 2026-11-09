@@ -153,11 +153,18 @@ export async function aiComment(name: string, month: string, stats: MonthlyStats
 
 /**
  * Tạo/cập nhật báo cáo tháng.
- * final=false: tạo bản tạm tính (không đụng bản đã chốt), viết nhận xét AI nếu chưa có.
+ * final=false: tạo/tính lại bản tạm tính (không đụng bản đã chốt), viết nhận xét AI nếu chưa có.
  * final=true : tính lại số liệu, chốt, trao huy hiệu tháng. Nhận xét đã có (kể cả giáo viên sửa) giữ nguyên.
+ * opts.rewriteAi: viết lại nhận xét AI (chỉ bản tạm tính; nhận xét của giáo viên không đụng).
+ * opts.studentIds: chỉ tính lại các em này.
+ * Mỗi lần tính ghi stats.computed_at = now.
  */
-export async function runMonthly(month: string, final: boolean, now = new Date().toISOString()): Promise<{ reports: number; comments: number }> {
-  const data = await computeMonth(month, now, !final);
+export async function runMonthly(
+  month: string, final: boolean, now = new Date().toISOString(),
+  opts: { rewriteAi?: boolean; studentIds?: string[] } = {},
+): Promise<{ reports: number; comments: number }> {
+  const all = await computeMonth(month, now, !final);
+  const data = opts.studentIds ? new Map([...all].filter(([id]) => opts.studentIds!.includes(id))) : all;
   const existing = must(await db().from('monthly_reports').select('id,student_id,status,ai_comment').eq('month', month)) as
     { id: string; student_id: string; status: string; ai_comment: string | null }[];
   const exBy = new Map(existing.map((r) => [r.student_id, r]));
@@ -165,11 +172,15 @@ export async function runMonthly(month: string, final: boolean, now = new Date()
   const list = [...data.values()];
   // 4 học sinh song song để Gemini không bị quá tải
   for (let i = 0; i < list.length; i += 4) {
-    await Promise.all(list.slice(i, i + 4).map(async ({ student, stats, badges }) => {
+    await Promise.all(list.slice(i, i + 4).map(async ({ student, stats: s0, badges }) => {
       const ex = exBy.get(student.id);
       if (ex?.status === 'final' && !final) return;
+      const stats: MonthlyStats = { ...s0, computed_at: now };
       let ai = ex?.ai_comment ?? null;
-      if (!ai && stats.total > 0) { ai = await aiComment(student.name, month, stats); if (ai) comments++; }
+      if ((!ai || (opts.rewriteAi && !final)) && stats.total > 0) {
+        const fresh = await aiComment(student.name, month, stats);
+        if (fresh) { ai = fresh; comments++; }
+      }
       const row = {
         stats, ai_comment: ai,
         ...(final ? { status: 'final', finalized_at: now } : {}),

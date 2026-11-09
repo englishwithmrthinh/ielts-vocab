@@ -102,7 +102,7 @@ function reportsFor(month: string): AdminReportsResponse['reports'] {
       status: month < '2026-10' ? 'final' : 'draft', finalizedAt: null,
       link: `${window.location.origin}/bao-cao/demo-${st.code.toLowerCase()}`,
       aiComment: `${st.name.split(' ').pop()} làm bài khá đều trong tháng, nộp đúng hạn ${demoStats(i, month).on_time}/13 bài. Con nhớ tốt các từ về môi trường; cần ôn thêm các từ dài như "deforestation". Tháng tới cố gắng không để bài trễ nhé.`,
-      teacherComment: null, stats: demoStats(i, month),
+      teacherComment: null, stats: demoStats(i, month), computedAt: new Date().toISOString(),
     })));
   }
   return demoReports.get(month)!;
@@ -261,7 +261,7 @@ export async function mockApi<T>(method: string, path: string, body?: unknown): 
   }
 
   if (route === 'GET /api/admin/lessons') {
-    return ok({ lessons: [...state.lessons], nextNumber: Math.max(0, ...state.lessons.map((l) => l.number)) + 1 });
+    return ok({ lessons: state.lessons.map((l, i) => ({ class_ids: [], submitted_count: l.status === 'published' ? 3 : 0, owing_count: l.status === 'published' && i % 2 ? 2 : 0, overdue: l.status === 'published' && i % 2 === 1, ...l })), nextNumber: Math.max(0, ...state.lessons.map((l) => l.number)) + 1 });
   }
   if (route === 'POST /api/admin/lessons/check') {
     const words = b.words as { word: string; pos: string }[];
@@ -364,6 +364,41 @@ export async function mockApi<T>(method: string, path: string, body?: unknown): 
       }
     }
     return ok({ ok: true });
+  }
+  if (route === 'POST /api/admin/reports/recompute') {
+    for (const list of demoReports.values()) {
+      const r = list.find((x) => x.id === b.id);
+      if (r) {
+        r.computedAt = new Date().toISOString();
+        if (b.rewrite_ai) r.aiComment = `${r.aiComment ?? ''} (viết lại lúc ${r.computedAt.slice(11, 16)})`.trim();
+        return ok({ report: { id: r.id, stats: r.stats, aiComment: r.aiComment, teacherComment: r.teacherComment, status: r.status, finalizedAt: r.finalizedAt, computedAt: r.computedAt } });
+      }
+    }
+    throw new ApiCallError(404, 'not_found', 'Không tìm thấy báo cáo');
+  }
+  if (route === 'GET /api/admin/students/owing') {
+    const owing: Record<string, number> = {};
+    state.students.forEach((x, i) => { if (i % 3 === 0) owing[x.id] = 1 + (i % 2); });
+    return ok({ owing, abandoned: state.students[1] ? { [state.students[1].id]: 1 } : {} });
+  }
+  if (route === 'GET /api/admin/students/detail') {
+    const st = state.students.find((x) => x.id === url.searchParams.get('id')) ?? state.students[0]!;
+    const day = (d: number) => new Date(Date.now() + d * 86400_000).toISOString().slice(0, 10);
+    const dl = (d: number) => `${day(d)}T16:59:59.000Z`;
+    const it = (d: number, status: string, extra: Record<string, unknown> = {}) => ({
+      milestone_id: `m${d}`, date: day(d), kind: 'fri', deadline_at: dl(d), extended: false, status,
+      answered: 0, required: 24, submitted_at: null, score_pct: null, days_late: null, ...extra,
+    });
+    return ok({
+      student: { id: st.id, code: st.code, name: st.name, active: st.active, class_name: 'IELTS Foundation T3-T6', created_at: st.created_at },
+      owing: [it(-1, 'owing', { days_late: 1, answered: 6 })],
+      abandoned: [],
+      open: [it(1, 'open', { required: null }), it(-3, 'open', { extended: true, deadline_at: dl(1), answered: 10 })],
+      recent: [it(-5, 'submitted', { answered: 24, submitted_at: dl(-5), score_pct: 100, days_late: 0 }), it(-8, 'submitted', { answered: 20, submitted_at: dl(-7), score_pct: 90, days_late: 1 })],
+      lessons: state.lessons.slice(0, 4).map((l, i) => ({ id: l.id, number: l.number, title: l.title ?? null, status: l.status, taught_on: l.taught_on,
+        due: { date: day(i - 2), kind: 'tue', deadline_at: dl(i - 2) }, state: ['submitted', 'owing', 'open', 'open'][i], score_pct: i === 0 ? 100 : null })),
+      calendar_url: `/bao-cao-lop?hs=${st.code}`,
+    });
   }
   if (route === 'POST /api/admin/reports/finalize') {
     for (const list of demoReports.values()) {
