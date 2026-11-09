@@ -48,3 +48,24 @@ export async function setOff(milestoneId: string, isOff: boolean): Promise<void>
   must(await db().from('milestones').update({ is_off: true, idx: null }).eq('id', milestoneId));
   await reindex(isOff ? new Set() : new Set([row.date]));
 }
+
+/**
+ * Đổi hạn nộp chung của một mốc. deadline: 'YYYY-MM-DDTHH:mm' giờ VN (giây :59).
+ * Trạng thái bài (đang mở / nợ / bỏ) tính lại theo hạn mới ngay lập tức; bài đã nộp giữ nguyên điểm.
+ */
+export async function setMilestoneDeadline(id: string, deadline: string | undefined): Promise<string> {
+  const at = parseVnDeadline(deadline);
+  const m = must(await db().from('milestones').select('*').eq('id', id).maybeSingle()) as Milestone | null;
+  if (!m) throw new HttpError(404, 'not_found', 'Không tìm thấy mốc');
+  if (Date.parse(at) <= Date.parse(m.opens_at)) throw new HttpError(400, 'too_early', 'Hạn phải sau giờ mở bài');
+  must(await db().from('milestones').update({ deadline_at: at }).eq('id', id));
+  return at;
+}
+
+/** 'YYYY-MM-DDTHH:mm' (giờ VN) → ISO, giây :59 */
+export function parseVnDeadline(deadline: string | undefined): string {
+  if (!deadline || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(deadline)) throw new HttpError(400, 'bad_input', 'Cần hạn dạng YYYY-MM-DDTHH:mm');
+  const t = Date.parse(`${deadline}:59+07:00`);
+  if (!Number.isFinite(t)) throw new HttpError(400, 'bad_input', 'Hạn không hợp lệ');
+  return new Date(t).toISOString();
+}

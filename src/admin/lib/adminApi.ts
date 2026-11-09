@@ -28,6 +28,35 @@ export interface LessonSummary {
   due?: { date: string; kind: string; deadline_at: string } | null;
 }
 
+/** Một học sinh trong bảng hạn nộp của bộ từ */
+export interface LessonDeadlineStudent {
+  id: string; code: string; name: string; class_name: string; active: boolean;
+  status: 'submitted' | 'doing' | 'not_started' | 'owing' | 'abandoned' | 'off';
+  /** Hạn hiệu lực của em này (có gia hạn riêng thì là hạn riêng) */
+  deadline_at: string;
+  /** Hạn riêng nếu đang được gia hạn riêng, không thì null */
+  extended_to: string | null;
+  days_late: number | null; score_pct: number | null; answered: number; required: number | null;
+  /** Có từ của bộ này dư sang bài sau */
+  spill: boolean;
+}
+
+/** GET /api/admin/lessons/deadline?id= */
+export interface LessonDeadline {
+  lesson: { id: string; number: number; title: string | null; status: string };
+  /** Mốc làm lần đầu của bộ từ (bài chính) */
+  milestone: { id: string; date: string; kind: string; opens_at: string; deadline_at: string; is_off: boolean } | null;
+  /** true: bộ cũ chưa đặt mốc, mốc được suy ra từ bài sớm nhất có từ của bộ */
+  inferred: boolean;
+  state: 'none' | 'locked' | 'open' | 'overdue' | 'off';
+  daysOverdue: number;
+  counts: { total: number; submitted: number; doing: number; notStarted: number; owing: number; abandoned: number };
+  students: LessonDeadlineStudent[];
+  spillCount: number;
+  /** false: chưa chạy migration 005 → chưa gia hạn riêng được */
+  extensionsReady: boolean;
+}
+
 export interface ExistingWord { word: string; pos: string; id: string; has_audio: boolean; has_image: boolean }
 
 type Method = 'GET' | 'POST';
@@ -105,6 +134,10 @@ export const adminApi = {
   publish: (lessonId: string, studentIds: string[], milestoneId?: string | null) =>
     call<PublishResult>('POST', '/api/admin/lessons/publish', { lesson_id: lessonId, student_ids: studentIds, ...(milestoneId ? { milestone_id: milestoneId } : {}) }),
   upcomingMilestones: () => call<{ milestones: Milestone[] }>('GET', '/api/admin/milestones/upcoming'),
+  lessonDeadline: (id: string) => call<LessonDeadline>('GET', `/api/admin/lessons/deadline?id=${id}`),
+  extendLesson: (id: string, deadline: string, scope: 'all' | 'students', studentIds: string[] = []) =>
+    call<{ ok: true; scope: string; deadline_at: string; count: number | null }>('POST', '/api/admin/lessons/deadline', { id, deadline, scope, student_ids: studentIds }),
+  clearExtension: (id: string, studentIds: string[]) => call<{ ok: true; count: number }>('POST', '/api/admin/lessons/deadline/clear', { id, student_ids: studentIds }),
   updateLesson: (id: string, patch: { title?: string | null; milestone_id?: string }) =>
     call<{ ok: true; moved: number }>('POST', '/api/admin/lessons/update', { id, ...patch }),
 };

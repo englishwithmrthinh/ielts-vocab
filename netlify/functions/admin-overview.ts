@@ -14,6 +14,7 @@ import { buildOverview, type AdminOverview } from '../../src/admin/lib/overview'
 import { requireAdmin } from '../lib/auth';
 import { errorResponse, HttpError, json } from '../lib/http';
 import { db, must } from '../lib/supabase';
+import { loadExtensions } from '../lib/extensions';
 
 async function all<T>(q: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>): Promise<T[]> {
   const out: T[] = [];
@@ -29,7 +30,7 @@ export default async (req: Request): Promise<Response> => {
     requireAdmin(req);
     if (req.method !== 'GET') throw new HttpError(405, 'method_not_allowed', 'Phương thức không hỗ trợ');
     const now = new Date().toISOString();
-    const [stR, msR, as, lsR, sgR, flR] = await Promise.all([
+    const [stR, msR, as, lsR, sgR, flR, ext] = await Promise.all([
       db().from('students').select('id,code,name,created_at,class_id').eq('active', true).order('code'),
       db().from('milestones').select('*').order('date'),
       all<Pick<Assignment, 'student_id' | 'milestone_id' | 'status' | 'answered_count'>>((f, t) =>
@@ -37,12 +38,13 @@ export default async (req: Request): Promise<Response> => {
       db().from('lessons').select('status').neq('status', 'published'),
       db().from('suggestions').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
       db().from('answers').select('id', { count: 'exact', head: true }).eq('flagged', true),
+      loadExtensions(),
     ]);
     const lessons = { draft: 0, processing: 0, review: 0 };
     for (const l of must(lsR) as { status: keyof typeof lessons }[]) if (l.status in lessons) lessons[l.status]++;
     const out: AdminOverview = {
       now,
-      ...buildOverview(now, must(stR) as never, must(msR) as Milestone[], as),
+      ...buildOverview(now, must(stR) as never, must(msR) as Milestone[], as, ext),
       lessons,
       suggestionsPending: sgR.count ?? 0,
       flagsTotal: flR.count ?? 0,

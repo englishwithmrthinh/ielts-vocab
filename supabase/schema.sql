@@ -238,3 +238,14 @@ alter table students add column if not exists birth text;
 -- ---------- Tên bộ từ + mốc hạn (migration 004) ----------
 alter table lessons add column if not exists title text;
 alter table lessons add column if not exists due_milestone_id uuid references milestones(id) on delete set null;
+
+-- ---------- Gia hạn riêng từng học sinh (migration 005) ----------
+create table if not exists deadline_extensions (
+  student_id   uuid not null references students(id) on delete cascade,
+  milestone_id uuid not null references milestones(id) on delete cascade,
+  deadline_at  timestamptz not null,
+  created_at   timestamptz not null default now(),
+  primary key (student_id, milestone_id)
+);
+create index if not exists deadline_extensions_milestone_idx on deadline_extensions (milestone_id);
+alter table deadline_extensions enable row level security;

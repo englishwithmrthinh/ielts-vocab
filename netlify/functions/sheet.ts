@@ -12,6 +12,8 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import type { Assignment, AssignmentStatus, Milestone } from '../../shared/types';
 import { PASS_BOX } from '../../shared/types';
 import { daysLate, scoreIfSubmittedAt, unsubmittedStatus } from '../../shared/lateness';
+import { extKey, withExtension } from '../../shared/deadlines';
+import { loadExtensions } from '../lib/extensions';
 import { addDays, isoWeekday, monthKey, nextMonth, vnDate, vnStartOfDay, weekStart } from '../../shared/time';
 import { requireAdmin } from '../lib/auth';
 import { env } from '../lib/env';
@@ -95,12 +97,13 @@ async function studentCalendar(code: string, month: string, now: string): Promis
   const st = must(await db().from('students').select('id,code,name,created_at,class_id').eq('code', code).maybeSingle()) as
     { id: string; code: string; name: string; created_at: string; class_id: string | null } | null;
   if (!st) return new Response('Không tìm thấy học sinh', { status: 404, headers: { 'content-type': 'text/plain; charset=utf-8' } });
-  const [msR, asR, clR] = await Promise.all([
+  const [msR, asR, clR, ext] = await Promise.all([
     db().from('milestones').select('*').eq('month', month).order('date'),
     db().from('assignments').select('*').eq('student_id', st.id),
     st.class_id ? db().from('classes').select('name').eq('id', st.class_id).maybeSingle() : Promise.resolve({ data: null, error: null }),
+    loadExtensions({ studentIds: [st.id] }),
   ]);
-  const ms = must(msR) as Milestone[];
+  const ms = (must(msR) as Milestone[]).map((m) => withExtension(m, ext.get(extKey(st.id, m.id))));
   const byM = new Map((must(asR) as Assignment[]).map((a) => [a.milestone_id, a]));
   const cls = (clR.data as { name: string } | null)?.name ?? 'Chưa xếp lớp';
   const vnDM = (iso: string) => { const d = new Date(Date.parse(iso) + 7 * 3600_000).toISOString(); return `${d.slice(8, 10)}/${d.slice(5, 7)}`; };
@@ -170,11 +173,12 @@ async function all<T>(q: (from: number, to: number) => PromiseLike<{ data: T[] |
 interface Stu { id: string; code: string; name: string; created_at: string; class_id: string | null; cls: string }
 
 async function base() {
-  const [stR, msR, as, clR] = await Promise.all([
+  const [stR, msR, as, clR, ext] = await Promise.all([
     db().from('students').select('id,code,name,created_at,class_id').eq('active', true).order('code'),
     db().from('milestones').select('*').order('date'),
     all<Assignment>((f, t) => db().from('assignments').select('*').range(f, t)),
     db().from('classes').select('id,name'),
+    loadExtensions(),
   ]);
   const clsName = new Map((must(clR) as { id: string; name: string }[]).map((c) => [c.id, c.name]));
   // Một tab cho tất cả, có cột Lớp, sắp theo lớp rồi theo mã (chưa xếp lớp ở cuối)
@@ -183,13 +187,16 @@ async function base() {
     .sort((a, b) => (a.cls ? 0 : 1) - (b.cls ? 0 : 1) || a.cls.localeCompare(b.cls, 'vi') || a.code.localeCompare(b.code));
   const milestones = must(msR) as Milestone[];
   const byKey = new Map(as.map((a) => [`${a.student_id}|${a.milestone_id}`, a]));
-  const statusOf = (s: Stu, m: Milestone, now: string): AssignmentStatus | null => {
+  /** Mốc với hạn hiệu lực của học sinh s (có gia hạn riêng thì dùng hạn riêng) */
+  const eff = (s: Stu, m: Milestone): Milestone => withExtension(m, ext.get(extKey(s.id, m.id)));
+  const statusOf = (s: Stu, m0: Milestone, now: string): AssignmentStatus | null => {
+    const m = eff(s, m0);
     if (m.is_off) return 'off';
     if (Date.parse(m.deadline_at) < Date.parse(s.created_at)) return null; // trước khi học sinh vào lớp
     const a = byKey.get(`${s.id}|${m.id}`);
     return a?.status === 'submitted' ? 'submitted' : unsubmittedStatus(m, now);
   };
-  return { students, milestones, byKey, statusOf };
+  return { students, milestones, byKey, statusOf, eff };
 }
 
 const STATUS_VI: Record<AssignmentStatus, string> = {
@@ -213,7 +220,7 @@ function currentMilestone(ms: Milestone[], now: string): Milestone | null {
 }
 
 async function homNay(now: string) {
-  const { students, milestones, byKey, statusOf } = await base();
+  const { students, milestones, byKey, statusOf, eff } = await base();
   const m = currentMilestone(milestones, now);
   const since = vnStartOfDay(vnDate(now));
   const [ans, pass] = await Promise.all([
@@ -233,7 +240,7 @@ async function homNay(now: string) {
     rows.push([
       s.cls, s.code, s.name, st ? STATUS_VI[st] : '',
       a ? `${a.answered_count}/${a.required_count ?? '?'}` : '',
-      a?.score_pct ?? (st === 'owing' && m ? `nếu nộp giờ: ${scoreIfSubmittedAt(vnDate(m.deadline_at), now)}%` : ''),
+      a?.score_pct ?? (st === 'owing' && m ? `nếu nộp giờ: ${scoreIfSubmittedAt(vnDate(eff(s, m).deadline_at), now)}%` : ''),
       mine.length, mine.length ? Math.round((100 * mine.filter((x) => x.correct).length) / mine.length) : '',
       owing, pass.filter((x) => x.student_id === s.id).length,
     ]);
@@ -242,12 +249,13 @@ async function homNay(now: string) {
 }
 
 async function chuaLam(now: string) {
-  const { students, milestones, byKey, statusOf } = await base();
+  const { students, milestones, byKey, statusOf, eff } = await base();
   const rows: (string | number | null)[][] = [['Lớp', 'Mã', 'Tên', 'Mốc', 'Hạn', 'Trạng thái', 'Đã làm', 'Trễ (ngày)', 'Điểm nếu nộp hôm nay']];
   for (const s of students) {
-    for (const m of milestones) {
-      const st = statusOf(s, m, now);
+    for (const m0 of milestones) {
+      const st = statusOf(s, m0, now);
       if (st !== 'open' && st !== 'owing') continue;
+      const m = eff(s, m0);
       const a = byKey.get(`${s.id}|${m.id}`);
       rows.push([
         s.cls, s.code, s.name, `${KIND[m.kind]} ${m.date}`,

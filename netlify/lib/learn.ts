@@ -3,6 +3,8 @@ import type { Assignment, AssignmentStatus, Box, Milestone, WordCard, WordFamily
 import type { QuizWord } from '../../shared/questions';
 import type { StudentWordLite } from '../../shared/assignment';
 import { unsubmittedStatus } from '../../shared/lateness';
+import { extKey, withExtension } from '../../shared/deadlines';
+import { loadExtensions } from './extensions';
 import { HttpError } from './http';
 import { db, must } from './supabase';
 
@@ -80,13 +82,16 @@ export interface StudentPlan {
 }
 
 export async function loadPlan(studentId: string, now: string): Promise<StudentPlan> {
-  const [stR, msR, asR] = await Promise.all([
+  const [stR, msR, asR, ext] = await Promise.all([
     db().from('students').select('created_at').eq('id', studentId).single(),
     db().from('milestones').select('*').eq('is_off', false).order('date'),
     db().from('assignments').select('*').eq('student_id', studentId),
+    loadExtensions({ studentIds: [studentId] }),
   ]);
   const st = must(stR) as { created_at: string };
-  const ms = (must(msR) as Milestone[]).filter((m) => Date.parse(m.deadline_at) >= Date.parse(st.created_at));
+  // Hạn riêng (gia hạn cho em này) thay hạn chung nếu muộn hơn
+  const ms = (must(msR) as Milestone[]).map((m) => withExtension(m, ext.get(extKey(studentId, m.id))))
+    .filter((m) => Date.parse(m.deadline_at) >= Date.parse(st.created_at));
   const as = must(asR) as Assignment[];
   const assignments = new Map(as.map((a) => [a.milestone_id, a]));
   const status = new Map<string, AssignmentStatus>();
@@ -124,7 +129,8 @@ export async function getAssignment(studentId: string, id: string): Promise<{ a:
   ) as (Assignment & { m: Milestone }) | null;
   if (!row) throw new HttpError(404, 'not_found', 'Không tìm thấy bài');
   const { m, ...a } = row;
-  return { a: a as Assignment, m };
+  const ext = await loadExtensions({ studentIds: [studentId], milestoneIds: [m.id] });
+  return { a: a as Assignment, m: withExtension(m, ext.get(extKey(studentId, m.id))) };
 }
 
 export interface AnswerLite { id: string; word_id: string; mode: string; correct: boolean; flagged: boolean; qtype: string; box_before: number | null; box_after: number | null; created_at: string }

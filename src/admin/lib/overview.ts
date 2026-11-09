@@ -5,6 +5,7 @@
 import type { Assignment, Milestone } from '../../../shared/types';
 import { daysLate, scoreIfSubmittedAt, unsubmittedStatus } from '../../../shared/lateness';
 import { vnDate } from '../../../shared/time';
+import { extKey, withExtension, type ExtensionMap } from '../../../shared/deadlines';
 
 export interface AdminOverview {
   now: string;
@@ -24,6 +25,7 @@ export function buildOverview(
   students: { id: string; code: string; name: string; created_at: string; class_id: string | null }[],
   milestones: Milestone[],
   assignments: Pick<Assignment, 'student_id' | 'milestone_id' | 'status' | 'answered_count'>[],
+  ext: ExtensionMap = new Map(),
 ): Pick<AdminOverview, 'milestone' | 'today' | 'owing'> {
   const byKey = new Map(assignments.map((a) => [`${a.student_id}|${a.milestone_id}`, a]));
   const t = Date.parse(now);
@@ -44,7 +46,8 @@ export function buildOverview(
       else if (a && a.answered_count > 0) today.doing++;
       else today.notStarted++;
     }
-    const mine = live.filter((m) => Date.parse(m.deadline_at) >= joined && byKey.get(`${s.id}|${m.id}`)?.status !== 'submitted' && unsubmittedStatus(m, now) === 'owing');
+    const mine = live.map((m) => withExtension(m, ext.get(extKey(s.id, m.id))))
+      .filter((m) => Date.parse(m.deadline_at) >= joined && byKey.get(`${s.id}|${m.id}`)?.status !== 'submitted' && unsubmittedStatus(m, now) === 'owing');
     if (mine.length) {
       const oldest = mine[0]!;
       owing.push({

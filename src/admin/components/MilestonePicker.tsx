@@ -21,7 +21,8 @@ export function MilestonePicker({ value, onChange, autoSelect = true }: { value:
   useEffect(() => {
     adminApi.upcomingMilestones().then((r) => {
       setItems(r.milestones);
-      if (autoSelect && !value && r.milestones[0]) onChange(r.milestones[0].id);
+      // Chưa chọn, hoặc mốc đang chọn đã qua (không còn trong danh sách) → chọn mốc gần nhất
+      if (autoSelect && r.milestones[0] && (!value || !r.milestones.some((m) => m.id === value))) onChange(r.milestones[0].id);
     }, () => setErr(true));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

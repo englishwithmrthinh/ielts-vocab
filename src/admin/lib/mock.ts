@@ -204,6 +204,26 @@ export async function mockApi<T>(method: string, path: string, body?: unknown): 
     const t = now.toISOString();
     return ok({ milestones: state.milestones.filter((m) => !m.is_off && m.deadline_at >= t).sort((a, b) => a.deadline_at.localeCompare(b.deadline_at)).slice(0, 8) });
   }
+  if (route === 'GET /api/admin/lessons/deadline') {
+    const d = new Date(Date.now() - 2 * 86400_000);
+    const dl = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 16, 59, 59)).toISOString();
+    const st = ['owing', 'owing', 'doing', 'submitted', 'submitted', 'not_started'] as const;
+    const students = state.students.slice(0, 6).map((s, i) => ({
+      id: s.id, code: s.code, name: s.name, class_name: 'IELTS Foundation T3-T6', active: true, status: st[i]!,
+      deadline_at: i === 2 ? new Date(Date.parse(dl) + 4 * 86400_000).toISOString() : dl, extended_to: i === 2 ? new Date(Date.parse(dl) + 4 * 86400_000).toISOString() : null,
+      days_late: st[i] === 'owing' ? 2 : st[i] === 'submitted' ? (i === 4 ? 1 : 0) : null, score_pct: st[i] === 'submitted' ? (i === 4 ? 90 : 100) : null,
+      answered: st[i] === 'submitted' ? 32 : st[i] === 'doing' ? 12 : st[i] === 'owing' && i === 1 ? 5 : 0, required: st[i] === 'not_started' || (st[i] === 'owing' && i === 0) ? null : 32, spill: i === 3,
+    }));
+    return ok({
+      lesson: { id: 'l1', number: 1, title: 'Environment', status: 'published' },
+      milestone: { id: 'm-demo', date: vnDate(d), kind: 'fri', opens_at: new Date(Date.parse(dl) - 3 * 86400_000).toISOString(), deadline_at: dl, is_off: false },
+      inferred: false, state: 'overdue', daysOverdue: 2,
+      counts: { total: 6, submitted: 2, doing: 1, notStarted: 1, owing: 2, abandoned: 0 }, students, spillCount: 1, extensionsReady: true,
+    });
+  }
+  if (route === 'POST /api/admin/lessons/deadline' || route === 'POST /api/admin/lessons/deadline/clear') {
+    return ok({ ok: true, scope: b.scope, deadline_at: new Date().toISOString(), count: (b.student_ids as string[] | undefined)?.length ?? 0 });
+  }
   if (route === 'POST /api/admin/lessons/update') {
     return ok({ ok: true, moved: 0 });
   }

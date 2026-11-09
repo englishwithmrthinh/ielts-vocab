@@ -10,7 +10,7 @@ import type { Config } from '@netlify/functions';
 import type { Milestone } from '../../shared/types';
 import { requireAdmin } from '../lib/auth';
 import { errorResponse, HttpError, json, readJson } from '../lib/http';
-import { ensureMonth, setOff } from '../lib/milestones-db';
+import { ensureMonth, setMilestoneDeadline, setOff } from '../lib/milestones-db';
 import { db, must } from '../lib/supabase';
 
 export default async (req: Request): Promise<Response> => {
@@ -37,14 +37,8 @@ export default async (req: Request): Promise<Response> => {
     }
     if (url.pathname === '/api/admin/milestones/deadline' && req.method === 'POST') {
       const { id, deadline } = await readJson<{ id?: string; deadline?: string }>(req);
-      if (!id || !deadline || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(deadline)) throw new HttpError(400, 'bad_input', 'Cần id và hạn dạng YYYY-MM-DDTHH:mm');
-      const m = must(await db().from('milestones').select('*').eq('id', id).maybeSingle()) as Milestone | null;
-      if (!m) throw new HttpError(404, 'not_found', 'Không tìm thấy mốc');
-      const t = Date.parse(`${deadline}:59+07:00`);
-      if (!Number.isFinite(t)) throw new HttpError(400, 'bad_input', 'Hạn không hợp lệ');
-      if (t <= Date.parse(m.opens_at)) throw new HttpError(400, 'too_early', 'Hạn phải sau giờ mở bài');
-      const at = new Date(t).toISOString();
-      must(await db().from('milestones').update({ deadline_at: at }).eq('id', id));
+      if (!id) throw new HttpError(400, 'bad_input', 'Cần id và hạn dạng YYYY-MM-DDTHH:mm');
+      const at = await setMilestoneDeadline(id, deadline);
       return json({ ok: true, deadline_at: at });
     }
     throw new HttpError(405, 'method_not_allowed', 'Phương thức không hỗ trợ');

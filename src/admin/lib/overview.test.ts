@@ -39,3 +39,14 @@ describe('buildOverview', () => {
     expect(r.owing[1]).toMatchObject({ count: 1, oldestDate: '2026-11-03', daysLate: 2, pctNow: 80, pctTomorrow: 70 });
   });
 });
+
+describe('buildOverview · gia hạn riêng', () => {
+  const now = '2026-11-05T03:00:00Z';
+  const base = buildOverview(now, students.slice(0, 1), milestones, []);
+  const ext = new Map([['a|m1', '2026-11-10T16:59:59Z'], ['a|m2', '2026-11-10T16:59:59Z']]);
+  const r = buildOverview(now, students.slice(0, 1), milestones, [], ext);
+  it('em được gia hạn không còn trong danh sách nợ', () => {
+    expect(base.owing.map((o) => o.studentId)).toEqual(['a']);
+    expect(r.owing).toEqual([]);
+  });
+});
