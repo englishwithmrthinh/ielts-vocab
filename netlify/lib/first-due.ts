@@ -1,5 +1,5 @@
 /** Đọc mốc đầu tiên của từng học sinh (xem shared/first-due.ts). Chủ sở hữu: Sếp. */
-import type { FirstIdxMap } from '../../shared/first-due';
+import { countsAsStarted, type FirstIdxMap } from '../../shared/first-due';
 import { db, must } from './supabase';
 
 async function all<T>(q: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>): Promise<T[]> {
@@ -14,8 +14,8 @@ async function all<T>(q: (from: number, to: number) => PromiseLike<{ data: T[] |
 export async function loadFirstIdx(studentIds?: string[]): Promise<FirstIdxMap> {
   if (studentIds && !studentIds.length) return new Map();
   const [asg, sw] = await Promise.all([
-    all<{ student_id: string; m: { idx: number | null } | null }>((f, t) => {
-      let q = db().from('assignments').select('student_id,m:milestones(idx)');
+    all<{ student_id: string; required_count: number | null; status: string; m: { idx: number | null } | null }>((f, t) => {
+      let q = db().from('assignments').select('student_id,required_count,status,m:milestones(idx)');
       if (studentIds) q = q.in('student_id', studentIds);
       return q.range(f, t) as never;
     }),
@@ -31,7 +31,7 @@ export async function loadFirstIdx(studentIds?: string[]): Promise<FirstIdxMap> 
     const cur = out.get(s);
     if (cur === undefined || i < cur) out.set(s, i);
   };
-  for (const a of asg) put(a.student_id, a.m?.idx);
+  for (const a of asg) if (countsAsStarted(a)) put(a.student_id, a.m?.idx); // bỏ bài rỗng chưa nộp
   for (const w of sw) put(w.student_id, w.due_idx);
   return out;
 }

@@ -1,6 +1,6 @@
 /**
  * "Chưa có từ thì chưa có bài": mốc đến TRƯỚC mốc đầu tiên của học sinh thì không tính (như chưa vào lớp).
- * Mốc đầu tiên = idx nhỏ nhất trong: các mốc em đã có bài (assignments), và hạn của các từ em CHƯA làm lần nào
+ * Mốc đầu tiên = idx nhỏ nhất trong: các mốc em đã có bài (assignments; bỏ bài rỗng 0 câu chưa nộp), và hạn của các từ em CHƯA làm lần nào
  * (student_words.last_answered_at null → due_idx là mốc làm lần đầu, kể cả sau khi thầy "Sửa" dời mốc).
  * Hàm thuần — không đụng database. Chủ sở hữu: Sếp.
  */
@@ -13,6 +13,11 @@ export function firstIdxOf(assignmentIdxs: (number | null | undefined)[], unansw
 }
 
 /** true: mốc này chưa phải bài của em (đến trước từ đầu tiên). Mốc nghỉ (idx null) không xét ở đây. */
+/** Bài này có tính là "đã có bài" không: bài rỗng (0 câu bắt buộc) chưa nộp thì không. */
+export function countsAsStarted(a: { required_count: number | null; status: string }): boolean {
+  return a.status === 'submitted' || (a.required_count ?? 0) > 0;
+}
+
 export function beforeFirst(m: { idx: number | null }, firstIdx: number | null | undefined): boolean {
   if (m.idx === null) return false;
   return firstIdx === null || firstIdx === undefined || m.idx < firstIdx;

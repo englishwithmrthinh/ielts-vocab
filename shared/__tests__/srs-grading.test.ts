@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyAnswer, initialState } from '../srs';
+import { applyAnswer, initialState, scheduleBase } from '../srs';
 import { gradeTyping } from '../grading';
 import type { Box } from '../types';
 
@@ -66,5 +66,23 @@ describe('gradeTyping', () => {
     const g = gradeTyping('envxronmant', 'environment');
     expect(g.hint).toBeUndefined();
     expect(g.diff.filter((d) => !d.ok).map((d) => d.char)).toEqual(['x', 'a']);
+  });
+});
+
+describe('làm bù bài cũ: hẹn ôn từ mốc đang mở', () => {
+  // Bài 06/11 (idx 10), làm trễ ngày 09/11 khi mốc đang mở là 10/11 (idx 12)
+  it('mốc gốc = mốc đang mở nếu muộn hơn bài', () => {
+    expect(scheduleBase(10, 12)).toBe(12);
+    expect(scheduleBase(12, 12)).toBe(12);
+    expect(scheduleBase(12, 11)).toBe(12);
+    expect(scheduleBase(10, null)).toBe(10);
+  });
+  it('từ H1 đúng lúc làm bù → H2, hẹn sau mốc đang mở (13), không rơi vào CN 08/11 (11)', () => {
+    const r = applyAnswer({ box: 1, typed_ok: false, wrong_count: 0 }, true, false, scheduleBase(10, 12));
+    expect(r.box).toBe(2);
+    expect(r.due_idx).toBe(13);
+  });
+  it('làm đúng hạn thì như cũ', () => {
+    expect(applyAnswer({ box: 1, typed_ok: false, wrong_count: 0 }, true, false, scheduleBase(12, 12)).due_idx).toBe(13);
   });
 });

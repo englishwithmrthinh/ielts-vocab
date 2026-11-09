@@ -19,6 +19,24 @@ const CLASSES: Class[] = [
   { id: 'c2', name: 'IELTS 5.0 Cuối tuần', active: true, created_at: '2026-11-01T02:00:00Z' },
 ];
 
+/** Bộ từ cũ (demo): đủ nhiều để thấy nhóm theo tháng và nút "Xem thêm" */
+const TOPICS = ['Education', 'Work', 'Health', 'Technology', 'Travel', 'Food', 'Family', 'Sport', 'Media', 'Shopping', 'Crime', 'Housing', 'Transport', 'Culture', 'Science', 'Money', 'Weather', 'Animals', 'Fashion', 'Music', 'Art', 'Space'];
+const DEMO_HISTORY: LessonSummary[] = TOPICS.map((t, k) => {
+  const n = 22 - k; // #22 mới nhất … #1 cũ nhất
+  const taught = new Date(Date.UTC(2026, 8, 1) + (n - 1) * 2.8 * 86400_000);
+  const d = taught.toISOString().slice(0, 10);
+  const due = new Date(taught.getTime() + 4 * 86400_000).toISOString().slice(0, 10);
+  const c = n % 3 === 0 ? ['c2'] : n % 3 === 1 ? ['c1'] : ['c1', 'c2'];
+  const owing = n % 5 === 0 ? 1 + (n % 3) : 0;
+  return {
+    id: `h${n}`, number: n, title: n % 4 === 0 ? null : t, taught_on: d, status: 'published', published_at: `${d}T14:00:00Z`, created_at: `${d}T12:00:00Z`,
+    word_count: 16 + (n % 6), student_count: c.length * 5 + (n % 2), class_ids: c,
+    class_names: c.map((id) => CLASSES.find((x) => x.id === id)!.name), unassigned_count: n === 7 ? 1 : 0,
+    due_milestone_id: `demo-m-h${n}`, due: { date: due, kind: 'tue', deadline_at: `${due}T16:59:59.000Z` },
+    submitted_count: c.length * 5 + (n % 2) - owing, owing_count: owing, overdue: owing > 0,
+  };
+});
+
 const state = {
   loggedIn: false,
   classes: [...CLASSES],
@@ -32,8 +50,9 @@ const state = {
   })),
   milestones: [] as Milestone[],
   lessons: [
-    { id: 'l2', number: 2, taught_on: '2026-11-04', status: 'review', published_at: null, created_at: '2026-11-04T12:00:00Z', word_count: 18, student_count: 6, class_names: ['IELTS Foundation T3-T6'], unassigned_count: 0 },
-    { id: 'l1', number: 1, taught_on: '2026-11-02', status: 'published', published_at: '2026-11-02T14:00:00Z', created_at: '2026-11-02T12:00:00Z', word_count: 20, student_count: 11, class_names: ['IELTS 5.0 Cuối tuần', 'IELTS Foundation T3-T6'], unassigned_count: 1 },
+    { id: 'l2', number: 24, taught_on: '2026-11-04', status: 'review', published_at: null, created_at: '2026-11-04T12:00:00Z', word_count: 18, student_count: 6, class_ids: ['c1'], due_milestone_id: 'demo-m-l2', due: { date: '2026-11-10', kind: 'tue', deadline_at: '2026-11-10T16:59:59.000Z' }, class_names: ['IELTS Foundation T3-T6'], unassigned_count: 0 },
+    { id: 'l1', number: 23, title: 'Environment', taught_on: '2026-11-02', status: 'published', published_at: '2026-11-02T14:00:00Z', created_at: '2026-11-02T12:00:00Z', word_count: 20, student_count: 11, class_ids: ['c2', 'c1'], submitted_count: 8, owing_count: 3, overdue: true, due_milestone_id: 'demo-m-l1', due: { date: '2026-11-06', kind: 'fri', deadline_at: '2026-11-06T16:59:59.000Z' }, class_names: ['IELTS 5.0 Cuối tuần', 'IELTS Foundation T3-T6'], unassigned_count: 1 },
+    ...DEMO_HISTORY,
   ] as LessonSummary[],
   knownWords: new Set(['environment|n', 'pollution|n', 'sustainable|adj']),
 };
@@ -58,7 +77,7 @@ function demoImage(i: number): string {
 
 const demoDetail: LessonDetail = {
   lesson: {
-    id: 'l2', number: 2, taught_on: '2026-11-04', status: 'review', infographic_urls: [], published_at: null, created_at: '2026-11-04T12:00:00Z',
+    id: 'l2', number: 24, taught_on: '2026-11-04', status: 'review', infographic_urls: [], published_at: null, created_at: '2026-11-04T12:00:00Z',
     pipeline_log: [
       { at: '2026-11-04T12:00:01Z', step: 'validate', message: 'Bắt đầu: 18 từ' },
       { at: '2026-11-04T12:00:04Z', step: 'ipa', message: 'Phiên âm: 16/18 từ tra được từ điển, còn lại giữ bản AI' },
@@ -102,7 +121,7 @@ function reportsFor(month: string): AdminReportsResponse['reports'] {
       status: month < '2026-10' ? 'final' : 'draft', finalizedAt: null,
       link: `${window.location.origin}/bao-cao/demo-${st.code.toLowerCase()}`,
       aiComment: `${st.name.split(' ').pop()} làm bài khá đều trong tháng, nộp đúng hạn ${demoStats(i, month).on_time}/13 bài. Con nhớ tốt các từ về môi trường; cần ôn thêm các từ dài như "deforestation". Tháng tới cố gắng không để bài trễ nhé.`,
-      teacherComment: null, stats: demoStats(i, month),
+      teacherComment: null, stats: demoStats(i, month), computedAt: i % 5 === 4 ? null : new Date(Date.now() - 3 * 3600_000).toISOString(),
     })));
   }
   return demoReports.get(month)!;
@@ -215,7 +234,7 @@ export async function mockApi<T>(method: string, path: string, body?: unknown): 
       answered: st[i] === 'submitted' ? 32 : st[i] === 'doing' ? 12 : st[i] === 'owing' && i === 1 ? 5 : 0, required: st[i] === 'not_started' || (st[i] === 'owing' && i === 0) ? null : 32, spill: i === 3,
     }));
     return ok({
-      lesson: { id: 'l1', number: 1, title: 'Environment', status: 'published' },
+      lesson: { id: 'l1', number: 23, title: 'Environment', status: 'published' },
       milestone: { id: 'm-demo', date: vnDate(d), kind: 'fri', opens_at: new Date(Date.parse(dl) - 3 * 86400_000).toISOString(), deadline_at: dl, is_off: false },
       inferred: false, state: 'overdue', daysOverdue: 2,
       counts: { total: 6, submitted: 2, doing: 1, notStarted: 1, owing: 2, abandoned: 0 }, students, spillCount: 1, extensionsReady: true,
@@ -261,7 +280,7 @@ export async function mockApi<T>(method: string, path: string, body?: unknown): 
   }
 
   if (route === 'GET /api/admin/lessons') {
-    return ok({ lessons: [...state.lessons], nextNumber: Math.max(0, ...state.lessons.map((l) => l.number)) + 1 });
+    return ok({ lessons: state.lessons.map((l) => ({ class_ids: [], submitted_count: l.status === 'published' ? 0 : undefined, owing_count: l.status === 'published' ? 0 : undefined, overdue: false, ...l })), nextNumber: Math.max(0, ...state.lessons.map((l) => l.number)) + 1 });
   }
   if (route === 'POST /api/admin/lessons/check') {
     const words = b.words as { word: string; pos: string }[];
@@ -365,6 +384,41 @@ export async function mockApi<T>(method: string, path: string, body?: unknown): 
     }
     return ok({ ok: true });
   }
+  if (route === 'POST /api/admin/reports/recompute') {
+    for (const list of demoReports.values()) {
+      const r = list.find((x) => x.id === b.id);
+      if (r) {
+        r.computedAt = new Date().toISOString();
+        if (b.rewrite_ai) r.aiComment = `${r.aiComment ?? ''} (viết lại lúc ${r.computedAt.slice(11, 16)})`.trim();
+        return ok({ report: { id: r.id, stats: r.stats, aiComment: r.aiComment, teacherComment: r.teacherComment, status: r.status, finalizedAt: r.finalizedAt, computedAt: r.computedAt } });
+      }
+    }
+    throw new ApiCallError(404, 'not_found', 'Không tìm thấy báo cáo');
+  }
+  if (route === 'GET /api/admin/students/owing') {
+    const owing: Record<string, number> = {};
+    state.students.forEach((x, i) => { if (i % 3 === 0) owing[x.id] = 1 + (i % 2); });
+    return ok({ owing, abandoned: state.students[1] ? { [state.students[1].id]: 1 } : {} });
+  }
+  if (route === 'GET /api/admin/students/detail') {
+    const st = state.students.find((x) => x.id === url.searchParams.get('id')) ?? state.students[0]!;
+    const day = (d: number) => new Date(Date.now() + d * 86400_000).toISOString().slice(0, 10);
+    const dl = (d: number) => `${day(d)}T16:59:59.000Z`;
+    const it = (d: number, status: string, extra: Record<string, unknown> = {}) => ({
+      milestone_id: `m${d}`, date: day(d), kind: 'fri', deadline_at: dl(d), extended: false, status,
+      answered: 0, required: 24, submitted_at: null, score_pct: null, days_late: null, ...extra,
+    });
+    return ok({
+      student: { id: st.id, code: st.code, name: st.name, active: st.active, class_name: 'IELTS Foundation T3-T6', created_at: st.created_at },
+      owing: [it(-1, 'owing', { days_late: 1, answered: 6 })],
+      abandoned: st.id === 's2' ? [it(-12, 'abandoned', { days_late: 11 })] : [],
+      open: [it(1, 'open', { required: null }), it(-3, 'open', { extended: true, deadline_at: dl(1), answered: 10 })],
+      recent: [it(-5, 'submitted', { answered: 24, submitted_at: dl(-5), score_pct: 100, days_late: 0 }), it(-8, 'submitted', { answered: 20, submitted_at: dl(-7), score_pct: 90, days_late: 1 })],
+      lessons: state.lessons.slice(0, 4).map((l, i) => ({ id: l.id, number: l.number, title: l.title ?? null, status: l.status, taught_on: l.taught_on,
+        due: { date: day(i - 2), kind: 'tue', deadline_at: dl(i - 2) }, state: ['submitted', 'owing', 'open', 'open'][i], score_pct: i === 0 ? 100 : null })),
+      calendar_url: `/bao-cao-lop?hs=${st.code}`,
+    });
+  }
   if (route === 'POST /api/admin/reports/finalize') {
     for (const list of demoReports.values()) {
       const r = list.find((x) => x.id === b.id);
@@ -376,6 +430,14 @@ export async function mockApi<T>(method: string, path: string, body?: unknown): 
     const month = String(b.month);
     reportsFor(month);
     if (b.final) demoReports.get(month)?.forEach((r) => { r.status = 'final'; r.finalizedAt = new Date().toISOString(); });
+    else {
+      // demo "chạy nền": ~25 giây sau các bản tạm tính mới có giờ tính mới
+      setTimeout(() => demoReports.get(month)?.forEach((r) => {
+        if (r.status === 'final') return;
+        r.computedAt = new Date().toISOString();
+        if (b.rewrite_ai) r.aiComment = `Nhận xét AI viết lại lúc ${r.computedAt.slice(11, 16)} UTC.`;
+      }), 25_000);
+    }
     return ok(null);
   }
   if (route === 'GET /api/admin/suggestions') return ok({ suggestions: demoSuggestions.filter((x) => x.status === (url.searchParams.get('status') ?? 'pending')) });

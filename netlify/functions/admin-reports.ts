@@ -4,6 +4,8 @@
  * GET  /api/admin/reports?month=YYYY-MM  → AdminReportsResponse
  * POST /api/admin/reports/update { id, teacher_comment?, ai_comment? } → { ok }
  * POST /api/admin/reports/finalize { id } → { ok }   (chốt sớm từng em; phụ huynh thấy nhận xét ngay)
+ * POST /api/admin/reports/recompute { id, rewrite_ai? } → { report }  (tính lại số liệu 1 em, bản tạm tính; ~5–15 giây)
+ * Tính lại cả tháng: POST /api/jobs/monthly { month, final: false, rewrite_ai? } (chạy nền, xem computedAt để biết đã xong)
  * Tạo/chốt hàng loạt: POST /api/jobs/monthly { month, final } (background, trả 202)
  *
  * GET  /api/admin/suggestions?status=pending → AdminSuggestionsResponse
@@ -16,6 +18,7 @@ import { monthKey, vnDate } from '../../shared/time';
 import { requireAdmin } from '../lib/auth';
 import { errorResponse, HttpError, json, readJson } from '../lib/http';
 import { db, must } from '../lib/supabase';
+import { runMonthly } from '../lib/monthly';
 
 export default async (req: Request): Promise<Response> => {
   try {
@@ -37,7 +40,7 @@ export default async (req: Request): Promise<Response> => {
         reports: rows.filter((r) => r.s).map((r) => ({
           id: r.id, studentId: r.s!.id, code: r.s!.code, name: r.s!.name, classId: r.s!.class_id,
           status: r.status, finalizedAt: r.finalized_at, link: `${site}/bao-cao/${r.token}`,
-          aiComment: r.ai_comment, teacherComment: r.teacher_comment, stats: r.stats,
+          aiComment: r.ai_comment, teacherComment: r.teacher_comment, stats: r.stats, computedAt: r.stats?.computed_at ?? null,
         })).sort((a, b) => a.code.localeCompare(b.code)),
       };
       return json(out);
@@ -50,6 +53,17 @@ export default async (req: Request): Promise<Response> => {
       if (b.ai_comment !== undefined) patch.ai_comment = b.ai_comment?.slice(0, 2000) || null;
       must(await db().from('monthly_reports').update(patch).eq('id', b.id));
       return json({ ok: true });
+    }
+    if (p === '/api/admin/reports/recompute' && req.method === 'POST') {
+      const b = await readJson<{ id?: string; rewrite_ai?: boolean }>(req);
+      if (!b.id) throw new HttpError(400, 'bad_input', 'Thiếu id');
+      const r0 = must(await db().from('monthly_reports').select('student_id,month,status').eq('id', b.id).maybeSingle()) as { student_id: string; month: string; status: string } | null;
+      if (!r0) throw new HttpError(404, 'not_found', 'Không tìm thấy báo cáo');
+      if (r0.status === 'final') throw new HttpError(409, 'final', 'Báo cáo đã chốt, không tính lại được');
+      await runMonthly(r0.month, false, new Date().toISOString(), { rewriteAi: !!b.rewrite_ai, studentIds: [r0.student_id] });
+      const r = must(await db().from('monthly_reports').select('id,stats,ai_comment,teacher_comment,status,finalized_at').eq('id', b.id).single()) as
+        { id: string; stats: MonthlyStats; ai_comment: string | null; teacher_comment: string | null; status: string; finalized_at: string | null };
+      return json({ report: { id: r.id, stats: r.stats, aiComment: r.ai_comment, teacherComment: r.teacher_comment, status: r.status, finalizedAt: r.finalized_at, computedAt: r.stats.computed_at ?? null } });
     }
     if (p === '/api/admin/reports/finalize' && req.method === 'POST') {
       const { id } = await readJson<{ id?: string }>(req);
@@ -90,6 +104,6 @@ export default async (req: Request): Promise<Response> => {
 };
 
 export const config: Config = {
-  path: ['/api/admin/reports', '/api/admin/reports/update', '/api/admin/reports/finalize',
+  path: ['/api/admin/reports', '/api/admin/reports/update', '/api/admin/reports/finalize', '/api/admin/reports/recompute',
     '/api/admin/suggestions', '/api/admin/suggestions/update', '/api/admin/flags'],
 };

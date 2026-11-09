@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { ClassesResponse, Student } from '@shared/types';
 import { adminApi, type StudentCard } from '../lib/adminApi';
 import { setPrintCards } from '../lib/printStore';
+import { StudentDetailPanel } from '../components/StudentDetailPanel';
 import { Badge, Button, Card, ErrorBox, PageHeader, inputCls, selectCls } from '../ui';
 
 export default function StudentsPage() {
@@ -22,6 +23,13 @@ export default function StudentsPage() {
   const filter = params.get('lop') ?? 'all'; // all | none | <class id>
   const [moveTo, setMoveTo] = useState('');
   const [addClassId, setAddClassId] = useState('');
+  const [owing, setOwing] = useState<{ owing: Record<string, number>; abandoned: Record<string, number> }>({ owing: {}, abandoned: {} });
+  const detailId = params.get('hs');
+  const openDetail = (id: string | null) => {
+    const next = new URLSearchParams(params);
+    if (id) next.set('hs', id); else next.delete('hs');
+    setParams(next, { replace: true });
+  };
 
   const load = () =>
     Promise.all([adminApi.students(), adminApi.classes()]).then(([s, c]) => {
@@ -30,6 +38,7 @@ export default function StudentsPage() {
     }, setError);
   useEffect(() => {
     load();
+    adminApi.studentOwing().then(setOwing, () => undefined);
   }, []);
   useEffect(() => {
     setSelected(new Set());
@@ -263,7 +272,18 @@ export default function StudentsPage() {
                         <Button variant="ghost" onClick={() => setEditId(null)}>Huỷ</Button>
                       </form>
                     ) : (
-                      <span className="font-medium">{s.name}</span>
+                      <span className="flex flex-wrap items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => openDetail(s.id)}
+                          className="text-left font-medium text-slate-900 underline-offset-2 hover:text-teal-800 hover:underline"
+                          aria-label={`Xem chi tiết ${s.name}`}
+                        >
+                          {s.name}
+                        </button>
+                        {(owing.owing[s.id] ?? 0) > 0 && <Badge tone="red">Nợ {owing.owing[s.id]}</Badge>}
+                        {(owing.abandoned[s.id] ?? 0) > 0 && <Badge>Bỏ {owing.abandoned[s.id]}</Badge>}
+                      </span>
                     )}
                   </div>
                   {filter === 'all' && editId !== s.id && (s.class_id && className.get(s.class_id) ? <Badge tone="blue">{className.get(s.class_id)}</Badge> : <Badge tone="amber">Chưa xếp lớp</Badge>)}
@@ -286,6 +306,7 @@ export default function StudentsPage() {
           )}
         </Card>
       </div>
+      {detailId && <StudentDetailPanel studentId={detailId} onClose={() => openDetail(null)} />}
     </>
   );
 }
