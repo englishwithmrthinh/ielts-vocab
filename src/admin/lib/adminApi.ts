@@ -26,6 +26,13 @@ export interface LessonSummary {
   due_milestone_id?: string | null;
   /** Mốc đầu tiên từ mới phải làm */
   due?: { date: string; kind: string; deadline_at: string } | null;
+  /** id các lớp có học sinh được giao (lọc theo Lớp) */
+  class_ids?: string[];
+  /** Ở mốc hạn của bộ: số em đã nộp / đang nợ (kể cả bỏ bài). Chỉ bộ đã phát hành có mốc hạn. */
+  submitted_count?: number;
+  owing_count?: number;
+  /** Còn em đang nợ bài của bộ này (bộ lọc "Quá hạn") */
+  overdue?: boolean;
 }
 
 /** Một học sinh trong bảng hạn nộp của bộ từ */

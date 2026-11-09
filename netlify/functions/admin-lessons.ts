@@ -1,7 +1,8 @@
 /**
  * Buổi học (cần cookie quản trị) — Claude 3, giai đoạn 1.
  *
- * GET  /api/admin/lessons              → { lessons: LessonSummary[] (kèm class_names, unassigned_count), nextNumber }
+ * GET  /api/admin/lessons              → { lessons: LessonSummary[] (TẤT CẢ bộ; kèm class_names, class_ids, unassigned_count,
+ *                                          submitted_count, owing_count, overdue), nextNumber }
  * POST /api/admin/lessons/check  { words: {word,pos}[] }
  *      → { existing: { word, pos, id, has_audio, has_image }[] }   (từ đã có trong kho tổng)
  * POST /api/admin/lessons        { number, taught_on, student_ids, json }
@@ -15,7 +16,12 @@ import type { Lesson, PartOfSpeech } from '../../shared/types';
 import { parseLessonJson, normWord, type LessonWordInput } from '../../src/admin/lib/lessonSchema';
 import { requireAdmin } from '../lib/auth';
 import { errorResponse, HttpError, json, readJson } from '../lib/http';
-import { db, must } from '../lib/supabase';
+import { allRows, db, must } from '../lib/supabase';
+import { loadExtensions } from '../lib/extensions';
+import { loadFirstIdx } from '../lib/first-due';
+import { extKey, withExtension } from '../../shared/deadlines';
+import { beforeFirst } from '../../shared/first-due';
+import { unsubmittedStatus } from '../../shared/lateness';
 
 interface WordRow { id: string; word: string; pos: PartOfSpeech; audio_url: string | null; image_url: string | null }
 
@@ -29,33 +35,74 @@ async function findExisting(items: { word: string; pos: string }[]): Promise<Map
 }
 
 async function listLessons() {
-  const lessons = must(
-    await db().from('lessons').select('id,number,taught_on,status,published_at,created_at,title,due_milestone_id,dm:milestones(date,kind,deadline_at)').order('taught_on', { ascending: false }).limit(200),
-  ) as unknown as (Pick<Lesson, 'id' | 'number' | 'taught_on' | 'status' | 'published_at' | 'created_at'> & { title: string | null; due_milestone_id: string | null; dm: { date: string; kind: string; deadline_at: string } | null })[];
-  const ids = lessons.map((l) => l.id);
-  const words = ids.length ? (must(await db().from('lesson_words').select('lesson_id').in('lesson_id', ids)) as { lesson_id: string }[]) : [];
-  const att = ids.length ? (must(await db().from('attendance').select('lesson_id,student_id').in('lesson_id', ids)) as { lesson_id: string; student_id: string }[]) : [];
-  const count = (rows: { lesson_id: string }[], id: string) => rows.filter((r) => r.lesson_id === id).length;
+  const now = new Date().toISOString();
+  // Không giới hạn số bộ; đọc theo trang để không bị cắt ở 1000 dòng
+  const [lessons, words, att, stuR, clsR, ext] = await Promise.all([
+    allRows((f, t) => db().from('lessons').select('id,number,taught_on,status,published_at,created_at,title,due_milestone_id,dm:milestones(date,kind,deadline_at,opens_at,idx,is_off)')
+      .order('taught_on', { ascending: false }).order('number', { ascending: false }).range(f, t)) as unknown as Promise<(Pick<Lesson, 'id' | 'number' | 'taught_on' | 'status' | 'published_at' | 'created_at'> & {
+        title: string | null; due_milestone_id: string | null;
+        dm: { date: string; kind: string; deadline_at: string; opens_at: string; idx: number | null; is_off: boolean } | null;
+      })[]>,
+    allRows<{ lesson_id: string }>((f, t) => db().from('lesson_words').select('lesson_id').range(f, t)),
+    allRows<{ lesson_id: string; student_id: string }>((f, t) => db().from('attendance').select('lesson_id,student_id').range(f, t)),
+    db().from('students').select('id,class_id,active'),
+    db().from('classes').select('id,name'),
+    loadExtensions(),
+  ]);
+  const wordCount = new Map<string, number>();
+  for (const w of words) wordCount.set(w.lesson_id, (wordCount.get(w.lesson_id) ?? 0) + 1);
+  const attBy = new Map<string, string[]>();
+  for (const a of att) (attBy.get(a.lesson_id) ?? attBy.set(a.lesson_id, []).get(a.lesson_id)!).push(a.student_id);
   const nextNumber = lessons.reduce((m, l) => Math.max(m, l.number), 0) + 1;
 
-  // "Giao cho: Lớp A, Lớp B" — lớp hiện tại của các học sinh được giao
-  const [stuR, clsR] = await Promise.all([db().from('students').select('id,class_id'), db().from('classes').select('id,name')]);
   const classOf = new Map((must(stuR) as { id: string; class_id: string | null }[]).map((s) => [s.id, s.class_id]));
   const className = new Map((must(clsR) as { id: string; name: string }[]).map((c) => [c.id, c.name]));
-  const classesFor = (lessonId: string) => {
-    const names = new Set<string>();
-    let unassigned = 0;
-    for (const a of att) {
-      if (a.lesson_id !== lessonId) continue;
-      const cid = classOf.get(a.student_id);
-      const name = cid ? className.get(cid) : undefined;
-      if (name) names.add(name);
-      else unassigned++;
-    }
-    return { class_names: [...names].sort((a, b) => a.localeCompare(b, 'vi')), unassigned_count: unassigned };
-  };
+
+  // Trạng thái nộp ở mốc hạn của từng bộ đã phát hành (hạn riêng + "chưa có từ thì chưa có bài")
+  const dueIds = [...new Set(lessons.filter((l) => l.status === 'published' && l.due_milestone_id).map((l) => l.due_milestone_id!))];
+  const [asg, first] = await Promise.all([
+    dueIds.length
+      ? allRows<{ student_id: string; milestone_id: string; status: string }>((f, t) => db().from('assignments').select('student_id,milestone_id,status').in('milestone_id', dueIds).range(f, t))
+      : Promise.resolve([]),
+    dueIds.length ? loadFirstIdx() : Promise.resolve(new Map<string, number>()),
+  ]);
+  const submitted = new Set(asg.filter((a) => a.status === 'submitted').map((a) => `${a.student_id}|${a.milestone_id}`));
+
   return {
-    lessons: lessons.map(({ dm, ...l }) => ({ ...l, due: dm, word_count: count(words, l.id), student_count: count(att, l.id), ...classesFor(l.id) })),
+    lessons: lessons.map(({ dm, ...l }) => {
+      const sids = attBy.get(l.id) ?? [];
+      const names = new Set<string>();
+      const cids = new Set<string>();
+      let unassigned = 0;
+      for (const sid of sids) {
+        const cid = classOf.get(sid);
+        const name = cid ? className.get(cid) : undefined;
+        if (cid && name) { names.add(name); cids.add(cid); } else unassigned++;
+      }
+      let submittedCount = 0;
+      let owingCount = 0;
+      if (l.status === 'published' && dm && l.due_milestone_id) {
+        const m = { id: l.due_milestone_id, ...dm };
+        for (const sid of sids) {
+          if (submitted.has(`${sid}|${m.id}`)) { submittedCount++; continue; }
+          if (beforeFirst(m, first.get(sid))) continue;
+          const st = unsubmittedStatus(withExtension(m, ext.get(extKey(sid, m.id))), now);
+          if (st === 'owing' || st === 'abandoned') owingCount++;
+        }
+      }
+      return {
+        ...l,
+        due: dm ? { date: dm.date, kind: dm.kind, deadline_at: dm.deadline_at } : null,
+        word_count: wordCount.get(l.id) ?? 0,
+        student_count: sids.length,
+        class_names: [...names].sort((a, b) => a.localeCompare(b, 'vi')),
+        class_ids: [...cids],
+        unassigned_count: unassigned,
+        submitted_count: submittedCount,
+        owing_count: owingCount,
+        overdue: owingCount > 0,
+      };
+    }),
     nextNumber,
   };
 }
