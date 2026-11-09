@@ -6,7 +6,8 @@
  *           chưa gõ đúng thì ở lại H5, hẹn ngay mốc sau để ra dạng gõ.
  *           Pass đúng (kiểm tra lại) → giữ Pass.
  *   - Sai: về hộp theo BOX_ON_WRONG.
- *   - Hạn ôn tiếp: due_idx = idx của bài đang làm + BOX_INTERVAL[hộp mới].
+ *   - Hạn ôn tiếp: due_idx = MỐC GỐC + BOX_INTERVAL[hộp mới]. Mốc gốc = scheduleBase(): idx của bài đang làm,
+ *     hoặc idx của mốc đang mở lúc làm nếu muộn hơn (làm bù bài cũ thì lịch ôn đếm từ mốc hiện tại, không dồn vào bài đã qua).
  * Câu 'fix' / 'practice' / 'retry' KHÔNG gọi hàm này.
  */
 import type { Box } from './types';
@@ -23,6 +24,14 @@ export interface SrsResult extends SrsState {
   due_idx: number;
   /** Từ vừa chuyển sang Pass ở câu này (để hiện hiệu ứng, cộng XP) */
   passed: boolean;
+}
+
+/**
+ * Mốc gốc để hẹn ôn. assignmentIdx: idx của bài đang làm; currentIdx: idx của mốc đang mở lúc trả lời
+ * (mốc không nghỉ đầu tiên chưa qua hạn chung; null nếu chưa có lịch). Lấy cái muộn hơn.
+ */
+export function scheduleBase(assignmentIdx: number, currentIdx: number | null | undefined): number {
+  return typeof currentIdx === 'number' && currentIdx > assignmentIdx ? currentIdx : assignmentIdx;
 }
 
 export function applyAnswer(

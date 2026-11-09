@@ -19,3 +19,13 @@ describe('chưa có từ thì chưa có bài', () => {
     expect(beforeFirst({ idx: null }, null)).toBe(false);
   });
 });
+
+describe('bài rỗng (0 câu) chưa nộp không tính là đã có bài', () => {
+  it('countsAsStarted', async () => {
+    const { countsAsStarted } = await import('../first-due');
+    expect(countsAsStarted({ required_count: 0, status: 'open' })).toBe(false);
+    expect(countsAsStarted({ required_count: null, status: 'open' })).toBe(false);
+    expect(countsAsStarted({ required_count: 0, status: 'submitted' })).toBe(true);
+    expect(countsAsStarted({ required_count: 15, status: 'open' })).toBe(true);
+  });
+});

@@ -26,6 +26,13 @@ export interface LessonSummary {
   due_milestone_id?: string | null;
   /** Mốc đầu tiên từ mới phải làm */
   due?: { date: string; kind: string; deadline_at: string } | null;
+  /** id các lớp có học sinh được giao (lọc theo Lớp) */
+  class_ids?: string[];
+  /** Ở mốc hạn của bộ: số em đã nộp / đang nợ (kể cả bỏ bài). Chỉ bộ đã phát hành có mốc hạn. */
+  submitted_count?: number;
+  owing_count?: number;
+  /** Còn em đang nợ bài của bộ này (bộ lọc "Quá hạn") */
+  overdue?: boolean;
 }
 
 /** Một học sinh trong bảng hạn nộp của bộ từ */
@@ -55,6 +62,34 @@ export interface LessonDeadline {
   spillCount: number;
   /** false: chưa chạy migration 005 → chưa gia hạn riêng được */
   extensionsReady: boolean;
+}
+
+/** Một bài (mốc) trong chi tiết học sinh */
+export interface StudentDetailItem {
+  milestone_id: string; date: string; kind: string;
+  /** Hạn hiệu lực (có gia hạn riêng thì là hạn riêng) */
+  deadline_at: string; extended: boolean;
+  status: 'locked' | 'open' | 'submitted' | 'owing' | 'abandoned' | 'off';
+  answered: number; required: number | null;
+  submitted_at: string | null; score_pct: number | null; days_late: number | null;
+}
+
+/** GET /api/admin/students/detail?id= */
+export interface StudentDetail {
+  student: { id: string; code: string; name: string; active: boolean; class_name: string | null; created_at: string };
+  /** Đang nợ (quá hạn, còn làm bù được), cũ trước */
+  owing: StudentDetailItem[];
+  /** Bỏ bài (quá 7 ngày, 0 điểm) */
+  abandoned: StudentDetailItem[];
+  /** Đang mở (còn hạn) */
+  open: StudentDetailItem[];
+  /** Tối đa 8 bài nộp gần nhất */
+  recent: StudentDetailItem[];
+  /** Các bộ từ đã nhận, mới trước; state = trạng thái bài ở mốc hạn của bộ */
+  lessons: { id: string; number: number; title: string | null; status: string; taught_on: string;
+    due: { date: string; kind: string; deadline_at: string } | null; state: StudentDetailItem['status'] | null; score_pct: number | null }[];
+  /** Lịch tháng của em (trang /bao-cao-lop?hs=…), mở tab mới */
+  calendar_url: string;
 }
 
 export interface ExistingWord { word: string; pos: string; id: string; has_audio: boolean; has_image: boolean }
@@ -134,6 +169,13 @@ export const adminApi = {
   publish: (lessonId: string, studentIds: string[], milestoneId?: string | null) =>
     call<PublishResult>('POST', '/api/admin/lessons/publish', { lesson_id: lessonId, student_ids: studentIds, ...(milestoneId ? { milestone_id: milestoneId } : {}) }),
   upcomingMilestones: () => call<{ milestones: Milestone[] }>('GET', '/api/admin/milestones/upcoming'),
+  /** Tính lại số liệu 1 báo cáo (bản tạm tính), tuỳ chọn viết lại nhận xét AI. Chờ ~5–15 giây. */
+  recomputeReport: (id: string, rewriteAi = false) => call<{ report: { id: string; stats: unknown; aiComment: string | null; teacherComment: string | null; status: string; finalizedAt: string | null; computedAt: string | null } }>(
+    'POST', '/api/admin/reports/recompute', { id, rewrite_ai: rewriteAi }),
+  /** Tính lại cả tháng (chạy nền, trả ngay). Tải lại danh sách sau ~1–3 phút; computedAt đổi là xong. */
+  recomputeMonth: (month: string, rewriteAi = false) => call<unknown>('POST', '/api/jobs/monthly', { month, final: false, rewrite_ai: rewriteAi }),
+  studentOwing: () => call<{ owing: Record<string, number>; abandoned: Record<string, number> }>('GET', '/api/admin/students/owing'),
+  studentDetail: (id: string) => call<StudentDetail>('GET', `/api/admin/students/detail?id=${id}`),
   lessonDeadline: (id: string) => call<LessonDeadline>('GET', `/api/admin/lessons/deadline?id=${id}`),
   extendLesson: (id: string, deadline: string, scope: 'all' | 'students', studentIds: string[] = []) =>
     call<{ ok: true; scope: string; deadline_at: string; count: number | null }>('POST', '/api/admin/lessons/deadline', { id, deadline, scope, student_ids: studentIds }),
