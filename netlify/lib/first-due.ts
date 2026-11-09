@@ -15,7 +15,8 @@ export async function loadFirstIdx(studentIds?: string[]): Promise<FirstIdxMap> 
   if (studentIds && !studentIds.length) return new Map();
   const [asg, sw] = await Promise.all([
     all<{ student_id: string; m: { idx: number | null } | null }>((f, t) => {
-      let q = db().from('assignments').select('student_id,m:milestones(idx)');
+      // Bài rỗng (0 câu bắt buộc, chưa nộp) không tính là "đã có bài"
+      let q = db().from('assignments').select('student_id,m:milestones(idx)').or('required_count.gt.0,status.eq.submitted');
       if (studentIds) q = q.in('student_id', studentIds);
       return q.range(f, t) as never;
     }),
