@@ -92,6 +92,10 @@ export interface Lesson {
   pipeline_log: PipelineLogEntry[];
   published_at: ISODateTime | null;
   created_at: ISODateTime;
+  /** Tên bộ từ (migration 004); null = "Bộ từ N" */
+  title?: string | null;
+  /** Mốc làm lần đầu (migration 004) */
+  due_milestone_id?: UUID | null;
 }
 
 export interface Milestone {

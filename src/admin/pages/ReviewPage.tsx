@@ -9,6 +9,7 @@ import { ImagesSection, SingleImageDialog } from '../components/ImageTools';
 import { adminApi, type LessonDetail, type PublishResult } from '../lib/adminApi';
 import { Badge, Button, Card, ErrorBox, inputCls } from '../ui';
 import { MilestonePicker } from '../components/MilestonePicker';
+import { LessonDeadlinePanel } from '../components/LessonDeadlinePanel';
 
 const STATUS = {
   draft: { label: 'Nháp', tone: 'slate' },
@@ -168,6 +169,13 @@ export default function ReviewPage() {
             <Badge tone={missingImage ? 'amber' : 'teal'}>{missingImage ? `${missingImage} từ không có ảnh` : 'Đủ ảnh'}</Badge>
             {aiIpa > 0 && <Badge tone="amber">{aiIpa} phiên âm do AI — kiểm tra lại</Badge>}
           </div>
+        )}
+
+        {lesson.status === 'published' && (
+          <Card>
+            <h2 className="mb-3 text-base font-semibold text-slate-900">Hạn nộp</h2>
+            <LessonDeadlinePanel lessonId={lesson.id} />
+          </Card>
         )}
 
         {lesson.status !== 'published' && <ImagesSection lessonId={lesson.id} words={words} onUploaded={load} />}
@@ -379,7 +387,8 @@ function PublishDialog({ detail, onClose, onDone }: { detail: LessonDetail; onCl
   const missingAudio = detail.words.filter((w) => !w.audio_url).length;
   const missingImage = detail.words.filter((w) => !w.image_url).length;
   const already = detail.lesson.status === 'published';
-  const [mid, setMid] = useState<string | null>(null);
+  // Đã đặt hạn trước bằng nút "Sửa" thì chọn sẵn đúng mốc đó (mốc đã qua thì MilestonePicker tự chọn mốc gần nhất)
+  const [mid, setMid] = useState<string | null>(detail.lesson.due_milestone_id ?? null);
 
   const go = async () => {
     setBusy(true);

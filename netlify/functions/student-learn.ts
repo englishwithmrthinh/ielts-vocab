@@ -43,7 +43,9 @@ async function home(studentId: string): Promise<HomeResponse> {
     db().from('student_words').select('word_id', { count: 'exact', head: true }).eq('student_id', studentId).eq('introduced', false),
   ]);
   const { owing, open, next } = cardsOf(plan);
-  const list = [...owing, ...(open ? [open] : [])];
+  // Có thể có nhiều bài đang mở cùng lúc (bài cũ được gia hạn) → hiện hết, cũ trước
+  const opens = plan.milestones.filter((m) => plan.status.get(m.id) === 'open');
+  const list = [...owing, ...opens];
   const tomorrow = new Date(Date.parse(t) + 86_400_000).toISOString();
   const assignments: AssignmentCard[] = list.map((m, i) => {
     const a = plan.assignments.get(m.id);

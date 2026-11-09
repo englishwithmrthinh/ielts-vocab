@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { adminApi, type LessonSummary } from '../lib/adminApi';
 import { Badge, Button, Card, ErrorBox, PageHeader } from '../ui';
 import { MilestonePicker, vnDeadline } from '../components/MilestonePicker';
+import { LessonDeadlinePanel } from '../components/LessonDeadlinePanel';
 
 const STATUS: Record<LessonSummary['status'], { label: string; tone: 'slate' | 'amber' | 'blue' | 'teal' }> = {
   draft: { label: 'Nháp', tone: 'slate' },
@@ -11,6 +12,13 @@ const STATUS: Record<LessonSummary['status'], { label: string; tone: 'slate' | '
   review: { label: 'Chờ duyệt', tone: 'blue' },
   published: { label: 'Đã phát hành', tone: 'teal' },
 };
+
+/** Số ngày lịch (giờ VN) đã quá hạn chung; 0 = còn hạn */
+function overdueDays(iso: string): number {
+  if (Date.now() <= Date.parse(iso)) return 0;
+  const day = (t: number) => Math.floor((t + 7 * 3600_000) / 86400_000);
+  return Math.max(1, day(Date.now()) - day(Date.parse(iso)));
+}
 
 function fmtDate(d: string) {
   const [y, m, day] = d.split('-');
@@ -23,9 +31,10 @@ export default function LessonsPage() {
 
   const [busy, setBusy] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
+  const [dlId, setDlId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [mid, setMid] = useState<string | null>(null);
-  const startEdit = (l: LessonSummary) => { setEditId(l.id); setTitle(l.title ?? ''); setMid(null); };
+  const startEdit = (l: LessonSummary) => { setDlId(null); setEditId(l.id); setTitle(l.title ?? ''); setMid(null); };
   const save = async (l: LessonSummary) => {
     setBusy(true); setError(null);
     try {
@@ -69,6 +78,7 @@ export default function LessonsPage() {
                 <span className="font-semibold text-slate-900">{l.title || `Bộ từ ${l.number}`}</span>
                 {l.title && <span className="text-xs text-slate-400">(số {l.number})</span>}
                 {l.due && <><span className="text-slate-400">·</span><span className="font-medium text-teal-800">Hạn {vnDeadline(l.due.deadline_at)}</span></>}
+                {l.due && l.status === 'published' && overdueDays(l.due.deadline_at) > 0 && <Badge tone="red">Quá hạn {overdueDays(l.due.deadline_at)} ngày</Badge>}
                 <span className="text-slate-400">·</span>
                 <span className="text-slate-600">{l.word_count} từ</span>
                 <span className="text-slate-400">·</span>
@@ -81,10 +91,20 @@ export default function LessonsPage() {
                 </span>
                 <span className="ml-auto"><Badge tone={STATUS[l.status].tone}>{STATUS[l.status].label}</Badge></span>
                 </Link>
+                {l.status === 'published' && (
+                  <Button variant="ghost" disabled={busy} onClick={() => { setEditId(null); setDlId(dlId === l.id ? null : l.id); }} aria-expanded={dlId === l.id}>
+                    <span className="text-teal-800">Hạn nộp</span>
+                  </Button>
+                )}
                 <Button variant="ghost" disabled={busy} onClick={() => (editId === l.id ? setEditId(null) : startEdit(l))}>Sửa</Button>
                 <Button variant="ghost" disabled={busy} onClick={() => remove(l)} aria-label={`Xoá bộ từ ${l.number}`}>
                   <span className="text-red-700">Xoá</span>
                 </Button>
+                {dlId === l.id && (
+                  <div className="w-full border-t border-slate-100 bg-slate-50 px-4 py-3">
+                    <LessonDeadlinePanel lessonId={l.id} onChanged={reload} />
+                  </div>
+                )}
                 {editId === l.id && (
                   <div className="w-full space-y-3 border-t border-slate-100 bg-slate-50 px-4 py-3">
                     <label className="block text-sm">

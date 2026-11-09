@@ -5,6 +5,8 @@
 import type { Assignment, Milestone } from '../../../shared/types';
 import { daysLate, scoreIfSubmittedAt, unsubmittedStatus } from '../../../shared/lateness';
 import { vnDate } from '../../../shared/time';
+import { extKey, withExtension, type ExtensionMap } from '../../../shared/deadlines';
+import { beforeFirst, type FirstIdxMap } from '../../../shared/first-due';
 
 export interface AdminOverview {
   now: string;
@@ -24,6 +26,9 @@ export function buildOverview(
   students: { id: string; code: string; name: string; created_at: string; class_id: string | null }[],
   milestones: Milestone[],
   assignments: Pick<Assignment, 'student_id' | 'milestone_id' | 'status' | 'answered_count'>[],
+  ext: ExtensionMap = new Map(),
+  /** Mốc đầu tiên từng em (bỏ trống = không lọc, như trước) */
+  first?: FirstIdxMap,
 ): Pick<AdminOverview, 'milestone' | 'today' | 'owing'> {
   const byKey = new Map(assignments.map((a) => [`${a.student_id}|${a.milestone_id}`, a]));
   const t = Date.parse(now);
@@ -37,14 +42,16 @@ export function buildOverview(
 
   for (const s of students) {
     const joined = Date.parse(s.created_at);
-    if (cur && Date.parse(cur.deadline_at) >= joined) {
+    const notYet = (m: Milestone) => !!first && beforeFirst(m, first.get(s.id)); // chưa có từ thì chưa có bài
+    if (cur && Date.parse(cur.deadline_at) >= joined && !notYet(cur)) {
       today.total++;
       const a = byKey.get(`${s.id}|${cur.id}`);
       if (a?.status === 'submitted') today.submitted++;
       else if (a && a.answered_count > 0) today.doing++;
       else today.notStarted++;
     }
-    const mine = live.filter((m) => Date.parse(m.deadline_at) >= joined && byKey.get(`${s.id}|${m.id}`)?.status !== 'submitted' && unsubmittedStatus(m, now) === 'owing');
+    const mine = live.map((m) => withExtension(m, ext.get(extKey(s.id, m.id))))
+      .filter((m) => !notYet(m) && Date.parse(m.deadline_at) >= joined && byKey.get(`${s.id}|${m.id}`)?.status !== 'submitted' && unsubmittedStatus(m, now) === 'owing');
     if (mine.length) {
       const oldest = mine[0]!;
       owing.push({
